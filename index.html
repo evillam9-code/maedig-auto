@@ -223,6 +223,10 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
       <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
       <div style="font-size:14px;color:#94a3b8" id="topbar-empresa">Sistema de Gestión Vehicular</div>
       <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;margin-right:12px">
+        <div id="fb-dot" style="width:8px;height:8px;border-radius:50%;background:#64748b;flex-shrink:0"></div>
+        <span id="fb-text">Local</span>
+      </div>
       <div style="font-size:13px;font-weight:600;color:#fff" id="topbar-nombre">Admin</div>
     </div>
     <div class="main">
@@ -383,6 +387,10 @@ function doLogin(){
     aplicarPermisosNav();
     showPage('dashboard');
     setTimeout(checkAlerts,1500);
+    // Sincronizar Firebase después del login
+    if(typeof fbIniciar==='function') fbIniciar().then(()=>{
+      renderDashboard();
+    });
   },2200);
 }
 function _getRolLabel(role){
@@ -5207,6 +5215,98 @@ function exportarInformePDF(){
 // INIT
 document.getElementById('li-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('li-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-pass').focus();});
+</script>
+<!-- ══ FIREBASE ══ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB6_XJiTwdtUA-LAtA0zXuNqgeLyVRbH3c",
+  authDomain: "maedig-auto.firebaseapp.com",
+  projectId: "maedig-auto",
+  storageBucket: "maedig-auto.firebasestorage.app",
+  messagingSenderId: "386590226890",
+  appId: "1:386590226890:web:71b099a4577eefe267b733"
+};
+firebase.initializeApp(firebaseConfig);
+const _fbDB = firebase.firestore();
+const _fbCol = 'maedig';
+
+async function fbGuardar(key){
+  try {
+    await _fbDB.collection(_fbCol).doc(key).set({
+      valor: JSON.stringify(DB[key] !== undefined ? DB[key] : (key==='config'?{}:[]))
+    });
+  } catch(e){ console.warn('FB save error:', e.message); }
+}
+
+async function fbCargar(){
+  const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
+    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','log'];
+  let loaded=false;
+  for(const key of keys){
+    try {
+      const snap = await _fbDB.collection(_fbCol).doc(key).get();
+      if(snap.exists){
+        const val = JSON.parse(snap.data().valor);
+        if(val!==null){
+          if(key==='users' && Array.isArray(val) && Array.isArray(DB[key])){
+            const merged=[...val];
+            DB[key].forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
+            DB[key]=merged.length>0?merged:DB[key];
+          } else {
+            DB[key]=val;
+          }
+          loaded=true;
+        }
+      }
+    } catch(e){ console.warn('FB load error:', key, e.message); }
+  }
+  return loaded;
+}
+
+const _sDB_orig = sDB;
+window._fbActivo = false;
+window.sDB = function(key){
+  try { _sDB_orig(key); } catch(e){}
+  if(window._fbActivo){
+    const dot=document.getElementById('fb-dot');
+    const txt=document.getElementById('fb-text');
+    if(dot) dot.style.background='#f59e0b';
+    if(txt) txt.textContent='Guardando...';
+    fbGuardar(key).then(()=>{
+      if(dot) dot.style.background='#22c55e';
+      if(txt) txt.textContent='✓ Guardado';
+    }).catch(()=>{
+      if(dot) dot.style.background='#ef4444';
+      if(txt) txt.textContent='Error al guardar';
+    });
+  }
+};
+
+window.fbIniciar = async function(){
+  const dot=document.getElementById('fb-dot');
+  const txt=document.getElementById('fb-text');
+  const setStatus=(color,msg)=>{if(dot)dot.style.background=color;if(txt)txt.textContent=msg;};
+  setStatus('#f59e0b','Sincronizando...');
+  try {
+    const loaded = await fbCargar();
+    window._fbActivo = true;
+    if(loaded){
+      setStatus('#22c55e','✓ Firebase');
+      console.log('✅ Firebase: datos cargados');
+    } else {
+      const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
+        'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','log'];
+      for(const k of keys) await fbGuardar(k);
+      setStatus('#22c55e','✓ Firebase');
+      console.log('✅ Firebase: datos iniciales guardados');
+    }
+  } catch(e) {
+    setStatus('#ef4444','Sin conexión');
+    console.warn('Firebase error:', e.message);
+  }
+};
 </script>
 </body>
 </html>
