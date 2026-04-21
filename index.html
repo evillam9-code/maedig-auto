@@ -487,22 +487,23 @@ function doLogin(){
   // Mostrar bienvenida con datos del localStorage primero
   _actualizarWelcome();
   ws.classList.add('show');
-  // Si hay Firebase, intentar cargar datos DURANTE la bienvenida (max 2s)
-  if(typeof fbIniciar==='function'){
-    let _fbCargado=false;
+  // Si Firebase ya precargó al arrancar, ir directo al dashboard
+  if(window._fbCargado){
+    _actualizarWelcome();
+    setTimeout(_entrarDashboard, 2000);
+  } else if(typeof fbIniciar==='function'){
+    // Firebase aún no cargó, cargar ahora
+    let _localFbCargado=false;
     const _fbTimeout=setTimeout(()=>{
-      // Si Firebase tardó más de 2s, entrar al dashboard de todas formas
-      if(!_fbCargado) _entrarDashboard();
+      if(!_localFbCargado) _entrarDashboard();
     },2200);
     fbIniciar().then(()=>{
-      _fbCargado=true;
+      _localFbCargado=true;
       clearTimeout(_fbTimeout);
-      // Actualizar bienvenida con datos de Firebase (logo y empresa)
       _actualizarWelcome();
-      // Esperar 1.5s para que el usuario vea el logo
       setTimeout(_entrarDashboard, 1500);
     }).catch(()=>{
-      _fbCargado=true;
+      _localFbCargado=true;
       clearTimeout(_fbTimeout);
       setTimeout(_entrarDashboard, 1000);
     });
@@ -6715,6 +6716,21 @@ document.addEventListener('DOMContentLoaded',()=>{
 // INIT
 document.getElementById('li-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('li-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-pass').focus();});
+// Precargar Firebase al arrancar para que los usuarios estén disponibles antes del login
+window.addEventListener('load', ()=>{
+  if(typeof fbCargar==='function'){
+    // Mostrar indicador de carga en el login
+    const btn=document.querySelector('.btn-login');
+    if(btn){btn.textContent='Conectando...';btn.disabled=true;}
+    fbCargar().then(()=>{
+      window._fbActivo=true;
+      window._fbCargado=true;
+      if(btn){btn.textContent='Ingresar al sistema →';btn.disabled=false;}
+    }).catch(()=>{
+      if(btn){btn.textContent='Ingresar al sistema →';btn.disabled=false;}
+    });
+  }
+});
 </script>
 <!-- ══ FIREBASE ══ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
