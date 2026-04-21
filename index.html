@@ -88,7 +88,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .modal{background:#fff;border-radius:14px;padding:28px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
 .modal-title{font-size:17px;font-weight:700;margin-bottom:20px;color:var(--navy)}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--gray3)}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:1000;transform:translateY(100px);opacity:0;transition:.3s;max-width:320px}
+.toast{position:fixed;bottom:32px;right:32px;background:var(--navy);color:#fff;padding:14px 22px;border-radius:var(--radius);font-size:14px;font-weight:600;z-index:99999;transform:translateY(100px);opacity:0;transition:.3s;max-width:320px}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.success{background:var(--green)}.toast.error{background:var(--red)}.toast.warning{background:var(--amber)}
 .search-wrap{margin-bottom:14px}
@@ -147,7 +147,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
         <div style="font-size:14px;color:#64748b">Ingresa tus credenciales para continuar</div>
       </div>
       <div class="login-error" id="login-error"></div>
-      <div class="login-blocked" id="login-blocked">🔒 Demasiados intentos. Espera <span id="login-countdown">30</span> segundos.</div>
+      <div class="login-blocked" id="login-blocked">🔒 Demasiados intentos. Espera <span id="login-countdown">60</span> segundos.</div>
       <div style="margin-bottom:18px"><label class="lbl">Usuario</label><input type="text" id="li-user" class="inp" placeholder="Nombre de usuario"></div>
       <div style="margin-bottom:24px"><label class="lbl">Contraseña</label><input type="password" id="li-pass" class="inp" placeholder="••••••••"></div>
       <button class="btn-login" onclick="doLogin()">Ingresar al sistema →</button>
@@ -160,8 +160,11 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 <!-- BIENVENIDA -->
 <div id="welcome-screen">
   <div class="wc-inner">
-    <div style="font-size:64px;margin-bottom:16px">🚗</div>
-    <div class="wc-title"><span style="color:#60a5fa">Dealer</span>System</div>
+    <div id="wc-logo-wrap" style="margin-bottom:20px;display:flex;align-items:center;justify-content:center">
+      <div id="wc-logo-img-wrap" style="display:none"><img id="wc-logo-img" src="" style="max-height:100px;max-width:220px;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.08);padding:10px"></div>
+      <div id="wc-logo-fallback" style="font-size:64px">🏢</div>
+    </div>
+    <div class="wc-title" id="wc-title-empresa"><span style="color:#60a5fa">Dealer</span>System</div>
     <div class="wc-sub" id="wc-empresa">Sistema de Gestión Vehicular</div>
     <div class="wc-user" id="wc-bienvenida">Bienvenido</div>
     <div class="wc-bar"><div class="wc-fill"></div></div>
@@ -171,19 +174,9 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 <div id="app" style="display:none;min-height:100vh">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
   <div class="sidebar" id="sidebar">
-    <div class="sb-logo">
-      <svg width="32" height="18" viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="18" width="72" height="16" rx="4" fill="#60a5fa"/>
-        <path d="M20 18 L27 6 L53 6 L60 18 Z" fill="#93c5fd"/>
-        <path d="M29 8 L27 16 L40 16 L40 8 Z" fill="#1e3a5f" opacity="0.8"/>
-        <path d="M42 8 L42 16 L55 16 L53 8 Z" fill="#1e3a5f" opacity="0.8"/>
-        <circle cx="20" cy="34" r="5" fill="#0f172a"/>
-        <circle cx="20" cy="34" r="2.5" fill="#94a3b8"/>
-        <circle cx="60" cy="34" r="5" fill="#0f172a"/>
-        <circle cx="60" cy="34" r="2.5" fill="#94a3b8"/>
-        <rect x="72" y="22" width="5" height="5" rx="1" fill="#fef08a"/>
-      </svg>
-      <span style="font-size:16px;font-weight:800;color:#fff"><span style="color:#60a5fa">Dealer</span>System</span>
+    <div class="sb-logo" id="sb-logo-wrap">
+      <img id="sb-logo-img" src="" style="display:none;max-height:48px;max-width:140px;object-fit:contain;border-radius:6px">
+      <span id="sb-logo-text" style="font-size:15px;font-weight:800;color:#fff"><span style="color:#60a5fa">Dealer</span>System</span>
     </div>
     <div class="sb-user">
       <div class="user-av" id="user-initials">A</div>
@@ -211,10 +204,17 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
     <div class="sb-sec">OTROS</div>
     <div class="nav-item" onclick="showPage('cotizaciones')" id="nav-cotizaciones"><span class="ico">📋</span>Cotizaciones</div>
     <div class="nav-item" onclick="showPage('autorizaciones')" id="nav-autorizaciones"><span class="ico">📝</span>Autorización Compra</div>
+    <div class="nav-item" onclick="showPage('seguros')" id="nav-seguros"><span class="ico">🛡️</span>Seguros</div>
+    <div class="nav-item" onclick="showPage('facturaExterna')" id="nav-facturaExterna"><span class="ico">🧾</span>Facturas Externas</div>
     <div class="sb-sec">SISTEMA</div>
     <div class="nav-item" onclick="showPage('usuarios')" id="nav-usuarios"><span class="ico">👥</span>Usuarios</div>
     <div class="nav-item" onclick="showPage('config')" id="nav-config"><span class="ico">⚙️</span>Configuración</div>
-    <div style="margin-top:auto;padding:12px;border-top:1px solid var(--gray3)">
+    <div style="margin-top:auto;border-top:1px solid var(--gray3)">
+      <div style="padding:10px 16px 6px;font-size:10px;color:#94a3b8;text-align:center;line-height:1.5">
+        <div style="font-weight:600;color:#64748b">Desarrollado por</div>
+        <div style="font-weight:800;color:#60a5fa">Edward Villa</div>
+        <div><a href="tel:8498579190" style="color:#94a3b8;text-decoration:none">849-857-9190</a></div>
+      </div>
       <div class="nav-item" onclick="doLogout()" style="color:var(--red)"><span class="ico">🚪</span>Cerrar sesión</div>
     </div>
   </div>
@@ -246,6 +246,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
       <div class="page" id="page-cxp"></div>
       <div class="page" id="page-cxc"></div>
       <div class="page" id="page-autorizaciones"></div>
+      <div class="page" id="page-seguros"></div>
+      <div class="page" id="page-facturaExterna"></div>
     </div>
   </div>
 </div>
@@ -303,7 +305,9 @@ let DB={
   gastosVehiculos:ls('gastosVehiculos')||[],
   cxp:ls('cxp')||[],
   cxc:ls('cxc')||[],
-  autorizaciones:ls('autorizaciones')||[]
+  autorizaciones:ls('autorizaciones')||[],
+  seguros:ls('seguros')||[],
+  facturasExternas:ls('facturasExternas')||[]
 };
 function sDB(k){ss(k,DB[k]);}
 
@@ -313,11 +317,73 @@ const fmtDate=d=>{if(!d)return '—';try{return new Date(d+'T12:00:00').toLocale
 const uid=()=>'id'+Date.now()+Math.random().toString(36).slice(2,6);
 function genFactura(){const nums=DB.ventas.map(v=>{const m=(v.factura||'').match(/(\d+)$/);return m?parseInt(m[1]):0;});const next=(nums.length?Math.max(...nums):0)+1;return 'FAC-'+String(next).padStart(6,'0');}
 const escHtml=s=>{const d=document.createElement('div');d.textContent=s||'';return d.innerHTML};
+// ══ BANCOS Y CUENTAS HELPER ══
+function getBancoCuentas(){return DB.config.bancoCuentas||[];}
+function getBancoOptions(selectedBanco){
+  const bcs=getBancoCuentas();
+  return bcs.map(b=>`<option value="${escHtml(b.banco)}" ${b.banco===selectedBanco?'selected':''}>${escHtml(b.banco)}</option>`).join('');
+}
+function getCuentasDeSelBanco(bancoSelId,selectedCuenta){
+  const bancoEl=document.getElementById(bancoSelId);
+  if(!bancoEl)return;
+  const cuentaSelId=bancoSelId.replace('banco','cuenta');
+  const cuentaEl=document.getElementById(cuentaSelId);
+  if(!cuentaEl)return;
+  const bcs=getBancoCuentas();
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  const cuentas=b?b.cuentas:[];
+  cuentaEl.innerHTML=cuentas.map(c=>`<option value="${escHtml(c.numero+' — '+c.tipo)}" ${(c.numero+' — '+c.tipo)===selectedCuenta?'selected':''}>${escHtml(c.banco||'')} ${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="">Sin cuentas configuradas</option>';
+}
+function bancoCuentaHTML(bancoId,cuentaId,selectedBanco,selectedCuenta){
+  const bcs=getBancoCuentas();
+  const bancoOpts=bcs.map(b=>`<option value="${escHtml(b.banco)}" ${b.banco===selectedBanco?'selected':''}>${escHtml(b.banco)}</option>`).join('')||'<option value="">Sin bancos configurados</option>';
+  const b=bcs.find(x=>x.banco===selectedBanco);
+  const cuentas=b?b.cuentas:[];
+  const cuentaOpts=cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}" ${(c.tipo+' — '+c.numero)===selectedCuenta?'selected':''}>${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="">Seleccione banco primero</option>';
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="form-field" style="margin:0"><label style="font-size:10px">Banco</label>
+      <select id="${bancoId}" onchange="getCuentasDeSelBanco('${bancoId}','${cuentaId}')">${bancoOpts}</select>
+    </div>
+    <div class="form-field" style="margin:0"><label style="font-size:10px">Cuenta</label>
+      <select id="${cuentaId}">${cuentaOpts}</select>
+    </div>
+  </div>`;
+}
+
 const titleCase=s=>s?s.replace(/\b\w/g,l=>l.toUpperCase()):'';
 const sentenceCase=s=>s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():'';
 const currentYear=()=>new Date().getFullYear();
 
 function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(()=>t.className='toast',3200);}
+function confirmarResetDatos(){
+  openModal('⚠️ Limpiar Todos los Datos',
+    `<div style="text-align:center;padding:16px 0">
+      <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+      <p style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px">¿Estás SEGURO que deseas limpiar todos los datos?</p>
+      <p style="font-size:13px;color:var(--gray)">Esta acción eliminará vehículos, ventas, clientes, gastos y todos los registros del sistema. <strong>No se puede deshacer.</strong></p>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-red" onclick="confirmarResetDatos2()">⚠️ Sí, continuar</button>`);
+}
+function confirmarResetDatos2(){
+  closeModal();
+  setTimeout(()=>{
+    openModal('🔴 ÚLTIMA CONFIRMACIÓN',
+      `<div style="text-align:center;padding:16px 0">
+        <div style="font-size:48px;margin-bottom:12px">🔴</div>
+        <p style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:8px">¿REALMENTE deseas borrar TODO?</p>
+        <p style="font-size:13px;color:var(--gray)">Esta es tu <strong>última oportunidad</strong> de cancelar. Todos los datos serán eliminados permanentemente.</p>
+      </div>`,
+      `<button class="btn btn-secondary" onclick="closeModal()">No, cancelar</button>
+       <button class="btn btn-red" onclick="ejecutarResetDatos()">🗑 SÍ, BORRAR TODO</button>`);
+  }, 200);
+}
+function ejecutarResetDatos(){
+  const keys=['vehiculos','clientes','suplidores','ventas','cotizaciones','caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones'];
+  keys.forEach(k=>{DB[k]=[];localStorage.removeItem(k);});
+  keys.forEach(k=>{if(window._fbActivo)fbGuardar(k);});
+  closeModal();toast('Datos limpiados ✓','success');showPage('dashboard');
+}
 function filterTable(id,q){const tbl=document.getElementById(id);if(!tbl)return;const sq=q.toLowerCase();tbl.querySelectorAll('tbody tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(sq)?'':'none';});}
 function openModal(title,body,footer){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=body;document.getElementById('modal-footer').innerHTML=footer||'<button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>';document.getElementById('modal-overlay').classList.add('open');}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
@@ -342,7 +408,7 @@ function doLogin(){
       document.getElementById('li-user').disabled=true;
       document.getElementById('li-pass').disabled=true;
       document.querySelector('.btn-login').disabled=true;
-      let seg=30;
+      let seg=60;
       document.getElementById('login-countdown').textContent=seg;
       _loginTimer=setInterval(()=>{
         seg--;
@@ -369,13 +435,41 @@ function doLogin(){
   currentUser=user;
   // Mostrar pantalla de bienvenida
   const ws=document.getElementById('welcome-screen');
-  const wcEmp=document.getElementById('wc-empresa');
-  const wcBien=document.getElementById('wc-bienvenida');
-  if(wcEmp)wcEmp.textContent=DB.config.empresa||'Sistema de Gestión Vehicular';
-  if(wcBien)wcBien.textContent='¡Bienvenido, '+user.nombre+'! 👋';
   document.getElementById('login-screen').style.display='none';
-  ws.classList.add('show');
-  setTimeout(()=>{
+  // Función para actualizar la pantalla de bienvenida con los datos actuales
+  const _actualizarWelcome=()=>{
+    // Nombre empresa
+    const wcEmp=document.getElementById('wc-empresa');
+    const wcBien=document.getElementById('wc-bienvenida');
+    const wcTitle=document.getElementById('wc-title-empresa');
+    const wcLogoImg=document.getElementById('wc-logo-img');
+    const wcLogoWrap=document.getElementById('wc-logo-img-wrap');
+    const wcLogoFallback=document.getElementById('wc-logo-fallback');
+    const nombreEmpresa=DB.config.empresa||'';
+    if(wcEmp)wcEmp.textContent=nombreEmpresa||'Sistema de Gestión Vehicular';
+    if(wcBien)wcBien.textContent='¡Bienvenido, '+user.nombre+'! 👋';
+    // Logo
+    const logo=DB.config.logoData||'';
+    if(logo&&logo.startsWith('data:')&&wcLogoImg){
+      wcLogoImg.src=logo;
+      wcLogoImg.style.display='block';
+      if(wcLogoWrap)wcLogoWrap.style.display='flex';
+      if(wcLogoFallback)wcLogoFallback.style.display='none';
+      if(wcTitle)wcTitle.style.display='none';
+    } else {
+      if(wcLogoImg)wcLogoImg.style.display='none';
+      if(wcLogoWrap)wcLogoWrap.style.display='none';
+      if(wcLogoFallback)wcLogoFallback.style.display='none';
+      if(wcTitle){
+        wcTitle.style.display='block';
+        wcTitle.innerHTML=nombreEmpresa
+          ?'<span style="color:#fff;font-size:36px;font-weight:900">'+escHtml(nombreEmpresa)+'</span>'
+          :'<span style="color:#60a5fa">Dealer</span>System';
+      }
+    }
+  };
+  // Función para entrar al dashboard
+  const _entrarDashboard=()=>{
     ws.classList.remove('show');
     document.getElementById('app').style.display='flex';
     document.getElementById('top-username').textContent=user.nombre;
@@ -385,13 +479,36 @@ function doLogin(){
     const emp=document.getElementById('topbar-empresa');
     if(emp&&DB.config.empresa)emp.textContent=DB.config.empresa;
     aplicarPermisosNav();
+    if(DB.config?.colores)aplicarColoresSistema();
+    actualizarLogoSidebar();
     showPage('dashboard');
     setTimeout(checkAlerts,1500);
-    // Sincronizar Firebase después del login
-    if(typeof fbIniciar==='function') fbIniciar().then(()=>{
-      renderDashboard();
+  };
+  // Mostrar bienvenida con datos del localStorage primero
+  _actualizarWelcome();
+  ws.classList.add('show');
+  // Si hay Firebase, intentar cargar datos DURANTE la bienvenida (max 2s)
+  if(typeof fbIniciar==='function'){
+    let _fbCargado=false;
+    const _fbTimeout=setTimeout(()=>{
+      // Si Firebase tardó más de 2s, entrar al dashboard de todas formas
+      if(!_fbCargado) _entrarDashboard();
+    },2200);
+    fbIniciar().then(()=>{
+      _fbCargado=true;
+      clearTimeout(_fbTimeout);
+      // Actualizar bienvenida con datos de Firebase (logo y empresa)
+      _actualizarWelcome();
+      // Esperar 1.5s para que el usuario vea el logo
+      setTimeout(_entrarDashboard, 1500);
+    }).catch(()=>{
+      _fbCargado=true;
+      clearTimeout(_fbTimeout);
+      setTimeout(_entrarDashboard, 1000);
     });
-  },2200);
+  } else {
+    setTimeout(_entrarDashboard, 2200);
+  }
 }
 function _getRolLabel(role){
   if(role==='admin')return 'Administrador';
@@ -414,7 +531,7 @@ function aplicarPermisosNav(){
   if(!currentUser)return;
   // Ocultar nav-items de módulos sin acceso
   const MODS_NAV=['dashboard','informes','suplidores','inventario','gastosVeh','cxp',
-    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','usuarios','config'];
+    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','usuarios','config'];
   MODS_NAV.forEach(id=>{
     const nav=document.getElementById('nav-'+id);
     if(!nav)return;
@@ -437,7 +554,7 @@ function showPage(id){
   if(id!=='dashboard'&&currentUser?.role!=='admin'&&!canAccess(id)){toast('No tienes acceso a este módulo','error');return;}
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
-  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones};
+  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna};
   if(r[id])r[id]();
 }
 
@@ -473,6 +590,20 @@ function checkAlerts(){
   // Vehículos sin costos
   const sinCostos=DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id));
   if(sinCostos.length>0)showNotif(sinCostos.length+' vehículo(s) sin costos registrados','Registre los gastos en Gastos de Vehículo.','warning');
+  // Alarmas de tiempo sin vender
+  const hoyDate=new Date();
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&v.fecha).forEach(v=>{
+    const fechaIngreso=new Date(v.fecha+'T12:00:00');
+    const diasSinVender=Math.floor((hoyDate-fechaIngreso)/(1000*60*60*24));
+    if(diasSinVender>=365){
+      const depreciacion=Math.round((parseFloat(v.costo||0))*0.15*100)/100;
+      showNotif('⏰ 1 AÑO SIN VENDER: '+escHtml(v.codigo+' '+v.marca+' '+v.modelo),
+        'Ingresó: '+fmtDate(v.fecha)+' ('+diasSinVender+' días). Depreciación est. 15%: '+fmt(depreciacion),'danger');
+    } else if(diasSinVender>=180){
+      showNotif('⚠️ 6 MESES SIN VENDER: '+escHtml(v.codigo+' '+v.marca+' '+v.modelo),
+        'Ingresó: '+fmtDate(v.fecha)+' ('+diasSinVender+' días). Revisar precio.','warning');
+    }
+  });
 }
 
 // ══ DASHBOARD ══
@@ -753,7 +884,12 @@ function formVehiculo(v){
       </div>
     </div>
     <div class="form-row c3">
-      <div class="form-field"><label class="required">Marca</label><select id="v-marca"><option value="">Seleccionar...</option>${MARCAS.map(m=>`<option ${m===v?.marca?'selected':''}>${m}</option>`).join('')}</select></div>
+      <div class="form-field"><label class="required">Marca</label>
+        <div style="display:flex;gap:4px">
+          <select id="v-marca" style="flex:1"><option value="">Seleccionar...</option>${[...MARCAS,...(DB.config.marcasExtra||[])].map(m=>`<option ${m===v?.marca?'selected':''}>${escHtml(m)}</option>`).join('')}</select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="agregarMarcaRapida()" title="Agregar marca nueva" style="white-space:nowrap">➕</button>
+        </div>
+      </div>
       <div class="form-field"><label class="required">Modelo</label><input type="text" id="v-modelo" value="${escHtml(v?.modelo||'')}" placeholder="Modelo"></div>
       <div class="form-field"><label>Tipo</label><select id="v-tipo">${TIPOS.map(t=>`<option ${t===v?.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
     </div>
@@ -789,6 +925,15 @@ function formVehiculo(v){
         </select>
       </div>
       <div class="form-field"><label>Notas</label><textarea id="v-notas" rows="1" placeholder="Notas adicionales...">${escHtml(v?.notas||'')}</textarea></div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Precio de Venta Sugerido</label>
+        <input type="text" id="v-precio-venta" value="${v?.precioVenta||''}" placeholder="0.00" oninput="fmtMoneyInput(this)">
+      </div>
+      <div class="form-field"><label>Precio de Compra / Costo</label>
+        <input type="text" id="v-costo-manual" value="${v?.costo||''}" placeholder="0.00" oninput="fmtMoneyInput(this)">
+        <div style="font-size:10px;color:var(--gray);margin-top:2px">Se actualiza automáticamente con los gastos del vehículo</div>
+      </div>
     </div>`;
 }
 
@@ -825,8 +970,12 @@ function guardarVehiculo(id){
     vin,placa:document.getElementById('v-placa').value,
     foto:fotoEl?.style.display!=='none'&&fotoEl?.src?fotoEl.src:(id?DB.vehiculos.find(x=>x.id===id)?.foto||'':''),
     carfax:carfaxEl?.style.display!=='none'&&carfaxEl?.src?carfaxEl.src:(id?DB.vehiculos.find(x=>x.id===id)?.carfax||'':''),
-    notas:document.getElementById('v-notas').value
+    notas:document.getElementById('v-notas').value,
+    precioVenta:parseFloat((document.getElementById('v-precio-venta')?.value||'0').replace(/,/g,''))||0
   };
+  // Solo actualizar costo manual si se ingresó
+  const costoManual=parseFloat((document.getElementById('v-costo-manual')?.value||'0').replace(/,/g,''));
+  if(costoManual>0)obj.costo=costoManual;
   if(id){
     const i=DB.vehiculos.findIndex(x=>x.id===id);
     if(i>=0){
@@ -840,6 +989,26 @@ function guardarVehiculo(id){
   sDB('vehiculos');closeModal();toast(id?'Vehículo actualizado ✓':'Vehículo agregado ✓','success');renderInventario();
 }
 
+function agregarMarcaRapida(){
+  const nueva=prompt('Ingresa el nombre de la nueva marca:');
+  if(!nueva||!nueva.trim())return;
+  const n=nueva.trim();
+  if(!DB.config.marcasExtra)DB.config.marcasExtra=[];
+  if([...MARCAS,...DB.config.marcasExtra].some(m=>m.toLowerCase()===n.toLowerCase())){
+    toast('Esta marca ya existe','warning');
+  } else {
+    DB.config.marcasExtra.push(n);
+    sDB('config');
+    toast('Marca "'+n+'" agregada ✓','success');
+  }
+  // Actualizar el select actual
+  const sel=document.getElementById('v-marca');
+  if(sel){
+    const opt=document.createElement('option');
+    opt.value=n;opt.textContent=n;opt.selected=true;
+    sel.appendChild(opt);
+  }
+}
 function verVehiculo(id){
   const v=DB.vehiculos.find(x=>x.id===id);if(!v)return;
   const i=DB.vehiculos.findIndex(x=>x.id===id);
@@ -862,6 +1031,8 @@ function verVehiculo(id){
      ${v.foto?`<button class="btn btn-secondary" onclick="window.open('${v.foto}','_blank')">📋 BL</button>`:''}
      ${v.carfax?`<button class="btn btn-secondary" onclick="window.open('${v.carfax}','_blank')">📄 Carfax</button>`:''}
      <button class="btn btn-amber" onclick="closeModal();gastosVehiculo('${id}')">💸 Gastos de Vehículo</button>
+     <button class="btn btn-green btn-sm" onclick="closeModal();imprimirHojaSalida('${id}')">📋 Hoja Salida</button>
+     <button class="btn btn-secondary btn-sm" onclick="closeModal();imprimirLavadoActivos('${id}')">🔍 Lavado Activos</button>
      <button class="btn btn-primary" onclick="closeModal();editarVehiculo('${id}')">✏️ Editar</button>`
   );
 }
@@ -965,38 +1136,138 @@ function imprimirGastosVehiculo(vid){
 .sidebar-toggle{display:none}
 .sidebar-overlay{display:none;position:fixed;inset:0;top:0;background:rgba(0,0,0,.5);z-index:199}
 .sidebar-overlay.open{display:block}
+/* ═══ RESPONSIVE MÓVIL ═══ */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%);transition:transform .25s ease;top:0;z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.18)}
+  /* SIDEBAR deslizable */
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;top:0;z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.18);width:260px!important}
   .sidebar.open{transform:translateX(0)}
   .content-wrap{margin-left:0!important}
-  .topbar{padding:0 12px;gap:8px}
-  .sidebar-toggle{display:flex!important;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:20px;cursor:pointer;flex-shrink:0;margin-right:4px}
-  .page-header{flex-direction:column;align-items:flex-start;gap:10px}
-  .page-header>div:last-child{flex-wrap:wrap;gap:6px}
+
+  /* TOPBAR */
+  .topbar{padding:0 10px;gap:6px;height:52px}
+  .sidebar-toggle{display:flex!important;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:22px;cursor:pointer;flex-shrink:0}
+
+  /* MAIN */
+  .main{padding:14px}
+
+  /* PAGE HEADER */
+  .page-header{flex-direction:column;align-items:flex-start;gap:10px;padding-bottom:12px}
+  .page-header h1{font-size:18px}
+  .page-header>div:last-child{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+  .page-header .btn{flex:1;min-width:120px;justify-content:center}
+
+  /* STATS */
   .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
-  .stat-card{padding:14px}
-  .stat-value{font-size:17px}
+  .stat-card{padding:12px}
+  .stat-value{font-size:16px}
+  .stat-sub{font-size:11px}
+  .stat-ico{font-size:20px}
+
+  /* CARDS */
+  .card{padding:12px;margin-bottom:14px}
+  .card-title{font-size:14px}
+
+  /* GRIDS a 1 columna */
   .two-col{grid-template-columns:1fr!important}
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{min-width:500px;font-size:12px}
-  th,td{padding:8px 10px}
-  .card{padding:14px}
-  .btn{padding:9px 14px;font-size:13px}
-  .btn-sm{padding:6px 10px;font-size:11px}
-  select,input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],input[type=month],textarea{font-size:16px!important}
   .form-row.c2,.form-row.c3,.form-row.c4{grid-template-columns:1fr!important}
-  .form-field{margin-bottom:16px}
-  .form-field input,.form-field select,.form-field textarea{padding:13px 14px!important;font-size:16px!important;min-height:48px!important}
-  .modal{width:96vw!important;max-width:96vw!important;padding:20px 14px!important;max-height:92vh!important;overflow-y:auto!important}
-  .modal .btn{width:100%!important;padding:14px!important;font-size:15px!important;margin-top:6px!important}
+  .form-field{margin-bottom:14px}
+
+  /* INPUTS grandes para toque */
+  select,
+  input[type=text],input[type=number],input[type=date],
+  input[type=email],input[type=password],input[type=month],
+  input[type=color],textarea{
+    font-size:16px!important;
+    padding:12px 14px!important;
+    min-height:46px!important;
+    border-radius:8px!important;
+  }
+  textarea{min-height:80px!important}
+
+  /* BOTONES */
+  .btn{padding:10px 14px;font-size:13px}
+  .btn-sm{padding:7px 10px;font-size:12px}
+  .btn-row{flex-direction:column;gap:8px}
+  .btn-row .btn{width:100%;justify-content:center}
+
+  /* TABLAS: scroll horizontal */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  table{min-width:520px;font-size:12px}
+  th{padding:9px 10px;font-size:10px}
+  td{padding:9px 10px;font-size:12px}
+
+  /* MODAL */
+  .modal-overlay{padding:8px;align-items:flex-end}
+  .modal{
+    width:100vw!important;
+    max-width:100vw!important;
+    padding:20px 14px 28px!important;
+    max-height:95vh!important;
+    overflow-y:auto!important;
+    border-radius:18px 18px 0 0!important;
+    margin:0!important;
+  }
+  .modal-title{font-size:16px}
+  .modal-footer{flex-direction:column;gap:8px}
+  .modal-footer .btn{width:100%!important;padding:14px!important;font-size:15px!important;justify-content:center}
+
+  /* LOGIN: solo columna derecha */
   .lft{display:none!important}
-  .rgt{width:100%!important;padding:32px 20px!important}
+  .rgt{width:100%!important;padding:28px 20px!important;min-height:100vh}
+  .rgt-inner{max-width:100%!important}
+
+  /* WELCOME SCREEN */
+  .wc-title{font-size:28px!important}
+
+  /* TOPBAR empresa y nombre — ocultar en móvil si no hay espacio */
+  #topbar-empresa{display:none}
+
+  /* FILTROS en 1 columna */
+  [style*="grid-template-columns:1fr 1fr 1fr 1fr"]{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+  }
+  [style*="grid-template-columns:repeat(4,1fr)"]{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+  }
+  [style*="grid-template-columns:repeat(3,1fr)"]{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+
+  /* CHART BARS */
+  .chart-bar-label{width:100px!important;font-size:11px}
+  .chart-bar-val{width:80px!important;font-size:11px}
+
+  /* SIDEBAR developer credit */
+  .sidebar .nav-item{padding:10px 16px;font-size:13px}
+
+  /* TABS de suplidores */
+  [onclick^="renderSuplidores"]{
+    font-size:12px!important;
+    padding:8px 10px!important;
+    flex:1;
+    justify-content:center;
+  }
 }
+
+/* Tabletas — 2 columnas */
+@media(min-width:769px) and (max-width:1024px){
+  .sidebar{width:200px}
+  .content-wrap{margin-left:200px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+  .main{padding:18px}
+}
+
+/* Landscape en móvil */
 @media(max-width:900px) and (orientation:landscape){
   .form-row.c2{grid-template-columns:1fr 1fr!important}
-  .form-row.c3{grid-template-columns:1fr 1fr 1fr!important}
-  .form-row.c4{grid-template-columns:1fr 1fr!important}
-  .two-col{grid-template-columns:1fr 1fr!important}
+  .form-row.c3{grid-template-columns:1fr 1fr!important}
+  .modal{max-height:90vh!important;border-radius:12px!important}
+  .modal-overlay{align-items:center;padding:12px}
+  .lft{display:none!important}
+  .rgt{width:100%!important}
 }
 </style></head><body>
   <div style="display:flex;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px">
@@ -1107,24 +1378,83 @@ function renderCaja(){
   document.getElementById('caja-tab').value=tab;
 }
 function nuevoCajaMov(tipo){
-  const catE=['Venta de Vehículo','Abono de Cliente','Préstamo Recibido','Capital','Otra Entrada'];
-  const catS=['Nómina/Salario','Gasto de Vehículo','Gasto de Empresa','Pago a Suplidor','Alquiler','Servicios/Utilidades','Publicidad','Impuestos','Otra Salida'];
-  const cats=tipo==='ENTRADA'?catE:catS;
+  const defCatE=DB.config.categoriasEntrada||['Venta de Vehículo','Abono de Cliente','Préstamo Recibido','Capital','Otra Entrada'];
+  const defCatS=DB.config.categoriasSalida||['Nómina/Salario','Gasto de Vehículo','Gasto de Empresa','Pago a Suplidor','Alquiler','Servicios/Utilidades','Publicidad','Impuestos','Otra Salida'];
+  const cats=tipo==='ENTRADA'?defCatE:defCatS;
+  const bcs=DB.config.bancoCuentas||[];
+  const bancoOpts=bcs.map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
+  const primerBanco=bcs[0];
+  const cuentaOpts=primerBanco?(primerBanco.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="">Sin cuentas</option>';
   openModal(`${tipo==='ENTRADA'?'📥 Nueva Entrada':'📤 Nueva Salida'}`,`
-    <div class="form-row c2"><div class="form-field"><label class="required">Fecha</label><input type="date" id="cj-fecha" value="${today()}"></div><div class="form-field"><label class="required">Monto (RD$)</label><input type="number" id="cj-monto" placeholder="0.00" step="0.01"></div></div>
     <div class="form-row c2">
-      <div class="form-field"><label class="required">Categoría</label><select id="cj-cat">${cats.map(c=>`<option>${c}</option>`).join('')}</select></div>
-      <div class="form-field"><label>Cuenta</label><select id="cj-ref">${(DB.config.cuentas||['Caja General']).map(c=>`<option>${escHtml(c)}</option>`).join('')}</select></div>
+      <div class="form-field"><label class="required">Fecha</label><input type="date" id="cj-fecha" value="${today()}"></div>
+      <div class="form-field"><label class="required">Monto</label>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="cj-monto" placeholder="0.00" oninput="fmtMoneyInput(this)" style="flex:1">
+          <select id="cj-moneda" style="width:80px"><option value="RD$">RD$</option><option value="USD">USD</option></select>
+        </div>
+      </div>
     </div>
-    <div class="form-field"><label class="required">Descripción</label><input type="text" id="cj-desc" placeholder="Descripción"></div>
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Categoría</label>
+        <div style="display:flex;gap:6px">
+          <select id="cj-cat" style="flex:1">${cats.map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="agregarCatCaja('${tipo}')" title="Agregar categoría">➕</button>
+        </div>
+      </div>
+      <div class="form-field"><label>Banco</label>
+        <select id="cj-banco" onchange="actualizarCuentasCaja()">${bancoOpts}</select>
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Cuenta Bancaria</label>
+        <select id="cj-cuenta">${cuentaOpts}</select>
+      </div>
+      <div class="form-field"><label class="required">Descripción</label>
+        <input type="text" id="cj-desc" placeholder="Descripción del movimiento">
+      </div>
+    </div>
     <div class="form-field"><label>Responsable</label><input type="text" id="cj-resp" value="${currentUser?.nombre||''}"></div>`,
-    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn ${tipo==='ENTRADA'?'btn-green':'btn-red'}" onclick="guardarCajaMov('${tipo}')">💾 Guardar</button>`);
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn ${tipo==='ENTRADA'?'btn-green':'btn-red'}" onclick="guardarCajaMov('${tipo}')">💾 Guardar</button>`);
+}
+function actualizarCuentasCaja(){
+  const bancoEl=document.getElementById('cj-banco');
+  const cuentaEl=document.getElementById('cj-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  const cuentas=b?b.cuentas:[];
+  cuentaEl.innerHTML=cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="">Sin cuentas</option>';
+}
+function agregarCatCaja(tipo){
+  const nueva=prompt('Nueva categoría:');
+  if(!nueva||!nueva.trim())return;
+  const n=nueva.trim();
+  if(tipo==='ENTRADA'){
+    if(!DB.config.categoriasEntrada)DB.config.categoriasEntrada=['Venta de Vehículo','Abono de Cliente','Préstamo Recibido','Capital','Otra Entrada'];
+    DB.config.categoriasEntrada.push(n);
+  } else {
+    if(!DB.config.categoriasSalida)DB.config.categoriasSalida=['Nómina/Salario','Gasto de Vehículo','Gasto de Empresa','Pago a Suplidor','Alquiler','Servicios/Utilidades','Publicidad','Impuestos','Otra Salida'];
+    DB.config.categoriasSalida.push(n);
+  }
+  sDB('config');
+  const sel=document.getElementById('cj-cat');
+  if(sel){const opt=document.createElement('option');opt.value=n;opt.textContent=n;opt.selected=true;sel.appendChild(opt);}
+  toast('Categoría agregada ✓','success');
 }
 function guardarCajaMov(tipo){
-  const monto=parseFloat(document.getElementById('cj-monto').value||0);
+  const monto=parseFloat((document.getElementById('cj-monto')?.value||'0').replace(/,/g,''));
   const desc=document.getElementById('cj-desc').value.trim();
   if(!monto||!desc){toast('Monto y descripción son requeridos','error');return;}
-  DB.caja.push({id:uid(),fecha:document.getElementById('cj-fecha').value,tipo,categoria:document.getElementById('cj-cat')?.value||'',descripcion:desc,monto,referencia:document.getElementById('cj-ref')?.value||'',responsable:document.getElementById('cj-resp').value});
+  const banco=document.getElementById('cj-banco')?.value||'';
+  const cuenta=document.getElementById('cj-cuenta')?.value||'';
+  const moneda=document.getElementById('cj-moneda')?.value||'RD$';
+  DB.caja.push({id:uid(),fecha:document.getElementById('cj-fecha').value,tipo,
+    categoria:document.getElementById('cj-cat')?.value||'',
+    descripcion:desc,monto,moneda,banco,cuenta,
+    referencia:banco+(cuenta?' / '+cuenta:''),
+    responsable:document.getElementById('cj-resp').value});
   sDB('caja');closeModal();toast('Registro guardado ✓','success');renderCaja();
 }
 
@@ -1204,13 +1534,22 @@ function imprimirGastos(){
   win.document.close();
 }
 function nuevoGasto(){
-  const cats=DB.config.categoriasGastos||['Alquiler','Servicios','Salarios','Papelería','Mantenimiento','Publicidad','Combustible','Otros'];
-  const sups=(DB.suplidores||[]).map(s=>`<option value="${escHtml(s.empresa||s.nombre)}">${escHtml(s.empresa||s.nombre)}</option>`).join('');
+  const cats=DB.config.categoriasGastos||['Alquiler','Servicios','Salarios','Papelería','Mantenimiento','Publicidad','Combustible','Impuestos','Otros'];
+  // Solo suplidores de empresa
+  const supsEmp=(DB.suplidores||[]).filter(s=>s.tipoSuplidor==='empresa'||(s.tipoSuplidor==null&&!s.tipoSuplidor));
+  const supsOpts=supsEmp.map(s=>`<option value="${escHtml(s.empresa||s.nombre)}">${escHtml(s.empresa||s.nombre)}</option>`).join('');
+  const bcs=DB.config.bancoCuentas||[];
+  const bancoOpts=bcs.map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
+  const primerBanco=bcs[0];
+  const cuentaOpts=primerBanco?(primerBanco.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="">Sin cuentas</option>';
   openModal('Nuevo Gasto de Empresa',`
     <div class="form-row c3">
       <div class="form-field"><label class="required">Fecha</label><input type="date" id="g-fecha" value="${today()}"></div>
       <div class="form-field"><label class="required">Categoría</label>
-        <select id="g-cat">${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
+        <div style="display:flex;gap:6px">
+          <select id="g-cat" style="flex:1">${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="agregarCatGasto()" title="Nueva categoría">➕</button>
+        </div>
       </div>
       <div class="form-field"><label>Estado</label>
         <select id="g-status">
@@ -1221,22 +1560,35 @@ function nuevoGasto(){
       </div>
     </div>
     <div class="form-row c2">
-      <div class="form-field"><label>Suplidor</label>
-        <select id="g-sup"><option value="">-- Sin suplidor --</option>${sups}</select>
+      <div class="form-field"><label>Suplidor (Empresa)</label>
+        <select id="g-sup">
+          <option value="">-- Sin suplidor --</option>
+          ${supsOpts}
+          ${supsEmp.length===0?'<option disabled>— No hay suplidores de empresa configurados —</option>':''}
+        </select>
+        ${supsEmp.length===0?'<div style="font-size:10px;color:var(--amber);margin-top:2px">💡 Agrega suplidores tipo "Empresa" en el módulo Suplidores</div>':''}
       </div>
       <div class="form-field"><label class="required">Descripción</label>
         <input type="text" id="g-desc" placeholder="Descripción del gasto">
       </div>
     </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Banco</label>
+        <select id="g-banco" onchange="actualizarCuentasGasto()">${bancoOpts}</select>
+      </div>
+      <div class="form-field"><label>Cuenta Bancaria</label>
+        <select id="g-cuenta">${cuentaOpts}</select>
+      </div>
+    </div>
     <div class="form-row c3">
       <div class="form-field"><label class="required">Monto Factura</label>
-        <input type="number" id="g-monto-factura" step="0.01" placeholder="0.00" oninput="calcPendienteGasto()">
+        <input type="text" id="g-monto-factura" placeholder="0.00" oninput="fmtMoneyInput(this);calcPendienteGasto()">
       </div>
       <div class="form-field"><label>Monto Abonado</label>
-        <input type="number" id="g-monto-abonado" step="0.01" value="0" placeholder="0.00" oninput="calcPendienteGasto()">
+        <input type="text" id="g-monto-abonado" value="0" placeholder="0.00" oninput="fmtMoneyInput(this);calcPendienteGasto()">
       </div>
       <div class="form-field"><label>Pendiente</label>
-        <input type="number" id="g-monto-pendiente" step="0.01" value="0" placeholder="0.00" readonly style="background:#f1f5f9;font-weight:700">
+        <input type="text" id="g-monto-pendiente" value="0" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
       </div>
     </div>
     <div class="form-row c2">
@@ -1254,6 +1606,25 @@ function nuevoGasto(){
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="guardarGasto()">💾 Guardar</button>`);
+}
+function actualizarCuentasGasto(){
+  const bancoEl=document.getElementById('g-banco');
+  const cuentaEl=document.getElementById('g-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="">Sin cuentas</option>';
+}
+function agregarCatGasto(){
+  const nueva=prompt('Nueva categoría de gasto:');
+  if(!nueva||!nueva.trim())return;
+  const n=nueva.trim();
+  if(!DB.config.categoriasGastos)DB.config.categoriasGastos=['Alquiler','Servicios','Salarios','Papelería','Mantenimiento','Publicidad','Combustible','Impuestos','Otros'];
+  DB.config.categoriasGastos.push(n);
+  sDB('config');
+  const sel=document.getElementById('g-cat');
+  if(sel){const opt=document.createElement('option');opt.value=n;opt.textContent=n;opt.selected=true;sel.appendChild(opt);}
+  toast('Categoría "'+n+'" agregada ✓','success');
 }
 function calcPendienteGasto(){
   const factura=parseFloat(document.getElementById('g-monto-factura')?.value||0);
@@ -1615,6 +1986,16 @@ function renderUsuarios(){
       </div>
 
       <div style="background:var(--gray2);border-radius:8px;padding:12px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✏️ PERMISOS DE EDITAR</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          ${BORRAR.map(b=>`
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:6px 8px;border:1.5px solid var(--gray3);border-radius:6px;background:#fff">
+              <input type="checkbox" id="nu-edit-${b.id}" style="width:14px;height:14px;accent-color:var(--amber)">
+              ${escHtml(b.label.replace('Borrar','Editar'))}
+            </label>`).join('')}
+        </div>
+      </div>
+      <div style="background:var(--gray2);border-radius:8px;padding:12px;margin-bottom:16px">
         <div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🗑 PERMISOS DE BORRAR</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
           ${BORRAR.map(b=>`
@@ -1654,7 +2035,7 @@ function renderUsuarios(){
             </td>
             <td><div style="display:flex;gap:4px">
               <button class="btn btn-secondary btn-sm" onclick="editarUsuarioPag(${i})">✏️ Editar</button>
-              <button class="btn btn-amber btn-sm" onclick="configurarPermisosUsuario(${i})">🔑 Permisos</button>
+              <button class="btn btn-amber btn-sm" onclick="editarUsuario(${i})">🔑 Permisos</button>
               ${u.id!=='u1'?`<button class="btn btn-red btn-sm" onclick="eliminarUsuario(${i})">✕</button>`:''}
             </div></td>
           </tr>`;
@@ -1665,7 +2046,7 @@ function renderUsuarios(){
 }
 function limpiarFormUsuario(){
   ['nu-nombre','nu-user','nu-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.querySelectorAll('[id^="nu-mod-"],[id^="nu-del-"]').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('[id^="nu-mod-"],[id^="nu-del-"],[id^="nu-edit-"]').forEach(cb=>cb.checked=false);
 }
 function crearUsuarioNuevo(){
   const nombre=document.getElementById('nu-nombre')?.value.trim();
@@ -1678,16 +2059,18 @@ function crearUsuarioNuevo(){
   const DEL_IDS=['ventas','clientes','suplidores','gastos','nomina','gastosVeh','cxc','inventario'];
   const modulos=role==='admin'?MODS_IDS:MODS_IDS.filter(id=>document.getElementById('nu-mod-'+id)?.checked);
   const puedeEliminar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-del-'+id)?.checked);
+  const puedeEditar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-edit-'+id)?.checked);
   const deleteMods=role==='admin'?DEL_IDS:DEL_IDS.filter(id=>document.getElementById('nu-del-'+id)?.checked);
+  const editMods=role==='admin'?DEL_IDS:DEL_IDS.filter(id=>document.getElementById('nu-edit-'+id)?.checked);
   DB.users.push({
     id:uid(),nombre,username:user,password:pass,role,activo:true,
-    modulos,deleteMods,
+    modulos,deleteMods,editMods,
     permisos:{
-      editar:true,
+      editar:puedeEditar,
       eliminar:puedeEliminar,
       imprimir:true,
       pdf:true,
-      deleteMods
+      deleteMods,editMods
     }
   });
   sDB('users');
@@ -1833,69 +2216,7 @@ function editarEmpleado(i){
 }
 
 // ══ INFORME MENSUAL ══
-function renderInformes(){
-  const mes=document.getElementById('inf-mes')?.value||today().slice(0,7);
-  const ventasMes=DB.ventas.filter(v=>v.fecha?.startsWith(mes));
-  const gastosMes=DB.gastos.filter(g=>g.fecha?.startsWith(mes));
-  const cajaE=DB.caja.filter(c=>c.fecha?.startsWith(mes)&&c.tipo==='ENTRADA').reduce((a,c)=>a+parseFloat(c.monto||0),0);
-  const cajaS=DB.caja.filter(c=>c.fecha?.startsWith(mes)&&c.tipo==='SALIDA').reduce((a,c)=>a+parseFloat(c.monto||0),0);
-  const totalV=ventasMes.reduce((a,v)=>a+parseFloat(v.precioVenta||0),0);
-  const totalG=ventasMes.reduce((a,v)=>a+parseFloat(v.ganancia||0),0);
-  const totalGastos=gastosMes.reduce((a,g)=>a+parseFloat(g.monto||0),0);
-  const nominaMes=DB.nomina.filter(e=>e.activo).reduce((a,e)=>a+parseFloat(e.salario||0),0);
-  const gastosCat={};gastosMes.forEach(g=>{gastosCat[g.categoria||'General']=(gastosCat[g.categoria||'General']||0)+parseFloat(g.monto||0);});
 
-  document.getElementById('page-informes').innerHTML=`
-    <div class="page-header">
-      <div><h1>📊 Informe Mensual</h1><p>Período: ${mes}</p></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="month" id="inf-mes" value="${mes}" onchange="renderInformes()" style="padding:7px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
-        <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>
-      </div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card green"><div class="stat-ico">💰</div><div class="stat-label">Ventas</div><div class="stat-value">${fmt(totalV)}</div><div class="stat-sub">${ventasMes.length} vehículos</div></div>
-      <div class="stat-card blue"><div class="stat-ico">📈</div><div class="stat-label">Ganancia Bruta</div><div class="stat-value">${fmt(totalG)}</div></div>
-      <div class="stat-card red"><div class="stat-ico">💸</div><div class="stat-label">Gastos</div><div class="stat-value">${fmt(totalGastos)}</div></div>
-      <div class="stat-card ${totalG-totalGastos>=0?'green':'red'}"><div class="stat-ico">📊</div><div class="stat-label">Ganancia Neta</div><div class="stat-value">${fmt(totalG-totalGastos)}</div></div>
-    </div>
-    <div class="two-col">
-      <div class="card"><div class="card-title">📦 Vehículos Vendidos</div>
-        ${ventasMes.length?`<div class="table-wrap"><table><thead><tr><th>Código</th><th>Vehículo</th><th>Cliente</th><th>Venta</th><th>Ganancia</th></tr></thead><tbody>
-          ${ventasMes.map(v=>`<tr><td class="mono" style="font-size:11px">${escHtml(v.codigo||'—')}</td><td style="font-size:12px">${escHtml(v.vehiculo||'—')}</td><td>${escHtml(v.cliente||'—')}</td><td style="font-weight:700;color:var(--green)">${fmt(v.precioVenta)}</td><td style="font-weight:700;color:${parseFloat(v.ganancia)>=0?'var(--green)':'var(--red)'}">${fmt(v.ganancia)}</td></tr>`).join('')}
-          <tr style="background:var(--blue3)"><td colspan="3" style="font-weight:700">TOTAL</td><td style="font-weight:800;color:var(--blue)">${fmt(totalV)}</td><td style="font-weight:800;color:var(--green)">${fmt(totalG)}</td></tr>
-        </tbody></table></div>`:'<div style="text-align:center;padding:24px;color:var(--gray)">Sin ventas este mes</div>'}
-      </div>
-      <div class="card"><div class="card-title">💸 Gastos por Categoría</div>
-        ${Object.keys(gastosCat).length?`<div class="chart-bar-wrap">${Object.entries(gastosCat).sort((a,b)=>b[1]-a[1]).map(([cat,total])=>{const max=Math.max(...Object.values(gastosCat));return`<div class="chart-bar-row"><div class="chart-bar-label">${escHtml(cat)}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(total/max*100)}%;background:linear-gradient(90deg,#dc2626,#f87171)"></div></div><div class="chart-bar-val">${fmt(total)}</div></div>`;}).join('')}</div>`:'<div style="text-align:center;padding:24px;color:var(--gray)">Sin gastos este mes</div>'}
-      </div>
-    </div>
-    <div class="two-col">
-      <div class="card"><div class="card-title">💳 Flujo de Caja</div>
-        <table><thead><tr><th>Concepto</th><th>Monto</th></tr></thead><tbody>
-          <tr><td>Total Entradas</td><td style="font-weight:700;color:var(--green)">${fmt(cajaE)}</td></tr>
-          <tr><td>Total Salidas</td><td style="font-weight:700;color:var(--red)">${fmt(cajaS)}</td></tr>
-          <tr style="background:var(--blue3)"><td style="font-weight:700">BALANCE NETO</td><td style="font-weight:800;color:var(--blue)">${fmt(cajaE-cajaS)}</td></tr>
-        </tbody></table>
-      </div>
-      <div class="card"><div class="card-title">👷 Nómina Mensual</div>
-        <table><thead><tr><th>Empleado</th><th>Cargo</th><th>Salario</th></tr></thead><tbody>
-          ${DB.nomina.filter(e=>e.activo).map(e=>`<tr><td style="font-weight:600">${escHtml(e.nombre)}</td><td style="font-size:12px">${escHtml(e.cargo||'—')}</td><td style="font-weight:700">${fmt(e.salario)}</td></tr>`).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--gray)">Sin empleados</td></tr>'}
-          <tr style="background:var(--amber2)"><td colspan="2" style="font-weight:700">TOTAL NÓMINA</td><td style="font-weight:800;color:var(--amber)">${fmt(nominaMes)}</td></tr>
-        </tbody></table>
-      </div>
-    </div>
-    <div class="card" style="background:var(--navy)">
-      <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:14px">📊 RESUMEN MENSUAL — ${mes}</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-        <div style="text-align:center;padding:12px;background:rgba(255,255,255,.1);border-radius:8px"><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:#94a3b8">Ventas</div><div style="font-size:18px;font-weight:800;color:#4ade80">${fmt(totalV)}</div></div>
-        <div style="text-align:center;padding:12px;background:rgba(255,255,255,.1);border-radius:8px"><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:#94a3b8">Ganancia Bruta</div><div style="font-size:18px;font-weight:800;color:#60a5fa">${fmt(totalG)}</div></div>
-        <div style="text-align:center;padding:12px;background:rgba(255,255,255,.1);border-radius:8px"><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:#94a3b8">Gastos</div><div style="font-size:18px;font-weight:800;color:#f87171">${fmt(totalGastos)}</div></div>
-        <div style="text-align:center;padding:12px;background:rgba(255,255,255,.1);border-radius:8px"><div style="font-size:10px;font-weight:600;text-transform:uppercase;color:#94a3b8">Ganancia Neta</div><div style="font-size:18px;font-weight:800;color:${totalG-totalGastos>=0?'#4ade80':'#f87171'}">${fmt(totalG-totalGastos)}</div></div>
-      </div>
-    </div>`;
-  document.getElementById('inf-mes').value=mes;
-}
 
 // ══ USUARIOS ══
 
@@ -1910,20 +2231,17 @@ function guardarUsuario(idx){
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true});
   sDB('users');closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
 }
-function editarUsuario(i){
-  const u=DB.users[i];
-  openModal('Editar Usuario',`
-    <div class="form-row c2"><div class="form-field"><label class="required">Nombre</label><input type="text" id="u-nombre" value="${escHtml(u.nombre)}"></div><div class="form-field"><label class="required">Usuario</label><input type="text" id="u-user" value="${escHtml(u.username)}"></div></div>
-    <div class="form-row c2"><div class="form-field"><label>Nueva Contraseña</label><input type="password" id="u-pass" placeholder="Dejar en blanco para mantener"></div><div class="form-field"><label>Rol</label><select id="u-role"><option value="user" ${u.role==='user'?'selected':''}>Usuario</option><option value="admin" ${u.role==='admin'?'selected':''}>Administrador</option></select></div></div>`,
-    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario(${i})">💾 Actualizar</button>`);
-}
+
 
 
 // ══ CONFIGURACIÓN ══
 function renderConfig(){
   const c=DB.config;
+  // Si Firebase activo pero aún no cargó, mostrar aviso
+  const fbPendiente=window._fbActivo&&!window._fbCargado;
   document.getElementById('page-config').innerHTML=`
     <div class="page-header"><div><h1>⚙️ Configuración</h1><p>Información del negocio</p></div></div>
+    ${fbPendiente?'<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400e;display:flex;align-items:center;gap:8px"><span>⏳</span> Sincronizando con Firebase... Los datos se actualizarán en unos segundos.</div>':''}
     <div class="card">
       <div class="card-title">🏢 Información del Negocio</div>
       <div class="form-row c2">
@@ -1966,14 +2284,101 @@ function renderConfig(){
       <button class="btn btn-secondary btn-sm" onclick="agregarPropConfig()">➕ Agregar Propietario</button>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="card-title">💳 Cuentas de la Empresa</div>
+      <div class="card-title">💳 Cuentas de la Empresa <span style="font-size:11px;font-weight:400;color:var(--gray)">(Para cotizaciones)</span></div>
       <div id="cf-cuentas-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
         ${(c.cuentas||['Caja General']).map((ct,i)=>`<div style="display:flex;gap:6px"><input type="text" value="${escHtml(ct)}" id="cf-cuenta-${i}" style="flex:1"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button></div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarCuentaConfig()">➕ Agregar Cuenta</button>
     </div>
+    <!-- COLORES DEL SISTEMA -->
+    <div class="card">
+      <div class="card-title">🎨 Colores del Sistema</div>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:16px">Personaliza todos los colores del programa incluyendo la pantalla de inicio y el menú.</p>
+      
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px;border-bottom:1px solid var(--gray3);padding-bottom:4px">🎨 Colores Principales del Sistema</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+        ${[
+          {id:'blue',  label:'Color Principal (Botones/Links)', def:'#2563eb'},
+          {id:'navy',  label:'Fondo Menú Lateral', def:'#0f172a'},
+          {id:'navy2', label:'Fondo Topbar', def:'#1e293b'},
+          {id:'green', label:'Color Éxito (Verde)', def:'#16a34a'},
+          {id:'red',   label:'Color Alerta (Rojo)', def:'#dc2626'},
+          {id:'amber', label:'Color Advertencia (Ámbar)', def:'#d97706'},
+        ].map(c=>`
+          <div class="form-field">
+            <label style="font-size:11px">${escHtml(c.label)}</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="color" id="cf-color-${c.id}" value="${DB.config.colores?.[c.id]||c.def}" 
+                style="width:44px;height:34px;border:none;border-radius:6px;cursor:pointer;padding:2px;flex-shrink:0"
+                oninput="syncColorHex('${c.id}')">
+              <input type="text" id="cf-color-${c.id}-hex" value="${DB.config.colores?.[c.id]||c.def}" 
+                style="flex:1;font-family:monospace;font-size:12px" 
+                oninput="syncColorPicker('${c.id}')">
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px;border-bottom:1px solid var(--gray3);padding-bottom:4px">🔐 Pantalla de Login / Portada</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+        ${[
+          {id:'loginBg1',  label:'Fondo Login (Color 1)', def:'#0f172a'},
+          {id:'loginBg2',  label:'Fondo Login (Color 2)', def:'#1e3a5f'},
+          {id:'loginAccent',label:'Color de Acento Login', def:'#2563eb'},
+        ].map(c=>`
+          <div class="form-field">
+            <label style="font-size:11px">${escHtml(c.label)}</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="color" id="cf-color-${c.id}" value="${DB.config.colores?.[c.id]||c.def}" 
+                style="width:44px;height:34px;border:none;border-radius:6px;cursor:pointer;padding:2px;flex-shrink:0"
+                oninput="syncColorHex('${c.id}')">
+              <input type="text" id="cf-color-${c.id}-hex" value="${DB.config.colores?.[c.id]||c.def}" 
+                style="flex:1;font-family:monospace;font-size:12px" 
+                oninput="syncColorPicker('${c.id}')">
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px;border-bottom:1px solid var(--gray3);padding-bottom:4px">✨ Pantalla de Bienvenida</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+        ${[
+          {id:'welcomeBg1',  label:'Fondo Bienvenida (Color 1)', def:'#0f172a'},
+          {id:'welcomeBg2',  label:'Fondo Bienvenida (Color 2)', def:'#1e3a5f'},
+          {id:'welcomeText', label:'Color Texto Bienvenida', def:'#ffffff'},
+        ].map(c=>`
+          <div class="form-field">
+            <label style="font-size:11px">${escHtml(c.label)}</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="color" id="cf-color-${c.id}" value="${DB.config.colores?.[c.id]||c.def}" 
+                style="width:44px;height:34px;border:none;border-radius:6px;cursor:pointer;padding:2px;flex-shrink:0"
+                oninput="syncColorHex('${c.id}')">
+              <input type="text" id="cf-color-${c.id}-hex" value="${DB.config.colores?.[c.id]||c.def}" 
+                style="flex:1;font-family:monospace;font-size:12px" 
+                oninput="syncColorPicker('${c.id}')">
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="previsualizarColores()">👁️ Previsualizar</button>
+        <button class="btn btn-secondary" onclick="resetColores()">🔄 Restablecer Todo</button>
+      </div>
+    </div>
+    <!-- COMPAÑÍAS DE SEGUROS -->
+    <div class="card">
+      <div class="card-title">🛡️ Compañías de Seguros</div>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Lista de compañías disponibles en el módulo de Seguros.</p>
+      <div id="cf-seguros-list">
+        ${(DB.config.companiasSeguro||['Universal','Mapfre BHD','Reservas','Patria','Atlantica','HUMANO','Otra']).map((s,i)=>`
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <input type="text" id="cf-seguro-${i}" style="flex:1" value="${escHtml(s)}" placeholder="Compañía de seguros">
+            <button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="agregarSeguroConfig()">➕ Agregar Compañía</button>
+    </div>
+
     <div class="btn-row" style="margin-top:16px">
-      <button class="btn btn-primary" onclick="guardarConfig()">💾 Guardar Configuración</button>
+      <button class="btn btn-primary" id="btn-guardar-config" onclick="guardarConfig()">💾 Guardar Configuración</button>
       ${currentUser?.role==='admin'?`
       <div style="margin-left:auto">
         <button class="btn btn-secondary" onclick="confirmarResetDatos()" style="color:var(--red);border:1.5px solid var(--red)">🗑 Limpiar Todos los Datos</button>
@@ -2023,18 +2428,36 @@ function renderConfig(){
       <button class="btn btn-secondary btn-sm" onclick="agregarCatGastoConfig()">➕ Agregar Categoría</button>
     </div>
 
-    <!-- BANCOS Y ENTIDADES -->
+    <!-- BANCOS Y CUENTAS -->
     <div class="card">
-      <div class="card-title">🏦 Bancos y Entidades Financieras</div>
-      <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Lista de bancos disponibles para cotizaciones y cuentas de salida.</p>
-      <div id="cf-bancos-list">
-        ${(DB.config.bancos||['Banco Popular','Banco BHD','Otra Entidad']).map((b,i)=>`
-          <div style="display:flex;gap:6px;margin-bottom:8px">
-            <input type="text" id="cf-banco-${i}" style="flex:1" value="${escHtml(b)}" placeholder="Nombre del banco">
-            <button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>
+      <div class="card-title">🏦 Bancos y Cuentas Bancarias <span style="font-size:11px;font-weight:400;color:var(--gray)">(Para pagos y gastos)</span></div>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Configure los bancos y sus cuentas asociadas. Cada banco puede tener múltiples cuentas en pesos o dólares.</p>
+      <div id="cf-bancoc-list">
+        ${(DB.config.bancoCuentas||[]).map((b,bi)=>`
+          <div class="bc-banco-block" style="background:var(--gray2);border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid var(--gray3)" id="bcb-${bi}">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+              <input type="text" id="bcb-nombre-${bi}" value="${escHtml(b.banco)}" placeholder="Nombre del banco" style="flex:1;font-weight:700">
+              <button class="btn btn-red btn-sm" onclick="document.getElementById('bcb-${bi}').remove()">🗑 Quitar banco</button>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">Cuentas de este banco:</div>
+            <div id="bcb-cuentas-${bi}">
+              ${(b.cuentas||[]).map((c,ci)=>`
+                <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px" class="bc-cuenta-row">
+                  <input type="text" placeholder="Número de cuenta" value="${escHtml(c.numero||'')}" class="bc-cnum">
+                  <select class="bc-ctipo">
+                    <option value="RD$ — Pesos" ${(c.tipo||'RD$ — Pesos')==='RD$ — Pesos'?'selected':''}>RD$ — Pesos</option>
+                    <option value="USD — Dólares" ${c.tipo==='USD — Dólares'?'selected':''}>USD — Dólares</option>
+                    <option value="Cuenta de Ahorro" ${c.tipo==='Cuenta de Ahorro'?'selected':''}>Cuenta de Ahorro</option>
+                    <option value="Corriente RD$" ${c.tipo==='Corriente RD$'?'selected':''}>Corriente RD$</option>
+                    <option value="Corriente USD" ${c.tipo==='Corriente USD'?'selected':''}>Corriente USD</option>
+                  </select>
+                  <button class="btn btn-red btn-sm" onclick="this.closest('.bc-cuenta-row').remove()">✕</button>
+                </div>`).join('')}
+            </div>
+            <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="agregarCuentaBanco(${bi})">➕ Agregar Cuenta</button>
           </div>`).join('')}
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="agregarBancoConfig()">➕ Agregar Banco</button>
+      <button class="btn btn-secondary btn-sm" onclick="agregarBancoConfig()">🏦 Agregar Banco</button>
     </div>
 
     <!-- RESPONSABLE Y OBSERVACIÓN RECIBO -->
@@ -2077,12 +2500,38 @@ function agregarCatGastoConfig(){
   list.appendChild(div);
 }
 function agregarBancoConfig(){
-  const list=document.getElementById('cf-bancos-list');
-  const i=list.children.length;
+  const list=document.getElementById('cf-bancoc-list');
+  const bi=list.querySelectorAll('.bc-banco-block').length;
   const div=document.createElement('div');
-  div.style.cssText='display:flex;gap:6px;margin-bottom:8px';
-  div.innerHTML=`<input type="text" id="cf-banco-${i}" style="flex:1" placeholder="Nombre del banco"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>`;
+  div.className='bc-banco-block';
+  div.id='bcb-'+bi;
+  div.style.cssText='background:var(--gray2);border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid var(--gray3)';
+  div.innerHTML=`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <input type="text" id="bcb-nombre-${bi}" value="" placeholder="Nombre del banco" style="flex:1;font-weight:700">
+      <button class="btn btn-red btn-sm" onclick="this.closest('.bc-banco-block').remove()">🗑 Quitar banco</button>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">Cuentas de este banco:</div>
+    <div id="bcb-cuentas-${bi}"></div>
+    <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="agregarCuentaBanco(${bi})">➕ Agregar Cuenta</button>`;
   list.appendChild(div);
+}
+function agregarCuentaBanco(bi){
+  const cont=document.getElementById('bcb-cuentas-'+bi);
+  if(!cont)return;
+  const div=document.createElement('div');
+  div.className='bc-cuenta-row';
+  div.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px';
+  div.innerHTML=`<input type="text" placeholder="Número de cuenta" class="bc-cnum">
+    <select class="bc-ctipo">
+      <option value="RD$ — Pesos">RD$ — Pesos</option>
+      <option value="USD — Dólares">USD — Dólares</option>
+      <option value="Cuenta de Ahorro">Cuenta de Ahorro</option>
+      <option value="Corriente RD$">Corriente RD$</option>
+      <option value="Corriente USD">Corriente USD</option>
+    </select>
+    <button class="btn btn-red btn-sm" onclick="this.closest('.bc-cuenta-row').remove()">✕</button>`;
+  cont.appendChild(div);
 }
 function agregarPropConfig(){const list=document.getElementById('cf-props-list');const i=list.children.length;const div=document.createElement('div');div.style.cssText='display:flex;gap:6px';div.innerHTML=`<input type="text" id="cf-prop-${i}" style="flex:1" placeholder="Nombre del propietario"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>`;list.appendChild(div);}
 function agregarCuentaConfig(){const list=document.getElementById('cf-cuentas-list');const i=list.children.length;const div=document.createElement('div');div.style.cssText='display:flex;gap:6px';div.innerHTML=`<input type="text" id="cf-cuenta-${i}" style="flex:1" placeholder="Nombre de la cuenta"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>`;list.appendChild(div);}
@@ -2131,12 +2580,77 @@ function guardarConfig(){
   // Guardar categorías gastos empresa
   const catg=[];document.querySelectorAll('[id^="cf-catg-"]').forEach(inp=>{const v=inp.value.trim();if(v)catg.push(v);});
   DB.config.categoriasGastos=catg.length?catg:['Alquiler','Servicios','Otros'];
-  // Guardar bancos
-  const bancos=[];document.querySelectorAll('[id^="cf-banco-"]').forEach(inp=>{const v=inp.value.trim();if(v)bancos.push(v);});
-  DB.config.bancos=bancos.length?bancos:['Banco Popular','Banco BHD','Otra Entidad'];
+  // Guardar bancos y cuentas
+  const bancoCuentas=[];
+  document.querySelectorAll('.bc-banco-block').forEach(block=>{
+    const nombreInp=block.querySelector('[id^="bcb-nombre-"]');
+    const banco=nombreInp?nombreInp.value.trim():'';
+    if(!banco)return;
+    const cuentas=[];
+    block.querySelectorAll('.bc-cuenta-row').forEach(row=>{
+      const num=row.querySelector('.bc-cnum')?.value.trim()||'';
+      const tipo=row.querySelector('.bc-ctipo')?.value||'RD$ — Pesos';
+      if(num)cuentas.push({numero:num,tipo});
+    });
+    bancoCuentas.push({banco,cuentas});
+  });
+  DB.config.bancoCuentas=bancoCuentas;
+  // Mantener compatibilidad con campo bancos simple
+  DB.config.bancos=bancoCuentas.map(b=>b.banco);
+  // Guardar colores
+  const _colorIds=['blue','navy','navy2','green','red','amber','loginBg1','loginBg2','loginAccent','welcomeBg1','welcomeBg2','welcomeText'];
+  const colores={};
+  _colorIds.forEach(id=>{const el=document.getElementById('cf-color-'+id);if(el)colores[id]=el.value;});
+  DB.config.colores=colores;
+  aplicarColoresSistema();
+  // Guardar compañías de seguros
+  const compSeg=[];document.querySelectorAll('[id^="cf-seguro-"]').forEach(inp=>{const v=inp.value.trim();if(v)compSeg.push(v);});
+  DB.config.companiasSeguro=compSeg.length?compSeg:['Universal','Mapfre BHD','Reservas','Otra'];
   sDB('config');
-  const emp=document.getElementById('topbar-empresa');if(emp&&DB.config.empresa)emp.textContent=DB.config.empresa;
-  toast('Configuración guardada ✓','success');
+  const emp=document.getElementById('topbar-empresa');
+  if(emp&&DB.config.empresa)emp.textContent=DB.config.empresa;
+  actualizarLogoSidebar();
+  // Mostrar mensaje inmediatamente
+  toast('✅ Configuración guardada correctamente','success');
+  // Sincronizar con Firebase en segundo plano
+  if(typeof fbGuardar==='function'&&window._fbActivo){
+    fbGuardar('config').catch(e=>console.warn('FB config save:',e));
+  }
+}
+function previsualizarColores(){
+  const ids=['blue','navy','navy2','green','red','amber','loginBg1','loginBg2','loginAccent','welcomeBg1','welcomeBg2','welcomeText'];
+  const colores={};
+  ids.forEach(id=>{const el=document.getElementById('cf-color-'+id);if(el)colores[id]=el.value;});
+  DB.config.colores={...DB.config.colores,...colores};
+  aplicarColoresSistema();
+  toast('Previsualización aplicada — Guarda la configuración para conservar los cambios','success');
+}
+function resetColores(){
+  const defaults={blue:'#2563eb',navy:'#0f172a',navy2:'#1e293b',green:'#16a34a',red:'#dc2626',amber:'#d97706',loginBg1:'#0f172a',loginBg2:'#1e3a5f',loginAccent:'#2563eb',welcomeBg1:'#0f172a',welcomeBg2:'#1e3a5f',welcomeText:'#ffffff'};
+  Object.entries(defaults).forEach(([id,val])=>{
+    const p=document.getElementById('cf-color-'+id);
+    const h=document.getElementById('cf-color-'+id+'-hex');
+    if(p)p.value=val;
+    if(h)h.value=val;
+  });
+  const root=document.documentElement;
+  root.style.setProperty('--blue','#2563eb');root.style.setProperty('--blue2','#1d4ed8');
+  root.style.setProperty('--navy','#0f172a');root.style.setProperty('--navy2','#1e293b');
+  root.style.setProperty('--green','#16a34a');root.style.setProperty('--red','#dc2626');root.style.setProperty('--amber','#d97706');
+  const ls=document.getElementById('login-screen');
+  if(ls)ls.style.background='';
+  const wc=document.getElementById('welcome-screen');
+  if(wc){wc.style.background='';wc.style.color='';}
+  DB.config.colores={};sDB('config');
+  toast('Colores restablecidos ✓','success');
+}
+function agregarSeguroConfig(){
+  const list=document.getElementById('cf-seguros-list');
+  const i=list.children.length;
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:6px;margin-bottom:8px';
+  div.innerHTML=`<input type="text" id="cf-seguro-${i}" style="flex:1" placeholder="Compañía de seguros"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>`;
+  list.appendChild(div);
 }
 
 // ══ EXPORTAR INVENTARIO PDF ══
@@ -2258,8 +2772,16 @@ function renderGastosVeh(){
 }
 
 function nuevoGastoVeh(){
-  const tiposGasto=(DB.config.tiposGastoVeh&&DB.config.tiposGastoVeh.length)?DB.config.tiposGastoVeh:TIPOS_GASTO_VEH;
   const cuentas=DB.config.cuentas&&DB.config.cuentas.length?DB.config.cuentas:['Caja General'];
+  // Generar opciones de banco+cuenta
+  const bancoCuentas=DB.config.bancoCuentas||[];
+  const opcionesBanco=bancoCuentas.length
+    ?bancoCuentas.flatMap(b=>b.cuentas&&b.cuentas.length
+      ?b.cuentas.map(ct=>`<option value="${escHtml(b.banco+' — '+ct.numero+' ('+ct.tipo+')')}">${escHtml(b.banco+' — '+ct.numero)}</option>`)
+      :[`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`])
+    :cuentas.map(ct=>`<option>${escHtml(ct)}</option>`);
+  // Tipos de gasto con botón +
+  const tiposGasto=DB.config.tiposGastoVeh&&DB.config.tiposGastoVeh.length?DB.config.tiposGastoVeh:['Compra Vehículo','Aduana','Flete','Otros'];
   openModal('➕ Nuevo Gasto de Vehículo',`
     <div class="form-row c2">
       <div class="form-field"><label class="required">Vehículo</label>
@@ -2269,18 +2791,22 @@ function nuevoGastoVeh(){
         </select>
       </div>
       <div class="form-field"><label class="required">Suplidor</label>
-        <select id="ngv-sup">
+        <select id="ngv-sup" onchange="mostrarTipoSuplidor(this.value,'ngv-tipo-sup-info')">
           <option value="">Seleccionar suplidor...</option>
-          ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}">${escHtml(s.empresa||s.nombre||'')}${s.propietario?' — '+s.propietario:''}</option>`).join('')}
+          ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" data-tipo="${escHtml(s.tipoSuplidor||'')}">${escHtml(s.empresa||s.nombre||'')}${s.propietario?' — '+s.propietario:''}</option>`).join('')}
         </select>
+        <div id="ngv-tipo-sup-info" style="font-size:11px;color:var(--gray);margin-top:3px"></div>
       </div>
     </div>
     <div class="form-row c3">
       <div class="form-field"><label class="required">Tipo de Gasto</label>
-        <select id="ngv-tipo">
-          <option value="">Seleccionar...</option>
-          ${tiposGasto.map(t=>`<option>${escHtml(t)}</option>`).join('')}
-        </select>
+        <div style="display:flex;gap:6px">
+          <select id="ngv-tipo" style="flex:1">
+            <option value="">Seleccionar...</option>
+            ${tiposGasto.map(t=>`<option>${escHtml(t)}</option>`).join('')}
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="agregarTipoGastoVeh()" title="Agregar tipo">➕</button>
+        </div>
       </div>
       <div class="form-field"><label class="required">Moneda</label>
         <select id="ngv-moneda" onchange="calcPendienteGVeh()">
@@ -2288,9 +2814,9 @@ function nuevoGastoVeh(){
           <option value="USD">USD — Dólares</option>
         </select>
       </div>
-      <div class="form-field"><label class="required">Cuenta de Salida</label>
+      <div class="form-field"><label class="required">Banco / Cuenta de Salida</label>
         <select id="ngv-cuenta">
-          ${cuentas.map(c=>`<option>${escHtml(c)}</option>`).join('')}
+          ${opcionesBanco.join('')}
         </select>
       </div>
     </div>
@@ -2315,6 +2841,16 @@ function nuevoGastoVeh(){
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="guardarNuevoGastoVeh()">💾 Guardar</button>`);
+}
+
+function mostrarTipoSuplidor(nombre, infoId){
+  const inf=document.getElementById(infoId);
+  if(!inf)return;
+  const sup=DB.suplidores.find(s=>(s.empresa||s.nombre||'')===nombre);
+  if(!sup){inf.textContent='';return;}
+  const tipo=sup.tipoSuplidor==='vehiculo'?'🚗 Suplidor de Vehículos':
+             sup.tipoSuplidor==='empresa'?'🏢 Suplidor de Empresa':'';
+  inf.textContent=tipo?'Tipo: '+tipo:'';
 }
 
 function calcPendienteGVeh(){
@@ -2490,23 +3026,6 @@ function guardarEditGastoVeh(i){
   renderGastosVeh();
 }
 
-function eliminarGastoVeh(gid){
-  if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar','error');return;}
-  if(!confirm('¿Eliminar este gasto?'))return;
-  const vid=(DB.gastosVehiculos||[]).find(g=>g.id===gid)?.vehiculoId;
-  DB.gastosVehiculos=(DB.gastosVehiculos||[]).filter(g=>g.id!==gid);
-  if(vid){
-    const iv=DB.vehiculos.findIndex(v=>v.id===vid);
-    if(iv>=0){
-      const totalGastos=DB.gastosVehiculos.filter(x=>x.vehiculoId===vid).reduce((a,x)=>a+parseFloat(x.montoFactura||0),0);
-      DB.vehiculos[iv].costo=totalGastos;
-      sDB('vehiculos');
-    }
-  }
-  sDB('gastosVehiculos');
-  toast('Gasto eliminado','success');
-  renderGastosVeh();
-}
 
 function selGVeh(id,tr){
   gvehSelectedId=id;
@@ -2518,6 +3037,22 @@ function selGVeh(id,tr){
   if(currentUser?.role==='admin'){actB('gveh-btn-editar','#475569','#fff');actB('gveh-btn-eliminar','#dc2626','#fff');}
 }
 
+function agregarTipoGastoVeh(){
+  const nuevo=prompt('Nuevo tipo de gasto:');
+  if(!nuevo||!nuevo.trim())return;
+  if(!DB.config.tiposGastoVeh)DB.config.tiposGastoVeh=['Compra Vehículo','Aduana','Flete','Otros'];
+  DB.config.tiposGastoVeh.push(nuevo.trim());
+  sDB('config');
+  // Actualizar el select en el modal
+  const sel=document.getElementById('ngv-tipo');
+  if(sel){
+    const opt=document.createElement('option');
+    opt.text=nuevo.trim();
+    opt.selected=true;
+    sel.add(opt);
+  }
+  toast('Tipo de gasto agregado ✓','success');
+}
 function gvehAccion(accion){
   if(!gvehSelectedId)return;
   if(accion==='pagar')abonarGastoVeh(gvehSelectedId);
@@ -2727,8 +3262,15 @@ function nuevaVenta(){
           <option>Transferencia</option><option>Cheque</option><option>Mixto</option>
         </select>
       </div>
+      <div class="form-field"><label>Banco</label>
+        <select id="sv-banco" onchange="actualizarCuentasVenta()">
+          ${(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>'}
+        </select>
+      </div>
       <div class="form-field"><label class="required">Cuenta de Cobro</label>
-        <select id="sv-cuenta">${(DB.config.cuentas||['Caja General']).map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
+        <select id="sv-cuenta">
+          ${(()=>{const bcs=DB.config.bancoCuentas||[];const b=bcs[0];return b?(b.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';})()}
+        </select>
       </div>
     </div>
     <div class="form-row c3" style="margin-bottom:4px">
@@ -2753,6 +3295,26 @@ function nuevaVenta(){
         <input type="text" id="sv-pendiente" value="" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
       </div>
     </div>
+    <div style="background:var(--blue3);border-radius:8px;padding:12px;margin-top:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--blue)">📋 Tipo de Transferencia</div>
+      </div>
+      <div class="form-row c2" style="margin-bottom:0">
+        <div class="form-field" style="margin:0"><label style="font-size:10px">Tipo</label>
+          <select id="sv-tipo-transferencia" onchange="toggleTraspasoFields()">
+            <option value="endoso">Endoso</option>
+            <option value="traspaso">Traspaso</option>
+          </select>
+        </div>
+        <div class="form-field" style="margin:0" id="sv-traspaso-monto-wrap" style="display:none">
+          <label style="font-size:10px">Costo del Traspaso (lo paga el cliente)</label>
+          <input type="text" id="sv-traspaso-monto" value="0" oninput="fmtMoneyInput(this)" placeholder="0.00">
+        </div>
+      </div>
+      <div id="sv-traspaso-info" style="display:none;margin-top:8px;background:var(--amber2);border-radius:6px;padding:8px;font-size:12px">
+        ⚠️ El traspaso se agrega al monto de la venta. Se registrará como <strong>pendiente de pago</strong> separado para controlar si fue pagado.
+      </div>
+    </div>
     <div style="background:var(--gray2);border-radius:8px;padding:12px;margin-top:8px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-size:13px;font-weight:700">🔄 Vehículo Recibido como Parte de Pago</div>
@@ -2775,6 +3337,9 @@ function nuevaVenta(){
           </div>
         </div>
       </div>
+    </div>
+    <div class="form-field" style="margin-top:10px"><label>💬 Comentario para la Factura</label>
+      <textarea id="sv-comentario" rows="2" placeholder="Ej: Vehículo entregado en condiciones actuales. Sin garantía de piezas mecánicas..."></textarea>
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-green" onclick="confirmarVenta('${nf}')">✅ Confirmar Venta</button>`);
@@ -2829,6 +3394,21 @@ function toggleVehRecibido(){
   if(fields)fields.style.display=cb?.checked?'block':'none';
 }
 
+function actualizarCuentasVenta(){
+  const bancoEl=document.getElementById('sv-banco');
+  const cuentaEl=document.getElementById('sv-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
+}
+function toggleTraspasoFields(){
+  const tipo=document.getElementById('sv-tipo-transferencia')?.value;
+  const wrap=document.getElementById('sv-traspaso-monto-wrap');
+  const info=document.getElementById('sv-traspaso-info');
+  if(wrap)wrap.style.display=tipo==='traspaso'?'block':'none';
+  if(info)info.style.display=tipo==='traspaso'?'block':'none';
+}
 function llenarInfoVenta(vid){
   const v=DB.vehiculos.find(x=>x.id===vid);
   const el=document.getElementById('sv-veh-info');
@@ -2839,7 +3419,7 @@ function llenarInfoVenta(vid){
     <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Vehículo</div><div style="font-weight:700">${escHtml(v.marca+' '+v.modelo+' '+v.anio)}</div></div>
     <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Chasis / VIN</div><div style="font-family:monospace;font-weight:800;color:var(--navy)">${escHtml(v.vin||'SIN VIN')}</div></div>
     <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Color | Estado</div><div>${escHtml(v.color||'—')} | <span style="font-weight:700;color:var(--amber)">${v.status}</span></div></div>
-    <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Costo Total</div><div style="font-weight:800;color:var(--red)">${fmt(totalGastos)}</div></div>
+    ${currentUser?.role==='admin'?`<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Costo Total</div><div style="font-weight:800;color:var(--red)">${fmt(totalGastos)}</div></div>`:''}
   </div>`;
 }
 
@@ -2877,12 +3457,16 @@ function confirmarVenta(nf){
   const inicial=parseFloat((document.getElementById('sv-inicial').value||'0').replace(/,/g,''));
   const montoRecibido=document.getElementById('sv-tiene-recibido')?.checked?parseFloat((document.getElementById('sv-rec-monto')?.value||'0').replace(/,/g,'')):0;
   const pendiente=Math.max(0,precio-inicial-montoRecibido);
+  const banco=document.getElementById('sv-banco')?.value||'';
   const cuenta=document.getElementById('sv-cuenta')?.value||'Caja General';
   const monedaVenta=document.getElementById('sv-moneda')?.value||'RD$';
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const totalGastos=(DB.gastosVehiculos||[]).filter(g=>g.vehiculoId===vid).reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
   // Estado automático según pendiente
   const estadoAuto=pendiente>0?'TRÁNSITO':'VENDIDO';
+  const tipoTransferencia=document.getElementById('sv-tipo-transferencia')?.value||'endoso';
+  const montoTraspaso=tipoTransferencia==='traspaso'?parseFloat((document.getElementById('sv-traspaso-monto')?.value||'0').replace(/,/g,'')):0;
+  const comentarioVenta=document.getElementById('sv-comentario')?.value||'';
   const venta={
     id:uid(),factura:nf,fecha:document.getElementById('sv-fecha').value,
     vehiculoId:vid,vehiculo:`${v.marca} ${v.modelo} ${v.anio}`,codigo:v.codigo,
@@ -2891,14 +3475,18 @@ function confirmarVenta(nf){
     precioVenta:precio,
     ganancia:precio-totalGastos,
     metodoPago:document.getElementById('sv-pago').value,
-    cuenta,inicial,pendiente,
+    banco,cuenta,inicial,pendiente,
     moneda:monedaVenta,
     tasaCambio:monedaVenta==='USD'?tasa:1,
     precioUSD:monedaVenta==='USD'?precio:precio/tasa,
     precioRD:monedaVenta==='USD'?precio*tasa:precio,
     estadoVenta:estadoAuto,
-    docsPendientes:pendiente<=0?true:false, // si está pagado queda pendiente de docs
-    fechaLimDocs:pendiente<=0?addDays(document.getElementById('sv-fecha').value,30):''
+    docsPendientes:pendiente<=0?true:false,
+    fechaLimDocs:pendiente<=0?addDays(document.getElementById('sv-fecha').value,30):'',
+    tipoTransferencia,
+    montoTraspaso,
+    traspassoPagado:montoTraspaso<=0,
+    comentario:comentarioVenta
   };
   // Vehículo recibido
   const tieneRecibido=document.getElementById('sv-tiene-recibido')?.checked;
@@ -3097,7 +3685,7 @@ function imprimirFactura(vid){
   const cli=DB.clientes.find(c=>c.id===v.clienteId);
   const veh=DB.vehiculos.find(x=>x.id===v.vehiculoId);
   const obs=DB.config.observacionRecibo||'';
-  const logo=DB.config.logo||'';
+  const logo=DB.config.logoData||DB.config.logo||'';
   const rec=v.vehiculoRecibido;
   const win=window.open('','_blank','width=860,height=800');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Factura ${escHtml(v.factura||'')} — ${escHtml(v.cliente||'')} — ${escHtml(v.codigo||'')} ${escHtml(v.vehiculo||'')}</title>
@@ -3226,6 +3814,7 @@ function imprimirFactura(vid){
     </table>
   </div>
 
+  ${v.comentario?`<div class="obs-box" style="background:#eff6ff;border-color:#93c5fd;color:#1d4ed8;margin-bottom:6px">💬 <strong>Comentario:</strong> ${escHtml(v.comentario)}</div>`:''}
   ${obs?`<div class="obs-box">📝 <strong>Observación:</strong> ${escHtml(obs)}</div>`:''}
 
   <!-- FIRMAS -->
@@ -3511,7 +4100,7 @@ function imprimirCotizacion(i){
   const esUSD=c.moneda==='USD';
   const fV=(n)=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(n);
   const empresa=DB.config.empresa||'DealerSystem';
-  const logo=DB.config.logo||'';
+  const logo=DB.config.logoData||DB.config.logo||'';
   const win=window.open('','_blank','width=820,height=750');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Cotización — ${escHtml(c.cliente||'')} — ${escHtml(c.vehiculo||'')}</title>
@@ -3670,54 +4259,70 @@ function guardarCliente(idx){
 }
 
 // ══ SUPLIDORES ══
-function renderSuplidores(){
+function renderSuplidores(tabActivo){
+  tabActivo=tabActivo||'vehiculo';
   const ds='background:#e2e8f0;color:#adb5bd;cursor:not-allowed;border:1px solid #dee2e6';
-  document.getElementById('page-suplidores').innerHTML=`
-    <div class="page-header">
-      <div><h1>🏭 Suplidores</h1><p>${DB.suplidores.length} suplidor(es) registrado(s)</p></div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <button id="sup-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('editar')">✏️ Editar</button>
-        ${currentUser?.role==='admin'?`<button id="sup-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('eliminar')">🗑 Eliminar</button>`:''}
-        <button class="btn btn-primary" onclick="nuevoSuplidor()">➕ Nuevo Suplidor</button>
-      </div>
-    </div>
-    <div class="card"><div class="search-wrap"><input class="search-input" placeholder="Buscar por nombre, RNC, teléfono..." oninput="filterTable('sup-tbl',this.value)"></div>
-      <div class="table-wrap"><table id="sup-tbl"><thead><tr>
-        <th style="width:36px"></th>
-        <th>#</th>
-        <th>Empresa</th>
-        <th>Propietario</th>
-        <th>RNC</th>
-        <th>Teléfono</th>
-        <th>WhatsApp</th>
-        <th>Correo</th>
-        <th>Dirección</th>
-        <th style="width:80px">Acciones</th>
-      </tr></thead>
-      <tbody>${DB.suplidores.map((s,i)=>`<tr onclick="selSupl('${s.id||i}',this)" style="cursor:pointer">
-        <td style="text-align:center"><input type="radio" name="sup-sel" onclick="event.stopPropagation();selSupl('${s.id||i}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
+  const supVeh=DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo');
+  const supEmp=DB.suplidores.filter(s=>s.tipoSuplidor==='empresa');
+  const lista=tabActivo==='vehiculo'?supVeh:supEmp;
+  function filasSup(arr){
+    return arr.map((s,i)=>{
+      const realIdx=DB.suplidores.findIndex(x=>(x.id||String(x))===s.id);
+      return `<tr onclick="selSupl('${s.id}',this)" style="cursor:pointer">
+        <td style="text-align:center"><input type="radio" name="sup-sel" onclick="event.stopPropagation();selSupl('${s.id}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
         <td style="font-size:11px;color:var(--gray);font-weight:600">${escHtml(s.supId||'—')}</td>
+        <td><span class="badge ${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'badge-blue':'badge-green'}" style="font-size:10px">${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'🚗 Vehículo':'🏢 Empresa'}</span></td>
         <td style="font-weight:700">${escHtml(s.empresa||s.nombre||'—')}</td>
         <td style="font-size:13px">${escHtml(s.propietario||'—')}</td>
         <td style="font-size:12px;color:var(--gray)"><span style="font-size:10px;background:var(--blue3);color:var(--blue);border-radius:4px;padding:1px 5px;font-weight:700;margin-right:4px">${escHtml(s.tipoDoc||'RNC')}</span>${escHtml(s.rnc||'—')}</td>
         <td style="font-size:13px">${escHtml(s.telefono||'—')}</td>
         <td style="font-size:13px">${s.whatsapp?`<a href="https://wa.me/${s.whatsapp.replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none">📱 ${escHtml(s.whatsapp)}</a>`:'—'}</td>
         <td style="font-size:12px">${s.correo?`<a href="mailto:${escHtml(s.correo)}" onclick="event.stopPropagation()" style="color:var(--blue);text-decoration:none">${escHtml(s.correo)}</a>`:'—'}</td>
-        <td style="font-size:12px;color:var(--gray);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.direccion||'—')}</td>
+        <td style="font-size:12px;color:var(--gray);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.direccion||'—')}</td>
         <td>
           <div style="display:flex;gap:4px">
-            <button class="btn btn-sm" style="background:var(--blue3);color:var(--blue);padding:4px 8px" onclick="event.stopPropagation();supAccionDirecta('editar','${s.id||i}')" title="Editar">✏️</button>
-            ${currentUser?.role==='admin'?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="event.stopPropagation();supAccionDirecta('eliminar','${s.id||i}')" title="Eliminar">🗑</button>`:''}
+            <button class="btn btn-sm" style="background:var(--blue3);color:var(--blue);padding:4px 8px" onclick="event.stopPropagation();supAccionDirecta('editar','${s.id}')" title="Editar">✏️</button>
+            ${currentUser?.role==='admin'?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="event.stopPropagation();supAccionDirecta('eliminar','${s.id}')" title="Eliminar">🗑</button>`:''}
           </div>
         </td>
-      </tr>`).join('')||'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gray)">Sin suplidores registrados</td></tr>'}
-      </tbody></table></div></div>`;
+      </tr>`;
+    }).join('')||`<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gray)">Sin suplidores registrados</td></tr>`;
+  }
+  document.getElementById('page-suplidores').innerHTML=`
+    <div class="page-header">
+      <div><h1>🏭 Suplidores</h1><p>${DB.suplidores.length} suplidor(es) — Vehículos: ${supVeh.length} | Empresa: ${supEmp.length}</p></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button id="sup-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('editar')">✏️ Editar</button>
+        ${currentUser?.role==='admin'?`<button id="sup-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('eliminar')">🗑 Eliminar</button>`:''}
+        <button class="btn btn-primary" onclick="nuevoSuplidor()">➕ Nuevo Suplidor</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--gray3)">
+      <button onclick="renderSuplidores('vehiculo')" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;${tabActivo==='vehiculo'?'background:var(--blue);color:#fff;':'background:var(--gray2);color:var(--navy);'}">🚗 Suplidores de Vehículos (${supVeh.length})</button>
+      <button onclick="renderSuplidores('empresa')" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;margin-left:4px;${tabActivo==='empresa'?'background:var(--blue);color:#fff;':'background:var(--gray2);color:var(--navy);'}">🏢 Suplidores de Empresa (${supEmp.length})</button>
+    </div>
+    <div class="card"><div class="search-wrap"><input class="search-input" placeholder="Buscar por nombre, RNC, teléfono..." oninput="filterTable('sup-tbl',this.value)"></div>
+      <div class="table-wrap"><table id="sup-tbl"><thead><tr>
+        <th style="width:36px"></th><th>#</th><th>Tipo</th><th>Empresa</th><th>Propietario</th>
+        <th>RNC</th><th>Teléfono</th><th>WhatsApp</th><th>Correo</th><th>Dirección</th>
+        <th style="width:80px">Acciones</th>
+      </tr></thead>
+      <tbody>${filasSup(lista)}</tbody></table></div></div>`;
 }
 function nuevoSuplidor(){
   const nextId='SUP-'+String(DB.suplidores.length+1).padStart(4,'0');
   openModal('Nuevo Suplidor',`
-    <div class="form-row c3">
+    <div class="form-row c2" style="margin-bottom:10px">
       <div class="form-field"><label>ID Suplidor</label><input type="text" id="s-supid" value="${nextId}" readonly style="background:#f1f5f9;font-weight:700;font-family:monospace"></div>
+      <div class="form-field"><label class="required">Tipo de Suplidor</label>
+        <select id="s-tipo-suplidor" style="border:2px solid var(--blue);font-weight:700">
+          <option value="">-- Seleccionar tipo --</option>
+          <option value="vehiculo">🚗 Suplidor de Vehículos</option>
+          <option value="empresa">🏢 Suplidor de Empresa</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row c2">
       <div class="form-field"><label class="required">Nombre Empresa</label><input type="text" id="s-empresa" placeholder="Ej: Motors del Norte SRL"></div>
       <div class="form-field"><label class="required">Nombre Propietario</label><input type="text" id="s-propietario" placeholder="Ej: Juan Pérez"></div>
     </div>
@@ -3748,10 +4353,12 @@ function guardarSuplidor(idx){
     if(rncDup){toast('Ya existe un suplidor con ese número de documento','error');return;}
   }
   const supId=document.getElementById('s-supid')?.value||('SUP-'+String(DB.suplidores.length+1).padStart(4,'0'));
+  const tipoSuplidor=document.getElementById('s-tipo-suplidor')?.value||(idx!==undefined?DB.suplidores[idx].tipoSuplidor||'vehiculo':'vehiculo');
   const s={
     id:idx!==undefined?DB.suplidores[idx].id:uid(),
     supId: idx!==undefined?DB.suplidores[idx].supId:supId,
     nombre:empresa, empresa, propietario,
+    tipoSuplidor,
     tipoDoc:document.getElementById('s-tipodoc')?.value||'RNC',
     rnc:document.getElementById('s-rnc').value.trim(),
     telefono:tel,
@@ -3760,13 +4367,21 @@ function guardarSuplidor(idx){
     direccion:document.getElementById('s-dir').value.trim()
   };
   if(idx!==undefined)DB.suplidores[idx]=s;else DB.suplidores.push(s);
-  sDB('suplidores');closeModal();toast('Suplidor guardado ✓','success');renderSuplidores();
+  sDB('suplidores');closeModal();toast('Suplidor guardado ✓','success');renderSuplidores(tipoSuplidor);
 }
 function editarSuplidor(i){
   const s=DB.suplidores[i];
   openModal('Editar Suplidor — '+escHtml(s.empresa||s.nombre||''),`
-    <div class="form-row c3">
+    <div class="form-row c2" style="margin-bottom:10px">
       <div class="form-field"><label>ID Suplidor</label><input type="text" id="s-supid" value="${escHtml(s.supId||'')}" readonly style="background:#f1f5f9;font-weight:700;font-family:monospace"></div>
+      <div class="form-field"><label class="required">Tipo de Suplidor</label>
+        <select id="s-tipo-suplidor" style="border:2px solid var(--blue);font-weight:700">
+          <option value="vehiculo" ${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'selected':''}>🚗 Suplidor de Vehículos</option>
+          <option value="empresa" ${s.tipoSuplidor==='empresa'?'selected':''}>🏢 Suplidor de Empresa</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row c2">
       <div class="form-field"><label class="required">Nombre Empresa</label><input type="text" id="s-empresa" value="${escHtml(s.empresa||s.nombre||'')}"></div>
       <div class="form-field"><label class="required">Nombre Propietario</label><input type="text" id="s-propietario" value="${escHtml(s.propietario||'')}"></div>
     </div>
@@ -3911,9 +4526,14 @@ function renderCXP(){
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="imprimirCXP()">📄 Exportar PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="nuevaCXPManual()">➕ CXP Manual</button>
       </div>
     </div>
 
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:8px">
+      <span>ℹ️</span>
+      <span>Las cuentas por pagar se generan automáticamente al registrar gastos de vehículo con saldo pendiente. También puedes agregar cuentas manualmente con el botón <strong>➕ CXP Manual</strong>.</span>
+    </div>
     <div class="card" style="margin-bottom:16px">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div style="display:flex;flex-direction:column;gap:4px">
@@ -3988,6 +4608,93 @@ function renderCXP(){
   const fv=document.getElementById('cxp-filtro-veh');if(fv)fv.value=filtroVeh;
 }
 
+function actualizarCuentasCXPP(){
+  const bancoEl=document.getElementById('cxpp-banco');
+  const cuentaEl=document.getElementById('cxpp-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
+}
+function nuevaCXPManual(){
+  const sups=(DB.suplidores||[]).map(s=>`<option value="${escHtml(s.empresa||s.nombre)}">${escHtml(s.empresa||s.nombre)}</option>`).join('');
+  const bcs=DB.config.bancoCuentas||[];
+  const bancoOpts=bcs.map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
+  const primerBanco=bcs[0];
+  const cuentaOpts=primerBanco?(primerBanco.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="">Sin cuentas</option>';
+  openModal('➕ Nueva Cuenta por Pagar Manual',`
+    <div style="background:var(--amber2);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#92400e">
+      ℹ️ Las CXP se generan automáticamente desde Gastos de Vehículos. Use esto solo para cuentas que no vienen de gastos de vehículo.
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Suplidor / Acreedor</label>
+        <select id="cxpm-sup"><option value="">-- Seleccionar --</option>${sups}</select>
+      </div>
+      <div class="form-field"><label class="required">Concepto / Descripción</label>
+        <input type="text" id="cxpm-desc" placeholder="Descripción de la deuda">
+      </div>
+    </div>
+    <div class="form-row c3">
+      <div class="form-field"><label class="required">Monto Total</label>
+        <input type="text" id="cxpm-monto" value="0" oninput="fmtMoneyInput(this);calcCXPMPend()">
+      </div>
+      <div class="form-field"><label>Abono Inicial</label>
+        <input type="text" id="cxpm-abono" value="0" oninput="fmtMoneyInput(this);calcCXPMPend()">
+      </div>
+      <div class="form-field"><label>Pendiente</label>
+        <input type="text" id="cxpm-pend" readonly value="0" style="background:#f8fafc;font-weight:700;color:var(--red)">
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Banco</label>
+        <select id="cxpm-banco" onchange="actualizarCuentasCXPM()">${bancoOpts}</select>
+      </div>
+      <div class="form-field"><label>Cuenta de Pago</label>
+        <select id="cxpm-cuenta">${cuentaOpts}</select>
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Fecha</label><input type="date" id="cxpm-fecha" value="${today()}"></div>
+      <div class="form-field"><label>Fecha Límite Pago</label><input type="date" id="cxpm-flim"></div>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarCXPManual()">💾 Guardar</button>`);
+}
+function calcCXPMPend(){
+  const m=parseFloat((document.getElementById('cxpm-monto')?.value||'0').replace(/,/g,''));
+  const a=parseFloat((document.getElementById('cxpm-abono')?.value||'0').replace(/,/g,''));
+  const p=document.getElementById('cxpm-pend');
+  if(p)p.value=Math.max(0,m-a).toFixed(2);
+}
+function actualizarCuentasCXPM(){
+  const bancoEl=document.getElementById('cxpm-banco');
+  const cuentaEl=document.getElementById('cxpm-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="">Sin cuentas</option>';
+}
+function guardarCXPManual(){
+  const sup=document.getElementById('cxpm-sup')?.value;
+  const desc=document.getElementById('cxpm-desc')?.value.trim();
+  const monto=parseFloat((document.getElementById('cxpm-monto')?.value||'0').replace(/,/g,''));
+  if(!desc||!monto){toast('Descripción y monto son requeridos','error');return;}
+  const abono=parseFloat((document.getElementById('cxpm-abono')?.value||'0').replace(/,/g,''));
+  const pendiente=Math.max(0,monto-abono);
+  const banco=document.getElementById('cxpm-banco')?.value||'';
+  const cuenta=document.getElementById('cxpm-cuenta')?.value||'';
+  // Guardar como gasto vehículo sin vehículo (manual)
+  if(!DB.cxp)DB.cxp=[];
+  DB.cxp.push({
+    id:uid(),tipo:'MANUAL',suplidor:sup||'',descripcion:desc,
+    montoFactura:monto,montoPagado:abono,montoPendiente:pendiente,
+    banco,cuenta,fecha:document.getElementById('cxpm-fecha')?.value||today(),
+    fechaLimite:document.getElementById('cxpm-flim')?.value||'',
+    statusGasto:pendiente<=0?'PAGADO':abono>0?'ABONADO':'PENDIENTE'
+  });
+  sDB('cxp');
+  closeModal();toast('CXP manual guardada ✓','success');renderCXP();
+}
 function abonarDesdeCXP(gid){
   const gastos=DB.gastosVehiculos||[];
   const i=gastos.findIndex(g=>g.id===gid);
@@ -4010,10 +4717,18 @@ function abonarDesdeCXP(gid){
       <div class="form-field"><label class="required">Monto a Pagar (${esUSD?'USD':'RD$'})</label>
         <input type="text" id="cxpp-monto" value="${g.montoPendiente||0}" oninput="fmtMoneyInput(this)" placeholder="0.00">
       </div>
-      <div class="form-field"><label>Cuenta de Salida</label>
-        <select id="cxpp-cuenta">${cuentas.map(c=>`<option ${c===g.cuenta?'selected':''}>${escHtml(c)}</option>`).join('')}</select>
+      <div class="form-field"><label>Banco</label>
+        <select id="cxpp-banco" onchange="actualizarCuentasCXPP()">
+          ${(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>'}
+        </select>
       </div>
     </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Cuenta Bancaria de Salida</label>
+        <select id="cxpp-cuenta">
+          ${(()=>{const bcs=DB.config.bancoCuentas||[];const b=bcs.find(x=>x.banco===g.banco)||bcs[0];return b?(b.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}" ${(c.tipo+' — '+c.numero)===g.cuenta?'selected':''}>${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';})()}
+        </select>
+      </div>
     <div class="form-row c2">
       <div class="form-field"><label>Fecha de Pago</label>
         <input type="date" id="cxpp-fecha" value="${today()}">
@@ -4080,7 +4795,7 @@ function imprimirReciboPagoCXP(g, pago){
   if(!g||!pago)return;
   const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
   const tasa=parseFloat(DB.config.tasaCambio||60);
-  const logo=DB.config.logo||'';
+  const logo=DB.config.logoData||DB.config.logo||'';
   const empresa=DB.config.empresa||'DealerSystem';
   const esSaldado=pago.saldado;
   const esUSD=g.moneda==='USD';
@@ -4308,6 +5023,10 @@ function renderCXC(){
       </div>
     </div>
 
+    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400e;display:flex;align-items:center;gap:8px">
+      <span>ℹ️</span>
+      <span>Las cuentas por cobrar se generan automáticamente al registrar ventas con saldo pendiente. También puedes agregar cuentas manualmente con el botón <strong>➕ Nueva CxC</strong>.</span>
+    </div>
     <div class="card">
       <div class="search-wrap"><input class="search-input" placeholder="Buscar por factura, cliente, vehículo..." oninput="filterTable('cxc-tbl',this.value)"></div>
       <div class="table-wrap"><table id="cxc-tbl">
@@ -4468,15 +5187,30 @@ function abonarCXC(id){
       </div>
     </div>
     <div class="form-row c2">
-      <div class="form-field"><label>Cuenta</label>
-        <select id="cxca-cuenta">${cuentas.map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
+      <div class="form-field"><label>Banco</label>
+        <select id="cxca-banco" onchange="actualizarCuentasCXCA()">
+          ${(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>'}
+        </select>
       </div>
-      <div class="form-field"><label>Nota</label>
-        <input type="text" id="cxca-nota" placeholder="Descripción del cobro">
+      <div class="form-field"><label>Cuenta Bancaria</label>
+        <select id="cxca-cuenta">
+          ${(()=>{const bcs=DB.config.bancoCuentas||[];const b=bcs[0];return b?(b.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';})()}
+        </select>
       </div>
+    </div>
+    <div class="form-field"><label>Nota</label>
+      <input type="text" id="cxca-nota" placeholder="Descripción del cobro">
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-green" onclick="confirmarAbonarCXC('${id}')">✅ Confirmar Cobro</button>`);
+}
+function actualizarCuentasCXCA(){
+  const bancoEl=document.getElementById('cxca-banco');
+  const cuentaEl=document.getElementById('cxca-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
 }
 
 function confirmarAbonarCXC(id){
@@ -4485,6 +5219,7 @@ function confirmarAbonarCXC(id){
   const i=DB.cxc.findIndex(x=>x.id===id);if(i<0)return;
   if(monto>parseFloat(DB.cxc[i].saldo||0)){toast('El monto no puede superar el saldo pendiente','error');return;}
   const fechaCobro=document.getElementById('cxca-fecha').value;
+  const bancoCobro=document.getElementById('cxca-banco')?.value||'';
   const cuentaCobro=document.getElementById('cxca-cuenta')?.value||'Caja General';
   const notaCobro=document.getElementById('cxca-nota')?.value||'';
   DB.cxc[i].abonado=(DB.cxc[i].abonado||0)+monto;
@@ -4502,7 +5237,7 @@ function confirmarAbonarCXC(id){
       sDB('ventas');
     }
   }
-  DB.caja.push({id:uid(),fecha:fechaCobro,tipo:'ENTRADA',categoria:'Cobro CxC',descripcion:`Cobro CxC: ${DB.cxc[i].cliente} — ${DB.cxc[i].factura}`,monto,referencia:cuentaCobro,responsable:currentUser.nombre});
+  DB.caja.push({id:uid(),fecha:fechaCobro,tipo:'ENTRADA',categoria:'Cobro CxC',descripcion:`Cobro CxC: ${DB.cxc[i].cliente} — ${DB.cxc[i].factura}`,monto,banco:bancoCobro,cuenta:cuentaCobro,referencia:bancoCobro?(bancoCobro+' / '+cuentaCobro):cuentaCobro,responsable:currentUser.nombre});
   sDB('cxc');sDB('caja');
   closeModal();
   imprimirReciboCobro(DB.cxc[i],{id:uid(),fecha:fechaCobro,monto,cuenta:cuentaCobro,nota:notaCobro,saldado});
@@ -4581,7 +5316,7 @@ function imprimirCXC(){
 
 function imprimirReciboCobro(cxc, pago){
   const tasa=parseFloat(DB.config.tasaCambio||60);
-  const logo=DB.config.logo||'';
+  const logo=DB.config.logoData||DB.config.logo||'';
   const esSaldado=pago.saldado;
   const ventaRel=DB.ventas.find(v=>v.id===cxc.ventaId);
   const esUSD=(cxc.moneda||ventaRel?.moneda||'RD$')==='USD';
@@ -4703,7 +5438,7 @@ function imprimirResumenPagosCXC(id){
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const fV=(n)=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(n);
   const empresa=DB.config.empresa||'DealerSystem';
-  const logo=DB.config.logo||'';
+  const logo=DB.config.logoData||DB.config.logo||'';
   const titulo=`Resumen de Pagos — ${escHtml(x.cliente)} — ${escHtml(x.factura)}`;
   const win=window.open('','_blank','width=820,height=700');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -4866,26 +5601,8 @@ VENTAS (${ventasData.length}):
 ${JSON.stringify(ventasData,null,2)}`;
   alert(msg);
 }
-function confirmarResetDatos(){
-  openModal('⚠️ Limpiar Todos los Datos',`
-    <div style="text-align:center;padding:16px">
-      <div style="font-size:48px;margin-bottom:12px">⚠️</div>
-      <div style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:8px">¡ACCIÓN IRREVERSIBLE!</div>
-      <p style="color:var(--gray);margin-bottom:16px">Esto eliminará <strong>TODOS</strong> los datos: vehículos, clientes, ventas, suplidores, gastos, nómina, caja, CxP, CxC y cotizaciones.<br><br>La configuración del negocio y los usuarios <strong>se conservarán</strong>.</p>
-      <div class="form-field"><label style="color:var(--red)">Escribe <strong>LIMPIAR</strong> para confirmar</label><input type="text" id="reset-confirm" placeholder="LIMPIAR" style="text-align:center;font-weight:700;font-size:16px"></div>
-    </div>`,
-    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-     <button class="btn btn-red" onclick="ejecutarResetDatos()">🗑 Confirmar Limpieza</button>`);
-}
-function ejecutarResetDatos(){
-  if(document.getElementById('reset-confirm')?.value.trim()!=='LIMPIAR'){toast('Debes escribir LIMPIAR para confirmar','error');return;}
-  DB.vehiculos=[];DB.clientes=[];DB.suplidores=[];DB.ventas=[];DB.cotizaciones=[];
-  DB.caja=[];DB.gastos=[];DB.nomina=[];DB.gastosVehiculos=[];DB.cxp=[];DB.cxc=[];
-  sDB('vehiculos');sDB('clientes');sDB('suplidores');sDB('ventas');sDB('cotizaciones');
-  sDB('caja');sDB('gastos');sDB('nomina');sDB('gastosVehiculos');sDB('cxp');sDB('cxc');
-  closeModal();toast('✅ Todos los datos fueron eliminados. La configuración se conservó.','success');
-  setTimeout(()=>showPage('dashboard'),800);
-}
+
+
 // ══ AUTORIZACIÓN DE COMPRA ══
 function renderAutorizaciones(){
   if(currentUser?.role!=='admin'){
@@ -5212,6 +5929,789 @@ function exportarInformePDF(){
   win.document.close();
 }
 
+// ══ SEGUROS ══
+function renderSeguros(){
+  if(!DB.seguros)DB.seguros=[];
+  const segs=DB.seguros||[];
+  const totalPrima=segs.reduce((a,s)=>a+parseFloat(s.prima||0),0);
+  const totalPagado=segs.reduce((a,s)=>a+parseFloat(s.abonado||0),0);
+  const totalPend=segs.reduce((a,s)=>a+parseFloat(s.pendiente||0),0);
+  const sc={PAGADO:'badge-green',ABONADO:'badge-amber',PENDIENTE:'badge-red'};
+  document.getElementById('page-seguros').innerHTML=`
+    <div class="page-header">
+      <div><h1>🛡️ Seguros de Vehículos</h1><p>${segs.length} seguro(s) registrado(s)</p></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="exportarSegurosPDF()">📄 Exportar PDF</button>
+        <button class="btn btn-primary" onclick="nuevoSeguro()">➕ Nuevo Seguro</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+      <div class="stat-card blue"><div class="stat-ico">🛡️</div><div class="stat-label">Total Primas</div><div class="stat-value">${fmt(totalPrima)}</div><div class="stat-sub">${segs.length} póliza(s)</div></div>
+      <div class="stat-card green"><div class="stat-ico">✅</div><div class="stat-label">Total Pagado</div><div class="stat-value">${fmt(totalPagado)}</div><div class="stat-sub">${segs.filter(s=>s.status==='PAGADO').length} pagado(s)</div></div>
+      <div class="stat-card ${totalPend>0?'amber':'green'}"><div class="stat-ico">⏳</div><div class="stat-label">Total Pendiente</div><div class="stat-value">${fmt(totalPend)}</div><div class="stat-sub">${segs.filter(s=>s.status!=='PAGADO').length} pendiente(s)</div></div>
+    </div>
+    <div class="card">
+      <div class="search-wrap"><input class="search-input" placeholder="Buscar por vehículo, cliente, compañía, póliza..." oninput="filterTable('seg-tbl',this.value)"></div>
+      <div class="table-wrap"><table id="seg-tbl">
+        <thead><tr>
+          <th>Vehículo</th>
+          <th>Cliente / Asegurado</th>
+          <th>Compañía Aseguradora</th>
+          <th>N° Póliza</th>
+          <th>Prima Total</th>
+          <th>Pagado</th>
+          <th>Pendiente</th>
+          <th>Desde</th>
+          <th>Hasta</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr></thead>
+        <tbody>${segs.length?segs.slice().reverse().map(s=>{
+          const v=DB.vehiculos.find(x=>x.id===s.vehiculoId);
+          const venc=s.hasta&&s.hasta<today();
+          const pend=parseFloat(s.pendiente||0);
+          return`<tr>
+            <td style="font-weight:700;font-size:12px">${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td>
+            <td style="font-weight:600">${escHtml(s.cliente||'—')}</td>
+            <td style="font-weight:600;color:var(--blue)">${escHtml(s.compania||'—')}</td>
+            <td style="font-family:monospace;font-size:11px">${escHtml(s.poliza||'—')}</td>
+            <td style="font-weight:700">${fmt(s.prima||0)}</td>
+            <td style="color:var(--green);font-weight:600">${fmt(s.abonado||0)}</td>
+            <td style="font-weight:700;color:${pend>0?'var(--red)':'var(--green)'}">${fmt(pend)}</td>
+            <td style="font-size:11px">${fmtDate(s.desde)||'—'}</td>
+            <td style="font-weight:${venc?'700':'400'};color:${venc?'var(--red)':'inherit'};font-size:11px">${fmtDate(s.hasta)||'—'}${venc?' ⚠️':''}</td>
+            <td><span class="badge ${sc[s.status||'PENDIENTE']||'badge-gray'}">${s.status||'PENDIENTE'}</span></td>
+            <td>
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                ${(s.status||'PENDIENTE')!=='PAGADO'?`<button class="btn btn-green btn-sm" onclick="abonarSeguro('${s.id}')">💵 Abonar</button>`:''}
+                <button class="btn btn-secondary btn-sm" onclick="editarSeguro('${s.id}')">✏️</button>
+                ${currentUser?.role==='admin'?`<button class="btn btn-red btn-sm" onclick="eliminarSeguro('${s.id}')">🗑</button>`:''}
+              </div>
+            </td>
+          </tr>`;
+        }).join(''):'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--gray)">Sin seguros registrados</td></tr>'}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function _formSeguro(s){
+  const companias=(DB.config.companiasSeguro||['Universal','Mapfre BHD','Reservas','Patria','Atlantica','HUMANO','Otra']);
+  const cuentas=DB.config.cuentas&&DB.config.cuentas.length?DB.config.cuentas:['Caja General'];
+  const abon=parseFloat(s?.abonado||0);
+  const prim=parseFloat(s?.prima||0);
+  return`
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Vehículo</label>
+        <select id="sg-veh">
+          <option value="">Seleccionar...</option>
+          ${DB.vehiculos.map(v=>`<option value="${v.id}" ${v.id===s?.vehiculoId?'selected':''}>${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+' '+v.anio)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-field"><label class="required">Compañía Aseguradora</label>
+        <select id="sg-comp">
+          ${companias.map(c=>`<option ${c===s?.compania?'selected':''}>${escHtml(c)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Cliente / Asegurado (Nombre)</label>
+        <input type="text" id="sg-cliente" value="${escHtml(s?.cliente||'')}" placeholder="Nombre del asegurado o cliente">
+      </div>
+      <div class="form-field"><label>N° de Póliza</label>
+        <input type="text" id="sg-poliza" value="${escHtml(s?.poliza||'')}" placeholder="Ej: POL-2024-001">
+      </div>
+    </div>
+    <div class="form-row c3">
+      <div class="form-field"><label class="required">Prima Total</label>
+        <input type="text" id="sg-prima" value="${prim||0}" oninput="fmtMoneyInput(this);calcPendSeguro()" placeholder="0.00">
+      </div>
+      <div class="form-field"><label>Abono Inicial</label>
+        <input type="text" id="sg-abonado" value="${abon||0}" oninput="fmtMoneyInput(this);calcPendSeguro()" placeholder="0.00">
+      </div>
+      <div class="form-field"><label>Pendiente</label>
+        <input type="text" id="sg-pendiente" value="${Math.max(0,prim-abon).toFixed(2)}" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
+      </div>
+    </div>
+    <div class="form-row c3">
+      <div class="form-field"><label>Vigencia Desde</label><input type="date" id="sg-desde" value="${s?.desde||today()}"></div>
+      <div class="form-field"><label>Vigencia Hasta</label><input type="date" id="sg-hasta" value="${s?.hasta||''}"></div>
+      <div class="form-field"><label>Cuenta de Pago</label>
+        <select id="sg-cuenta">${cuentas.map(c=>`<option ${c===s?.cuenta?'selected':''}>${escHtml(c)}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-field"><label>Observaciones</label>
+      <input type="text" id="sg-obs" value="${escHtml(s?.obs||'')}" placeholder="Cobertura, condiciones especiales...">
+    </div>`;
+}
+function calcPendSeguro(){
+  const p=parseFloat((document.getElementById('sg-prima')?.value||'0').replace(/,/g,''));
+  const a=parseFloat((document.getElementById('sg-abonado')?.value||'0').replace(/,/g,''));
+  const el=document.getElementById('sg-pendiente');
+  if(el)el.value=Math.max(0,p-a).toFixed(2);
+}
+function nuevoSeguro(){
+  openModal('🛡️ Nuevo Seguro',_formSeguro(null),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarSeguro()">💾 Guardar Seguro</button>`);
+}
+function guardarSeguro(id){
+  const vid=document.getElementById('sg-veh').value;
+  const comp=document.getElementById('sg-comp').value;
+  const cliente=document.getElementById('sg-cliente').value.trim();
+  const prima=parseFloat((document.getElementById('sg-prima').value||'0').replace(/,/g,''));
+  const abonado=parseFloat((document.getElementById('sg-abonado').value||'0').replace(/,/g,''));
+  if(!vid){toast('Selecciona un vehículo','error');return;}
+  if(!cliente){toast('Ingresa el nombre del asegurado','error');return;}
+  if(!prima){toast('Ingresa la prima del seguro','error');return;}
+  const pendiente=Math.max(0,prima-abonado);
+  if(!DB.seguros)DB.seguros=[];
+  const prev=id?DB.seguros.find(x=>x.id===id):null;
+  const s={
+    id:id||uid(),
+    vehiculoId:vid,
+    compania:comp,
+    cliente,
+    poliza:document.getElementById('sg-poliza').value.trim(),
+    prima,abonado,pendiente,
+    status:pendiente<=0?'PAGADO':abonado>0?'ABONADO':'PENDIENTE',
+    desde:document.getElementById('sg-desde').value,
+    hasta:document.getElementById('sg-hasta').value,
+    cuenta:document.getElementById('sg-cuenta').value,
+    obs:document.getElementById('sg-obs').value,
+    fecha:prev?.fecha||today(),
+    pagos:prev?.pagos||[]
+  };
+  if(abonado>0&&(!prev||prev.abonado<abonado)){
+    DB.caja.push({id:uid(),fecha:today(),tipo:'SALIDA',categoria:'Seguro Vehículo',
+      descripcion:'Abono seguro: '+comp+' — '+cliente+' — Póliza: '+(s.poliza||''),
+      monto:abonado-(prev?.abonado||0),referencia:s.cuenta,responsable:currentUser.nombre});
+    sDB('caja');
+  }
+  if(id){const i=DB.seguros.findIndex(x=>x.id===id);if(i>=0)DB.seguros[i]=s;}
+  else DB.seguros.push(s);
+  sDB('seguros');closeModal();toast('Seguro guardado ✓','success');renderSeguros();
+}
+function editarSeguro(id){
+  const s=DB.seguros.find(x=>x.id===id);if(!s)return;
+  openModal('✏️ Editar Seguro — '+escHtml(s.compania),_formSeguro(s),
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarSeguro('${id}')">💾 Actualizar</button>`);
+}
+function abonarSeguro(id){
+  const s=DB.seguros.find(x=>x.id===id);if(!s)return;
+  const cuentas=DB.config.cuentas&&DB.config.cuentas.length?DB.config.cuentas:['Caja General'];
+  const pendiente=parseFloat(s.pendiente||0);
+  openModal('💵 Registrar Abono — '+escHtml(s.compania),`
+    <div style="background:var(--blue3);border-radius:8px;padding:10px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
+        <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Prima Total</div><div style="font-weight:800">${fmt(s.prima)}</div></div>
+        <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Ya Pagado</div><div style="font-weight:700;color:var(--green)">${fmt(s.abonado||0)}</div></div>
+        <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Pendiente</div><div style="font-weight:800;color:var(--red)">${fmt(pendiente)}</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom:10px;font-size:13px">
+      <strong>Asegurado:</strong> ${escHtml(s.cliente||'—')} &nbsp;|&nbsp; <strong>Compañía:</strong> ${escHtml(s.compania||'—')}
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Monto a Pagar</label>
+        <input type="text" id="sgp-monto" value="${pendiente.toFixed(2)}" oninput="fmtMoneyInput(this)" placeholder="0.00">
+      </div>
+      <div class="form-field"><label>Cuenta de Pago</label>
+        <select id="sgp-cuenta">${cuentas.map(c=>`<option ${c===s.cuenta?'selected':''}>${escHtml(c)}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-field"><label>Fecha de Pago</label><input type="date" id="sgp-fecha" value="${today()}"></div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-green" onclick="confirmarAbonoSeguro('${id}')">✅ Confirmar Pago</button>`);
+}
+function pagarSeguro(id){abonarSeguro(id);}
+function confirmarPagoSeguro(id){confirmarAbonoSeguro(id);}
+function confirmarAbonoSeguro(id){
+  const i=DB.seguros.findIndex(x=>x.id===id);if(i<0)return;
+  const monto=parseFloat((document.getElementById('sgp-monto').value||'0').replace(/,/g,''));
+  if(!monto||monto<=0){toast('Ingresa un monto válido','error');return;}
+  const cuenta=document.getElementById('sgp-cuenta').value;
+  const fecha=document.getElementById('sgp-fecha').value;
+  const pendienteActual=parseFloat(DB.seguros[i].pendiente||0);
+  if(monto>pendienteActual){toast('El monto no puede superar el pendiente ('+fmt(pendienteActual)+')','error');return;}
+  DB.seguros[i].abonado=(parseFloat(DB.seguros[i].abonado||0)+monto);
+  DB.seguros[i].pendiente=Math.max(0,pendienteActual-monto);
+  DB.seguros[i].status=DB.seguros[i].pendiente<=0?'PAGADO':'ABONADO';
+  DB.seguros[i].cuenta=cuenta;
+  if(!DB.seguros[i].pagos)DB.seguros[i].pagos=[];
+  DB.seguros[i].pagos.push({fecha,monto,cuenta,responsable:currentUser.nombre});
+  DB.caja.push({id:uid(),fecha,tipo:'SALIDA',categoria:'Seguro Vehículo',
+    descripcion:'Pago seguro: '+DB.seguros[i].compania+' — '+escHtml(DB.seguros[i].cliente||'')+(DB.seguros[i].poliza?' — Póliza: '+DB.seguros[i].poliza:''),
+    monto,referencia:cuenta,responsable:currentUser.nombre});
+  sDB('seguros');sDB('caja');
+  closeModal();
+  toast(DB.seguros[i].pendiente<=0?'✅ Seguro pagado completamente':'💵 Abono registrado ✓','success');
+  renderSeguros();
+}
+function exportarSegurosPDF(){
+  const segs=DB.seguros||[];
+  const empresa=DB.config.empresa||'DealerSystem';
+  const logo=DB.config.logoData||'';
+  const totalPrima=segs.reduce((a,s)=>a+parseFloat(s.prima||0),0);
+  const totalAbonado=segs.reduce((a,s)=>a+parseFloat(s.abonado||0),0);
+  const totalPend=segs.reduce((a,s)=>a+parseFloat(s.pendiente||0),0);
+  const win=window.open('','_blank','width=1000,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Seguros — ${escHtml(empresa)}</title>
+  <style>body{font-family:Arial,sans-serif;padding:24px;font-size:11px}h2{font-size:16px;margin:0}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th{background:#0f172a;color:#fff;padding:7px 8px;text-align:left;font-size:10px}
+  td{padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:11px}tr:nth-child(even){background:#f8fafc}
+  .g{background:#dcfce7;color:#16a34a;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block}
+  .a{background:#fef3c7;color:#d97706;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block}
+  .r{background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block}
+  @media print{.np{display:none}}</style></head><body>
+  <div style="border-bottom:3px solid #2563eb;padding-bottom:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      ${logo?`<img src="${logo}" style="height:40px;object-fit:contain;margin-bottom:4px"><br>`:''}
+      <h2>${escHtml(empresa)}</h2>
+      <div style="color:#6b7280;font-size:11px">REPORTE DE SEGUROS — ${fmtDate(today())}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:#6b7280">TOTAL PENDIENTE</div>
+      <div style="font-size:20px;font-weight:800;color:#dc2626">${fmt(totalPend)}</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+    <div style="text-align:center;padding:10px;background:#dbeafe;border-radius:6px"><div style="font-size:10px;font-weight:700;color:#1d4ed8">TOTAL PRIMAS</div><div style="font-size:16px;font-weight:800;color:#1d4ed8">${fmt(totalPrima)}</div></div>
+    <div style="text-align:center;padding:10px;background:#dcfce7;border-radius:6px"><div style="font-size:10px;font-weight:700;color:#16a34a">TOTAL PAGADO</div><div style="font-size:16px;font-weight:800;color:#16a34a">${fmt(totalAbonado)}</div></div>
+    <div style="text-align:center;padding:10px;background:#fee2e2;border-radius:6px"><div style="font-size:10px;font-weight:700;color:#dc2626">TOTAL PENDIENTE</div><div style="font-size:16px;font-weight:800;color:#dc2626">${fmt(totalPend)}</div></div>
+  </div>
+  <table><thead><tr>
+    <th>Vehículo</th><th>Cliente/Asegurado</th><th>Compañía</th><th>Póliza</th>
+    <th>Prima</th><th>Pagado</th><th>Pendiente</th><th>Desde</th><th>Hasta</th><th>Estado</th>
+  </tr></thead><tbody>
+  ${segs.map(s=>{
+    const v=DB.vehiculos.find(x=>x.id===s.vehiculoId);
+    const venc=s.hasta&&s.hasta<today();
+    const sc={PAGADO:'g',ABONADO:'a',PENDIENTE:'r'};
+    return`<tr>
+      <td style="font-weight:700">${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td>
+      <td>${escHtml(s.cliente||'—')}</td>
+      <td style="font-weight:600;color:#2563eb">${escHtml(s.compania||'—')}</td>
+      <td style="font-family:monospace">${escHtml(s.poliza||'—')}</td>
+      <td style="font-weight:700">${fmt(s.prima||0)}</td>
+      <td style="color:#16a34a;font-weight:600">${fmt(s.abonado||0)}</td>
+      <td style="font-weight:800;color:${parseFloat(s.pendiente||0)>0?'#dc2626':'#16a34a'}">${fmt(s.pendiente||0)}</td>
+      <td>${fmtDate(s.desde)||'—'}</td>
+      <td style="color:${venc?'#dc2626':'inherit'};font-weight:${venc?'700':'400'}">${fmtDate(s.hasta)||'—'}</td>
+      <td><span class="${sc[s.status||'PENDIENTE']||'r'}">${s.status||'PENDIENTE'}</span></td>
+    </tr>`;
+  }).join('')}
+  <tr style="background:#f0f9ff">
+    <td colspan="4" style="font-weight:800;text-align:right">TOTALES:</td>
+    <td style="font-weight:800">${fmt(totalPrima)}</td>
+    <td style="font-weight:800;color:#16a34a">${fmt(totalAbonado)}</td>
+    <td style="font-weight:800;color:#dc2626">${fmt(totalPend)}</td>
+    <td colspan="3"></td>
+  </tr>
+  </tbody></table>
+  <div class="np" style="margin-top:20px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Imprimir / PDF</button>
+  </div></body></html>`);
+  win.document.close();
+}
+function eliminarSeguro(id){
+  if(currentUser?.role!=='admin'){toast('Solo admin puede eliminar','error');return;}
+  openModal('🗑 Eliminar Seguro','<p>¿Eliminar este seguro?</p>',
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-red" onclick="DB.seguros=DB.seguros.filter(x=>x.id!=='${id}');sDB('seguros');closeModal();toast('Eliminado','success');renderSeguros()">🗑 Eliminar</button>`);
+}
+
+// ══ FACTURA EXTERNA ══
+function renderFacturaExterna(){
+  if(!DB.facturasExternas)DB.facturasExternas=[];
+  document.getElementById('page-facturaExterna').innerHTML=`
+    <div class="page-header">
+      <div><h1>🧾 Facturas Externas</h1><p>Vehículos de terceros — No se guardan en el sistema</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="nuevaFacturaExterna()">➕ Nueva Factura Externa</button>
+      </div>
+    </div>
+    <div class="card" style="background:var(--amber2);border:1px solid var(--amber)">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:22px">ℹ️</span>
+        <div style="font-size:13px;color:#92400e">
+          <strong>¿Qué es una Factura Externa?</strong><br>
+          Es una factura para vehículos de clientes que traen su vehículo a vender a través de la empresa, pero que <strong>no pertenecen al inventario</strong>. No se registra el vehículo ni el cliente en el sistema.
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="table-wrap"><table id="fext-tbl">
+        <thead><tr><th>N° Factura</th><th>Fecha</th><th>Vehículo</th><th>Cliente/Comprador</th><th>Propietario/Vendedor</th><th>Monto</th><th>Abono</th><th>Pendiente</th><th>Acciones</th></tr></thead>
+        <tbody>${(DB.facturasExternas||[]).length?(DB.facturasExternas||[]).slice().reverse().map(f=>`<tr>
+          <td style="font-family:monospace;font-weight:700;color:var(--blue)">${escHtml(f.numero||'—')}</td>
+          <td>${fmtDate(f.fecha)}</td>
+          <td style="font-weight:700">${escHtml(f.vehiculo||'—')}</td>
+          <td>${escHtml(f.cliente||'—')}</td>
+          <td style="font-size:12px;color:var(--gray)">${escHtml(f.propietario||'—')}</td>
+          <td style="font-weight:700;color:var(--green)">${fmt(f.monto||0)}</td>
+          <td style="color:var(--green)">${fmt(f.abono||0)}</td>
+          <td style="font-weight:700;color:${parseFloat(f.pendiente||0)>0?'var(--red)':'var(--green)'}">${fmt(f.pendiente||0)}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-sm btn-secondary" onclick="imprimirFacturaExterna('${f.id}')">🖨️</button>
+              ${currentUser?.role==='admin'?`<button class="btn btn-sm btn-red" onclick="DB.facturasExternas=DB.facturasExternas.filter(x=>x.id!=='${f.id}');sDB('facturasExternas');toast('Eliminado','success');renderFacturaExterna()">🗑</button>`:''}
+            </div>
+          </td>
+        </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--gray)">Sin facturas externas</td></tr>'}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+function nuevaFacturaExterna(){
+  const nFact='FE-'+String(((DB.facturasExternas||[]).length+1)).padStart(5,'0');
+  openModal('🧾 Nueva Factura Externa',`
+    <div style="background:var(--navy);color:#fff;padding:8px 14px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between">
+      <span style="font-size:12px;font-weight:700">N° FACTURA EXTERNA</span>
+      <span style="font-family:monospace;font-size:15px;font-weight:800;color:#fbbf24">${nFact}</span>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--amber);background:var(--amber2);padding:8px 12px;border-radius:6px;margin-bottom:14px">
+      ⚠️ Esta factura NO se guardará en inventario ni en clientes del sistema.
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Vehículo (marca, modelo, año)</label>
+        <input type="text" id="fe-vehiculo" placeholder="Ej: Toyota Corolla 2020 Plateado">
+      </div>
+      <div class="form-field"><label>N° Chasis / VIN</label>
+        <input type="text" id="fe-vin" placeholder="Número de chasis" style="text-transform:uppercase;font-family:monospace">
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Propietario / Vendedor del Vehículo</label>
+        <input type="text" id="fe-propietario" placeholder="Nombre del dueño actual">
+      </div>
+      <div class="form-field"><label>Cédula / RNC del Propietario</label>
+        <input type="text" id="fe-prop-doc" placeholder="000-0000000-0">
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Cliente / Comprador</label>
+        <input type="text" id="fe-cliente" placeholder="Nombre del comprador">
+      </div>
+      <div class="form-field"><label>Cédula / RNC del Comprador</label>
+        <input type="text" id="fe-cli-doc" placeholder="000-0000000-0">
+      </div>
+    </div>
+    <div class="form-row c3">
+      <div class="form-field"><label class="required">Monto Total</label>
+        <input type="text" id="fe-monto" value="0" oninput="fmtMoneyInput(this);calcPendFE()">
+      </div>
+      <div class="form-field"><label>Abono Inicial</label>
+        <input type="text" id="fe-abono" value="0" oninput="fmtMoneyInput(this);calcPendFE()">
+      </div>
+      <div class="form-field"><label>Pendiente</label>
+        <input type="text" id="fe-pendiente" readonly style="background:#f8fafc;font-weight:700;color:var(--red)" value="0">
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Fecha</label><input type="date" id="fe-fecha" value="${today()}"></div>
+      <div class="form-field"><label>Moneda</label>
+        <select id="fe-moneda"><option value="RD$">RD$ — Pesos</option><option value="USD">USD — Dólares</option></select>
+      </div>
+    </div>
+    <div class="form-field"><label>Observaciones</label>
+      <textarea id="fe-obs" rows="2" placeholder="Condiciones del vehículo, acuerdos, notas..."></textarea>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarFacturaExterna('${nFact}')">💾 Guardar e Imprimir</button>`);
+}
+function calcPendFE(){
+  const m=parseFloat((document.getElementById('fe-monto')?.value||'0').replace(/,/g,''));
+  const a=parseFloat((document.getElementById('fe-abono')?.value||'0').replace(/,/g,''));
+  const p=document.getElementById('fe-pendiente');
+  if(p)p.value=Math.max(0,m-a).toFixed(2);
+}
+function guardarFacturaExterna(nFact){
+  const vehiculo=document.getElementById('fe-vehiculo').value.trim();
+  const monto=parseFloat((document.getElementById('fe-monto').value||'0').replace(/,/g,''));
+  if(!vehiculo){toast('Ingresa los datos del vehículo','error');return;}
+  if(!monto){toast('Ingresa el monto','error');return;}
+  const abono=parseFloat((document.getElementById('fe-abono').value||'0').replace(/,/g,''));
+  const f={
+    id:uid(),numero:nFact,
+    vehiculo,
+    vin:document.getElementById('fe-vin').value.trim(),
+    propietario:document.getElementById('fe-propietario').value.trim(),
+    propietarioDoc:document.getElementById('fe-prop-doc').value.trim(),
+    cliente:document.getElementById('fe-cliente').value.trim(),
+    clienteDoc:document.getElementById('fe-cli-doc').value.trim(),
+    monto,abono,pendiente:Math.max(0,monto-abono),
+    moneda:document.getElementById('fe-moneda').value,
+    fecha:document.getElementById('fe-fecha').value,
+    obs:document.getElementById('fe-obs').value
+  };
+  if(!DB.facturasExternas)DB.facturasExternas=[];
+  DB.facturasExternas.push(f);
+  sDB('facturasExternas');
+  closeModal();
+  imprimirFacturaExterna(f.id);
+  toast('Factura externa guardada ✓ — Generando...','success');
+  renderFacturaExterna();
+}
+function imprimirFacturaExterna(id){
+  const f=(DB.facturasExternas||[]).find(x=>x.id===id);if(!f)return;
+  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const esUSD=f.moneda==='USD';
+  const fV=n=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(n);
+  const empresa=DB.config.empresa||'DealerSystem';
+  const logo=DB.config.logoData||'';
+  const win=window.open('','_blank','width=820,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Factura Externa ${escHtml(f.numero)}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff}
+  .page{max-width:700px;margin:0 auto;padding:28px}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:4px solid #f59e0b;margin-bottom:18px}
+  .badge-ext{display:inline-block;padding:3px 10px;background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;font-size:11px;font-weight:800;color:#92400e;margin-top:4px}
+  .sec{margin-bottom:14px}
+  .sec-titulo{font-size:10px;font-weight:800;text-transform:uppercase;color:#fff;background:#0f172a;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .campo label{font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block}
+  .campo span{font-size:12px;font-weight:600;padding:4px 8px;background:#f8fafc;border-radius:4px;border-left:3px solid #f59e0b;display:block}
+  .fin-tabla{width:100%;border-collapse:collapse;margin-top:6px}
+  .fin-tabla td{padding:8px 12px;border-bottom:1px solid #e2e8f0}
+  .fin-tabla .lbl{color:#475569}.fin-tabla .val{text-align:right;font-weight:700}
+  .fin-total{background:#f0fdf4}.fin-pend{background:#fff1f2}
+  .firmas{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:40px}
+  .firma-linea{border-top:2px solid #000;padding-top:4px;text-align:center;font-size:10px;color:#475569}
+  .aviso{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:8px 12px;margin-top:12px;font-size:11px;color:#92400e}
+  .pie{text-align:center;font-size:9px;color:#94a3b8;margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0}
+  @media print{.np{display:none}}</style></head><body><div class="page">
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:12px">
+      ${logo?`<img src="${logo}" style="width:56px;height:56px;object-fit:contain;border-radius:8px">`:`<div style="width:56px;height:56px;background:#f59e0b;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff">${escHtml(empresa[0])}</div>`}
+      <div>
+        <div style="font-size:18px;font-weight:900">${escHtml(empresa)}</div>
+        ${DB.config.telefono?`<div style="font-size:11px;color:#6b7280">Tel: ${escHtml(DB.config.telefono)}</div>`:''}
+        ${DB.config.rnc?`<div style="font-size:11px;color:#6b7280">RNC: ${escHtml(DB.config.rnc)}</div>`:''}
+        <div class="badge-ext">FACTURA EXTERNA — NO REGISTRADA EN SISTEMA</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:22px;font-weight:900;color:#f59e0b">FACTURA</div>
+      <div style="font-family:monospace;font-size:20px;font-weight:900">${escHtml(f.numero)}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px">Fecha: ${fmtDate(f.fecha)}</div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-titulo">🚗 Vehículo</div>
+    <div class="g2">
+      <div class="campo"><label>Descripción</label><span>${escHtml(f.vehiculo||'—')}</span></div>
+      <div class="campo"><label>Chasis / VIN</label><span style="font-family:monospace">${escHtml(f.vin||'—')}</span></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-titulo">👤 Propietario / Vendedor</div>
+    <div class="g2">
+      <div class="campo"><label>Nombre</label><span>${escHtml(f.propietario||'—')}</span></div>
+      <div class="campo"><label>Cédula / RNC</label><span>${escHtml(f.propietarioDoc||'—')}</span></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-titulo">🏷️ Comprador</div>
+    <div class="g2">
+      <div class="campo"><label>Nombre</label><span>${escHtml(f.cliente||'—')}</span></div>
+      <div class="campo"><label>Cédula / RNC</label><span>${escHtml(f.clienteDoc||'—')}</span></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-titulo">💰 Detalle Financiero</div>
+    <table class="fin-tabla">
+      <tr><td class="lbl">Precio de Venta</td><td class="val">${fV(f.monto)}</td></tr>
+      <tr><td class="lbl">Abono Inicial</td><td class="val" style="color:#16a34a">${fV(f.abono||0)}</td></tr>
+      <tr class="${parseFloat(f.pendiente||0)>0?'fin-pend':'fin-total'}">
+        <td style="font-weight:800">${parseFloat(f.pendiente||0)>0?'PENDIENTE':'SALDADO'}</td>
+        <td class="val" style="font-size:16px">${fV(f.pendiente||0)}</td>
+      </tr>
+    </table>
+  </div>
+  ${f.obs?`<div class="aviso">📋 ${escHtml(f.obs)}</div>`:''}
+  <div class="firmas">
+    <div><div style="height:40px"></div><div class="firma-linea"><div style="font-weight:700">${escHtml(f.propietario||'Propietario del Vehículo')}</div>Firma del Vendedor</div></div>
+    <div><div style="height:40px"></div><div class="firma-linea"><div style="font-weight:700">${escHtml(f.cliente||'Comprador')}</div>Firma del Comprador</div></div>
+  </div>
+  <div class="pie">${escHtml(empresa)} | ${fmtDate(today())} | Factura Externa — No pertenece al inventario del sistema</div>
+  <div class="np" style="margin-top:16px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 24px;background:#f59e0b;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Imprimir / PDF</button>
+  </div>
+  </div></body></html>`);
+  win.document.close();
+}
+
+// ══ HOJA DE SALIDA DE VEHÍCULO ══
+function imprimirHojaSalida(vid){
+  const v=DB.vehiculos.find(x=>x.id===vid);if(!v)return;
+  const empresa=DB.config.empresa||'DealerSystem';
+  const logo=DB.config.logoData||'';
+  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const gastos=(DB.gastosVehiculos||[]).filter(g=>g.vehiculoId===vid);
+  const totalGastos=gastos.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const win=window.open('','_blank','width=820,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hoja de Salida — ${escHtml(v.codigo)}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff}
+  .page{max-width:720px;margin:0 auto;padding:28px}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:4px solid #16a34a;margin-bottom:16px}
+  .titulo{font-size:20px;font-weight:900;color:#16a34a;text-transform:uppercase;letter-spacing:1px}
+  .subtitulo{font-size:11px;color:#6b7280;margin-top:2px}
+  .numero{font-size:28px;font-weight:900;font-family:monospace;color:#0f172a;margin-top:4px}
+  .sec{margin-bottom:14px}
+  .sec-t{font-size:10px;font-weight:800;text-transform:uppercase;background:#0f172a;color:#fff;padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .campo label{font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block}
+  .campo span{font-size:12px;font-weight:600;padding:4px 8px;background:#f8fafc;border-radius:4px;border-left:3px solid #16a34a;display:block}
+  .foto{width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:12px}
+  .firmas{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:40px}
+  .firma-linea{border-top:2px solid #000;padding-top:4px;text-align:center;font-size:10px;color:#475569}
+  .pie{text-align:center;font-size:9px;color:#94a3b8;margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0}
+  @media print{.np{display:none}}</style></head><body><div class="page">
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:12px">
+      ${logo?`<img src="${logo}" style="width:56px;height:56px;object-fit:contain;border-radius:8px">`:`<div style="width:56px;height:56px;background:#16a34a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff">${escHtml(empresa[0])}</div>`}
+      <div>
+        <div style="font-size:17px;font-weight:900">${escHtml(empresa)}</div>
+        ${DB.config.telefono?`<div style="font-size:11px;color:#6b7280">Tel: ${escHtml(DB.config.telefono)}</div>`:''}
+        ${DB.config.rnc?`<div style="font-size:11px;color:#6b7280">RNC: ${escHtml(DB.config.rnc)}</div>`:''}
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="titulo">Hoja de Salida</div>
+      <div class="subtitulo">Vehículo</div>
+      <div class="numero">${escHtml(v.codigo||'—')}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px">Fecha: ${fmtDate(today())}</div>
+    </div>
+  </div>
+  ${v.foto?`<img src="${v.foto}" class="foto">`:''}
+  <div class="sec">
+    <div class="sec-t">🚗 Identificación del Vehículo</div>
+    <div class="g3">
+      <div class="campo"><label>Código</label><span style="font-family:monospace">${escHtml(v.codigo||'—')}</span></div>
+      <div class="campo"><label>Marca</label><span>${escHtml(v.marca||'—')}</span></div>
+      <div class="campo"><label>Modelo</label><span>${escHtml(v.modelo||'—')}</span></div>
+      <div class="campo"><label>Año</label><span>${v.anio||'—'}</span></div>
+      <div class="campo"><label>Color</label><span>${escHtml(v.color||'—')}</span></div>
+      <div class="campo"><label>Tipo</label><span>${escHtml(v.tipo||'—')}</span></div>
+      <div class="campo"><label>Chasis / VIN</label><span style="font-family:monospace;font-size:11px">${escHtml(v.vin||'—')}</span></div>
+      <div class="campo"><label>Placa</label><span style="font-family:monospace">${escHtml(v.placa||'—')}</span></div>
+      <div class="campo"><label>Millaje</label><span>${(v.millas||0).toLocaleString()} mi</span></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-t">📋 Condiciones de Salida</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px">
+        <div style="font-size:11px;font-weight:700;margin-bottom:8px;color:#16a34a">✅ INCLUYE / SE ENTREGA CON:</div>
+        <div style="height:80px;border-bottom:1px dashed #e2e8f0"></div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px">Escribir artículos incluidos</div>
+      </div>
+      <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px">
+        <div style="font-size:11px;font-weight:700;margin-bottom:8px;color:#dc2626">❌ NO INCLUYE / SIN:</div>
+        <div style="height:80px;border-bottom:1px dashed #e2e8f0"></div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px">Escribir artículos no incluidos</div>
+      </div>
+    </div>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px">
+      <div style="font-size:11px;font-weight:700;margin-bottom:6px">📝 Observaciones Generales:</div>
+      <div style="height:50px"></div>
+    </div>
+  </div>
+  <div class="firmas">
+    <div><div style="height:40px"></div><div class="firma-linea"><div style="font-weight:700">${escHtml(DB.config.responsable||empresa)}</div>Entregado por</div></div>
+    <div><div style="height:40px"></div><div class="firma-linea"><div style="font-weight:700">________________________________</div>Recibido por (Cliente)</div></div>
+  </div>
+  <div class="pie">${escHtml(empresa)} | ${fmtDate(today())} | Hoja de Salida de Vehículo</div>
+  <div class="np" style="margin-top:16px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 24px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Imprimir / PDF</button>
+  </div>
+  </div></body></html>`);
+  win.document.close();
+}
+
+// ══ FORMULARIO LAVADO DE ACTIVOS (UAF/DGII República Dominicana) ══
+function imprimirLavadoActivos(vid){
+  const v=DB.vehiculos.find(x=>x.id===vid);
+  const empresa=DB.config.empresa||'DealerSystem';
+  const logo=DB.config.logoData||'';
+  const win=window.open('','_blank','width=860,height=750');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Declaración Lavado de Activos</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#000;background:#fff}
+  .page{max-width:760px;margin:0 auto;padding:24px}
+  h1{font-size:14px;font-weight:900;text-align:center;text-transform:uppercase;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:14px}
+  h2{font-size:12px;font-weight:900;text-transform:uppercase;background:#e2e8f0;padding:4px 8px;margin:12px 0 8px;border-left:4px solid #000}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .campo{margin-bottom:6px}
+  .campo label{font-size:9px;font-weight:700;text-transform:uppercase;display:block;margin-bottom:2px;color:#475569}
+  .linea{border-bottom:1px solid #000;min-height:20px;padding:2px 4px;font-size:11px}
+  .check-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .check-box{width:14px;height:14px;border:2px solid #000;display:inline-block;flex-shrink:0}
+  table{width:100%;border-collapse:collapse;margin:8px 0}
+  th{background:#0f172a;color:#fff;padding:6px 8px;text-align:left;font-size:10px}
+  td{padding:5px 8px;border:1px solid #e2e8f0;font-size:11px}
+  .firma-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:30px}
+  .firma-linea{border-top:2px solid #000;padding-top:4px;text-align:center;font-size:10px}
+  .advertencia{background:#fef3c7;border:2px solid #f59e0b;border-radius:6px;padding:10px;margin-bottom:14px;font-size:11px;font-weight:700;text-align:center;color:#92400e}
+  @media print{.np{display:none}}</style></head><body><div class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:3px solid #000">
+    <div style="display:flex;align-items:center;gap:10px">
+      ${logo?`<img src="${logo}" style="width:50px;height:50px;object-fit:contain">`:''}
+      <div>
+        <div style="font-size:14px;font-weight:900">${escHtml(empresa)}</div>
+        ${DB.config.rnc?`<div style="font-size:10px">RNC: ${escHtml(DB.config.rnc)}</div>`:''}
+        ${DB.config.telefono?`<div style="font-size:10px">Tel: ${escHtml(DB.config.telefono)}</div>`:''}
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:13px;font-weight:900;text-transform:uppercase">Formulario de Debida Diligencia</div>
+      <div style="font-size:11px;font-weight:700">Prevención Lavado de Activos y Financiamiento del Terrorismo</div>
+      <div style="font-size:10px;color:#475569">Conforme Ley 155-17 y sus Reglamentos — República Dominicana</div>
+    </div>
+    <div style="text-align:right;font-size:10px">
+      <div>Fecha: ___/___/______</div>
+      <div style="margin-top:4px">N° Referencia: _________________</div>
+    </div>
+  </div>
+  <div class="advertencia">⚠️ Es obligatorio completar este formulario. La información suministrada queda sujeta a verificación conforme la Ley 155-17 sobre Lavado de Activos.</div>
+  <h2>I. IDENTIFICACIÓN DEL CLIENTE / COMPRADOR</h2>
+  <div class="g2">
+    <div class="campo"><label>Nombre Completo / Razón Social</label><div class="linea">${v?'':''}</div></div>
+    <div class="campo"><label>Cédula de Identidad / RNC / Pasaporte</label><div class="linea"></div></div>
+    <div class="campo"><label>Nacionalidad</label><div class="linea"></div></div>
+    <div class="campo"><label>Estado Civil</label><div class="linea"></div></div>
+    <div class="campo"><label>Profesión / Ocupación</label><div class="linea"></div></div>
+    <div class="campo"><label>Teléfono / Celular</label><div class="linea"></div></div>
+    <div class="campo" style="grid-column:span 2"><label>Dirección de Residencia</label><div class="linea"></div></div>
+    <div class="campo"><label>Correo Electrónico</label><div class="linea"></div></div>
+    <div class="campo"><label>Ingresos Mensuales Aproximados (RD$)</label><div class="linea"></div></div>
+  </div>
+  <h2>II. DATOS DEL VEHÍCULO</h2>
+  <div class="g3">
+    <div class="campo"><label>Marca</label><div class="linea">${v?escHtml(v.marca||''):''}</div></div>
+    <div class="campo"><label>Modelo</label><div class="linea">${v?escHtml(v.modelo||''):''}</div></div>
+    <div class="campo"><label>Año</label><div class="linea">${v?v.anio||'':''}</div></div>
+    <div class="campo"><label>Color</label><div class="linea">${v?escHtml(v.color||''):''}</div></div>
+    <div class="campo"><label>Placa</label><div class="linea">${v?escHtml(v.placa||''):''}</div></div>
+    <div class="campo"><label>Chasis / VIN</label><div class="linea" style="font-family:monospace">${v?escHtml(v.vin||''):''}</div></div>
+    <div class="campo"><label>Precio de Venta (RD$)</label><div class="linea"></div></div>
+    <div class="campo"><label>Tipo de Adquisición</label><div class="linea"></div></div>
+  </div>
+  <h2>III. FORMA DE PAGO</h2>
+  <div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;margin-bottom:6px">Método de Pago Utilizado:</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+      <div class="check-row"><div class="check-box"></div><span>Efectivo</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Cheque</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Transferencia</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Tarjeta</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Financiamiento</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Criptomonedas</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Permuta</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Otro</span></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="campo"><label>Banco / Entidad Financiera</label><div class="linea"></div></div>
+    <div class="campo"><label>N° Cuenta / Cheque / Transferencia</label><div class="linea"></div></div>
+  </div>
+  <h2>IV. ORIGEN DE LOS FONDOS</h2>
+  <div style="margin-bottom:10px">
+    <div style="font-size:10px;font-weight:700;margin-bottom:6px">Origen de los fondos utilizados en la transacción:</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+      <div class="check-row"><div class="check-box"></div><span>Salario / Empleo</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Negocio Propio</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Inversiones</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Herencia / Donación</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Préstamo Bancario</span></div>
+      <div class="check-row"><div class="check-box"></div><span>Venta de Bien</span></div>
+    </div>
+  </div>
+  <div class="campo"><label>Especifique el origen si marcó "Otro"</label><div class="linea"></div></div>
+  <h2>V. PERSONA POLÍTICAMENTE EXPUESTA (PEP)</h2>
+  <div class="check-row" style="margin-bottom:6px"><div class="check-box"></div><span>¿Es usted o algún familiar cercano una Persona Políticamente Expuesta (funcionario público, político, militar de alto rango)?</span></div>
+  <div class="campo"><label>Si marcó SÍ, especifique el cargo y relación</label><div class="linea"></div></div>
+  <h2>VI. DECLARACIÓN JURADA</h2>
+  <div style="border:1px solid #000;border-radius:6px;padding:10px;font-size:11px;margin-bottom:14px;line-height:1.6">
+    Yo, el/la suscrito/a, declaro bajo juramento que la información suministrada en este formulario es veraz y correcta, que los fondos utilizados para esta transacción provienen de actividades lícitas, y que no actúo en nombre de terceros, a menos que se haya declarado. Declaro conocer que el suministro de información falsa puede conllevar sanciones penales conforme a la legislación dominicana vigente, incluyendo la Ley 155-17 sobre Lavado de Activos.
+  </div>
+  <div class="firma-grid">
+    <div><div style="height:40px"></div><div class="firma-linea"><div style="font-weight:700">Firma del Cliente</div><div style="margin-top:4px">C.I. / RNC: _______________________</div><div>Fecha: ___/___/______</div></div></div>
+    <div><div style="height:40px"></div><div class="firma-linea"><div style="font-weight:700">Firma del Oficial de Cumplimiento</div><div style="margin-top:4px">${escHtml(DB.config.responsable||empresa)}</div><div>Fecha: ___/___/______</div></div></div>
+  </div>
+  <div style="text-align:center;font-size:9px;color:#94a3b8;margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0">
+    ${escHtml(empresa)} | Formulario de Debida Diligencia — Ley 155-17 | ${fmtDate(today())}
+  </div>
+  <div class="np" style="margin-top:16px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Imprimir / PDF</button>
+  </div>
+  </div></body></html>`);
+  win.document.close();
+}
+
+// ══ COLORES DEL SISTEMA ══
+function syncColorHex(id){
+  const picker=document.getElementById('cf-color-'+id);
+  const hex=document.getElementById('cf-color-'+id+'-hex');
+  if(picker&&hex)hex.value=picker.value;
+}
+function syncColorPicker(id){
+  const picker=document.getElementById('cf-color-'+id);
+  const hex=document.getElementById('cf-color-'+id+'-hex');
+  if(picker&&hex&&/^#[0-9A-Fa-f]{6}$/.test(hex.value))picker.value=hex.value;
+}
+function actualizarLogoSidebar(){
+  const img=document.getElementById('sb-logo-img');
+  const txt=document.getElementById('sb-logo-text');
+  if(DB.config.logoData&&img){
+    img.src=DB.config.logoData;
+    img.style.display='block';
+    if(txt)txt.style.display='none';
+  } else {
+    if(img)img.style.display='none';
+    if(txt){
+      txt.style.display='block';
+      txt.innerHTML=DB.config.empresa
+        ?'<span style="color:#60a5fa">'+escHtml(DB.config.empresa)+'</span>'
+        :'<span style="color:#60a5fa">Dealer</span>System';
+    }
+  }
+}
+function aplicarColoresSistema(){
+  const c=DB.config.colores||{};
+  const root=document.documentElement;
+  if(c.blue){root.style.setProperty('--blue',c.blue);root.style.setProperty('--blue2',c.blue);}
+  if(c.navy){root.style.setProperty('--navy',c.navy);}
+  if(c.navy2){root.style.setProperty('--navy2',c.navy2);}else if(c.navy)root.style.setProperty('--navy2',c.navy);
+  if(c.green)root.style.setProperty('--green',c.green);
+  if(c.red)root.style.setProperty('--red',c.red);
+  if(c.amber)root.style.setProperty('--amber',c.amber);
+  // Login background
+  const loginScreen=document.getElementById('login-screen');
+  if(loginScreen&&(c.loginBg1||c.loginBg2)){
+    loginScreen.style.background=`linear-gradient(135deg, ${c.loginBg1||'#0f172a'} 0%, ${c.loginBg2||'#1e3a5f'} 100%)`;
+  }
+  if(loginScreen&&c.loginAccent){
+    loginScreen.querySelectorAll('.btn-primary').forEach(b=>b.style.background=c.loginAccent);
+  }
+  // Welcome screen
+  const wcScreen=document.getElementById('welcome-screen');
+  if(wcScreen&&(c.welcomeBg1||c.welcomeBg2)){
+    wcScreen.style.background=`linear-gradient(135deg, ${c.welcomeBg1||'#0f172a'} 0%, ${c.welcomeBg2||'#1e3a5f'} 100%)`;
+  }
+  if(wcScreen&&c.welcomeText){
+    wcScreen.style.color=c.welcomeText;
+  }
+}
+
+// Aplicar colores al cargar
+document.addEventListener('DOMContentLoaded',()=>{
+  if(DB.config?.colores)aplicarColoresSistema();
+});
+
 // INIT
 document.getElementById('li-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('li-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-pass').focus();});
@@ -5234,15 +6734,22 @@ const _fbCol = 'maedig';
 
 async function fbGuardar(key){
   try {
-    await _fbDB.collection(_fbCol).doc(key).set({
-      valor: JSON.stringify(DB[key] !== undefined ? DB[key] : (key==='config'?{}:[]))
-    });
+    let val=DB[key]!==undefined?DB[key]:(key==='config'?{}:[]);
+    // Para config: guardar logoData separado para evitar límite de tamaño
+    if(key==='config'&&typeof val==='object'&&val!==null){
+      const logo=val.logoData||'';
+      const sinLogo=Object.assign({},val,{logoData:''});
+      await _fbDB.collection(_fbCol).doc(key).set({valor:JSON.stringify(sinLogo)});
+      if(logo) await _fbDB.collection(_fbCol).doc('config_logo').set({valor:JSON.stringify(logo)});
+    } else {
+      await _fbDB.collection(_fbCol).doc(key).set({valor:JSON.stringify(val)});
+    }
   } catch(e){ console.warn('FB save error:', e.message); }
 }
 
 async function fbCargar(){
-  const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
-    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','log'];
+  const keys=['config','config_logo','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
+    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log'];
   let loaded=false;
   for(const key of keys){
     try {
@@ -5254,6 +6761,22 @@ async function fbCargar(){
             const merged=[...val];
             DB[key].forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
             DB[key]=merged.length>0?merged:DB[key];
+          } else if(key==='config_logo'){
+            // Logo guardado separado - cargarlo en DB.config.logoData
+            const logoVal=typeof val==='string'?val:(val&&val.logoData?val.logoData:'');
+            if(logoVal&&logoVal.startsWith('data:')){
+              DB.config=DB.config||{};
+              DB.config.logoData=logoVal;
+            }
+          } else if(key==='config' && typeof val==='object' && val!==null){
+            // Merge config: Firebase tiene prioridad pero no sobreescribir con vacíos
+            const merged=Object.assign({},DB[key]);
+            Object.keys(val).forEach(k=>{
+              if(val[k]!==null && val[k]!==undefined && val[k]!==''){
+                merged[k]=val[k];
+              }
+            });
+            DB[key]=merged;
           } else {
             DB[key]=val;
           }
@@ -5267,6 +6790,7 @@ async function fbCargar(){
 
 const _sDB_orig = sDB;
 window._fbActivo = false;
+window._fbCargado = false;
 window.sDB = function(key){
   try { _sDB_orig(key); } catch(e){}
   if(window._fbActivo){
@@ -5294,11 +6818,26 @@ window.fbIniciar = async function(){
     window._fbActivo = true;
     if(loaded){
       setStatus('#22c55e','✓ Firebase');
-      console.log('✅ Firebase: datos cargados');
+      window._fbCargado=true;
+      // Actualizar sidebar con logo de Firebase
+      if(typeof actualizarLogoSidebar==='function') actualizarLogoSidebar();
+      // Actualizar topbar empresa
+      const _empFb=document.getElementById('topbar-empresa');
+      if(_empFb&&DB.config.empresa)_empFb.textContent=DB.config.empresa;
+      // Si estamos en config, re-renderizar con datos actualizados
+      const _activePage=document.querySelector('.page.active');
+      if(_activePage&&_activePage.id==='page-config'){
+        if(typeof renderConfig==='function') renderConfig();
+      }
+      // Si estamos en dashboard, actualizar
+      if(_activePage&&_activePage.id==='page-dashboard'){
+        if(typeof renderDashboard==='function') renderDashboard();
+      }
     } else {
       const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
-        'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','log'];
+        'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log'];
       for(const k of keys) await fbGuardar(k);
+      window._fbCargado=true;
       setStatus('#22c55e','✓ Firebase');
       console.log('✅ Firebase: datos iniciales guardados');
     }
