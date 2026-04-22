@@ -354,7 +354,7 @@ const titleCase=s=>s?s.replace(/\b\w/g,l=>l.toUpperCase()):'';
 const sentenceCase=s=>s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():'';
 const currentYear=()=>new Date().getFullYear();
 
-function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');setTimeout(()=>t.className='toast',3200);}
+function toast(msg,type=''){const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>{t.className='toast'},4000);}
 function confirmarResetDatos(){
   openModal('⚠️ Limpiar Todos los Datos',
     `<div style="text-align:center;padding:16px 0">
@@ -6902,7 +6902,7 @@ function fbActivarListeners(){
           caja:['caja'],gastosVeh:['gastosVehiculos','vehiculos'],
           cotizaciones:['cotizaciones','clientes'],
           autorizaciones:['autorizaciones'],
-          usuarios:['users'],config:['config','config_logo'],
+          usuarios:['users'],config:[],
           informes:['ventas','gastos','cxc','gastosVehiculos','nomina'],
         };
         const afecta=keysParaPagina[pid]||[];
