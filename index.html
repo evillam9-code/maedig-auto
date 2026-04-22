@@ -480,6 +480,9 @@ function doLogin(){
     if(emp&&DB.config.empresa)emp.textContent=DB.config.empresa;
     aplicarPermisosNav();
     if(DB.config?.colores)aplicarColoresSistema();
+    // Retry colores por si Firebase aún no terminó
+    setTimeout(()=>{if(DB.config?.colores)aplicarColoresSistema();},500);
+    setTimeout(()=>{if(DB.config?.colores)aplicarColoresSistema();},1500);
     actualizarLogoSidebar();
     showPage('dashboard');
     setTimeout(checkAlerts,1500);
@@ -6731,6 +6734,11 @@ window.addEventListener('load', ()=>{
       window._fbCargado=true;
       if(typeof fbActivarListeners==='function') fbActivarListeners();
       if(btn){btn.textContent='Ingresar al sistema →';btn.disabled=false;}
+      // Actualizar indicador Firebase
+      const _dot=document.getElementById('fb-dot');
+      const _txt=document.getElementById('fb-text');
+      if(_dot)_dot.style.background='#22c55e';
+      if(_txt)_txt.textContent='✓ Firebase';
     }).catch(()=>{
       if(btn){btn.textContent='Ingresar al sistema →';btn.disabled=false;}
     });
@@ -6935,6 +6943,8 @@ window.fbIniciar = async function(){
       // Actualizar topbar empresa
       const _empFb=document.getElementById('topbar-empresa');
       if(_empFb&&DB.config.empresa)_empFb.textContent=DB.config.empresa;
+      // Aplicar colores inmediatamente tras cargar Firebase
+      if(typeof aplicarColoresSistema==='function'&&DB.config.colores)aplicarColoresSistema();
       // Si estamos en config, re-renderizar con datos actualizados
       const _activePage=document.querySelector('.page.active');
       if(_activePage&&_activePage.id==='page-config'){
