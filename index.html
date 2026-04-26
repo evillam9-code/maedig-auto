@@ -43,9 +43,9 @@ body{font-family:'Outfit',sans-serif;background:var(--gray2);color:var(--navy);f
 .sb-user{background:#1e293b;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #334155;flex-shrink:0}
 .user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0}
 .sb-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray);padding:10px 16px 4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--navy3);transition:.15s;border-left:3px solid transparent}
-.nav-item:hover{background:var(--gray2)}
-.nav-item.active{background:var(--blue3);color:var(--blue);border-left-color:var(--blue);font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--sidebar-text,#cbd5e1);transition:.15s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff}
+.nav-item.active{background:rgba(255,255,255,0.12);color:var(--sidebar-active,var(--blue));border-left-color:var(--sidebar-active,var(--blue));font-weight:700}
 .nav-item .ico{font-size:16px;width:20px;text-align:center}
 .nav-badge{background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;margin-left:auto}
 .content-wrap{margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
@@ -114,6 +114,68 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .tooltip-btn::after{content:attr(title);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font-size:11px;font-weight:500;white-space:nowrap;padding:4px 8px;border-radius:5px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:999;font-family:'Outfit',sans-serif}
 .tooltip-btn::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#0f172a;pointer-events:none;opacity:0;transition:opacity .15s;z-index:999}
 .tooltip-btn:hover::after,.tooltip-btn:hover::before{opacity:1}
+.sidebar-toggle{display:none}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+.sidebar-overlay.open{display:block}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;top:0;z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.18);width:260px!important}
+  .sidebar.open{transform:translateX(0)}
+  .content-wrap{margin-left:0!important}
+  .topbar{padding:0 10px;gap:6px;height:52px}
+  .sidebar-toggle{display:flex!important;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:22px;cursor:pointer;flex-shrink:0}
+  .main{padding:14px}
+  .page-header{flex-direction:column;align-items:flex-start;gap:10px;padding-bottom:12px}
+  .page-header h1{font-size:18px}
+  .page-header>div:last-child{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+  .page-header .btn{flex:1;min-width:120px;justify-content:center}
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  .stat-card{padding:12px}
+  .stat-value{font-size:16px}
+  .stat-sub{font-size:11px}
+  .stat-ico{font-size:20px}
+  .card{padding:12px;margin-bottom:14px}
+  .card-title{font-size:14px}
+  .two-col{grid-template-columns:1fr!important}
+  .form-row.c2,.form-row.c3,.form-row.c4{grid-template-columns:1fr!important}
+  .form-field{margin-bottom:14px}
+  select,input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],input[type=month],input[type=color],textarea{font-size:16px!important;padding:12px 14px!important;min-height:46px!important;border-radius:8px!important}
+  textarea{min-height:80px!important}
+  .btn{padding:10px 14px;font-size:13px}
+  .btn-sm{padding:7px 10px;font-size:12px}
+  .btn-row{flex-direction:column;gap:8px}
+  .btn-row .btn{width:100%;justify-content:center}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  table{min-width:520px;font-size:12px}
+  th{padding:9px 10px;font-size:10px}
+  td{padding:9px 10px;font-size:12px}
+  .modal-overlay{padding:8px;align-items:flex-end}
+  .modal{width:100vw!important;max-width:100vw!important;padding:20px 14px 28px!important;max-height:95vh!important;overflow-y:auto!important;border-radius:18px 18px 0 0!important;margin:0!important}
+  .modal-title{font-size:16px}
+  .modal-footer{flex-direction:column;gap:8px}
+  .modal-footer .btn{width:100%!important;padding:14px!important;font-size:15px!important;justify-content:center}
+  .lft{display:none!important}
+  .rgt{width:100%!important;padding:28px 20px!important;min-height:100vh}
+  .rgt-inner{max-width:100%!important}
+  .wc-title{font-size:28px!important}
+  #topbar-empresa{display:none}
+  .chart-bar-label{width:100px!important;font-size:11px}
+  .chart-bar-val{width:80px!important;font-size:11px}
+  .sidebar .nav-item{padding:10px 16px;font-size:13px}
+}
+@media(min-width:769px) and (max-width:1024px){
+  .sidebar{width:200px}
+  .content-wrap{margin-left:200px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+  .main{padding:18px}
+}
+@media(max-width:900px) and (orientation:landscape){
+  .form-row.c2{grid-template-columns:1fr 1fr!important}
+  .form-row.c3{grid-template-columns:1fr 1fr!important}
+  .modal{max-height:90vh!important;border-radius:12px!important}
+  .modal-overlay{align-items:center;padding:12px}
+  .lft{display:none!important}
+  .rgt{width:100%!important}
+}
 </style>
 <script>
 (function(){
@@ -208,6 +270,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
     <div class="nav-item" onclick="showPage('facturaExterna')" id="nav-facturaExterna"><span class="ico">🧾</span>Facturas Externas</div>
     <div class="sb-sec">SISTEMA</div>
     <div class="nav-item" onclick="showPage('usuarios')" id="nav-usuarios"><span class="ico">👥</span>Usuarios</div>
+    <div class="nav-item" onclick="showPage('alertas')" id="nav-alertas"><span class="ico">🔔</span>Alertas del Sistema</div>
     <div class="nav-item" onclick="showPage('config')" id="nav-config"><span class="ico">⚙️</span>Configuración</div>
     <div style="margin-top:auto;border-top:1px solid var(--gray3)">
       <div style="padding:10px 16px 6px;font-size:10px;color:#94a3b8;text-align:center;line-height:1.5">
@@ -241,6 +304,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
       <div class="page" id="page-nomina"></div>
       <div class="page" id="page-informes"></div>
       <div class="page" id="page-usuarios"></div>
+      <div class="page" id="page-alertas"></div>
       <div class="page" id="page-config"></div>
       <div class="page" id="page-gastosVeh"></div>
       <div class="page" id="page-cxp"></div>
@@ -387,6 +451,28 @@ function ejecutarResetDatos(){
 function filterTable(id,q){const tbl=document.getElementById(id);if(!tbl)return;const sq=q.toLowerCase();tbl.querySelectorAll('tbody tr').forEach(tr=>{tr.style.display=tr.textContent.toLowerCase().includes(sq)?'':'none';});}
 function openModal(title,body,footer){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=body;document.getElementById('modal-footer').innerHTML=footer||'<button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>';document.getElementById('modal-overlay').classList.add('open');}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function preguntarCerrar(onSiCode){
+  openModal('¿Desea cerrar esta ventana?',
+    '<p style="font-size:15px;text-align:center;padding:16px 0">¿Desea cerrar el formulario o continuar trabajando?</p>',
+    `<button class="btn btn-secondary" onclick="closeModal()">No, continuar</button>
+     <button class="btn btn-primary" onclick="${onSiCode||'closeModal()'}">Sí, cerrar</button>`);
+}
+let _inactTimer=null;
+function resetInactTimer(){
+  clearTimeout(_inactTimer);
+  _inactTimer=setTimeout(()=>{
+    if(currentUser){
+      currentUser=null;
+      closeModal();
+      document.getElementById('app').style.display='none';
+      document.getElementById('login-screen').style.display='flex';
+      document.getElementById('li-user').value='';
+      document.getElementById('li-pass').value='';
+      alert('Sesión cerrada por inactividad (10 min). Inicie sesión nuevamente.');
+    }
+  },600000);
+}
+['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,resetInactTimer,{passive:true}));
 
 let currentUser=null;
 
@@ -546,8 +632,7 @@ function aplicarPermisosNav(){
 }
 function doLogout(){currentUser=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('li-user').value='';document.getElementById('li-pass').value='';}
 
-document.addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+// Modal NO cierra con click fuera ni Escape — solo con botón explícito
 
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -558,7 +643,7 @@ function showPage(id){
   if(id!=='dashboard'&&currentUser?.role!=='admin'&&!canAccess(id)){toast('No tienes acceso a este módulo','error');return;}
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
-  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna};
+  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas};
   if(r[id])r[id]();
 }
 
@@ -573,168 +658,179 @@ function showNotif(title,msg,type='danger'){
 function checkAlerts(){
   const c=document.getElementById('alert-container');if(c)c.innerHTML='';
   const hoy=today();
-  // Vehículos sin chasis
-  const sinVin=DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!v.vin);
-  if(sinVin.length>0)showNotif(sinVin.length+' vehículo(s) sin Chasis/VIN','Verifique el inventario.','warning');
-  // CXP pendientes
-  const cxpPend=(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0);
-  if(cxpPend.length>0){const t=cxpPend.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);showNotif(cxpPend.length+' gasto(s) de vehículo por pagar','Pendiente: '+fmt(t),'danger');}
-  // CXC pendientes
-  const cxcPend=(DB.cxc||[]).filter(x=>x.status==='PENDIENTE'||x.status==='PARCIAL');
-  if(cxcPend.length>0){const t=cxcPend.reduce((a,x)=>a+parseFloat(x.saldo||0),0);showNotif(cxcPend.length+' cuenta(s) por cobrar pendientes','Total: '+fmt(t),'warning');}
-  // CXC vencidas
-  (DB.cxc||[]).filter(x=>(x.status==='PENDIENTE'||x.status==='PARCIAL')&&x.fechaVence&&x.fechaVence<=hoy).forEach(x=>{showNotif('⚠️ CxC VENCIDA: '+x.cliente,'Vence: '+fmtDate(x.fechaVence)+' — '+fmt(x.saldo),'danger');});
-  // Documentos pendientes de entrega
-  const docsPend=DB.ventas.filter(v=>v.docsPendientes&&v.fechaLimDocs);
-  docsPend.forEach(v=>{
-    const vencida=v.fechaLimDocs<=hoy;
-    const msg='Entrega de documentos'+(vencida?' VENCIDA':' pendiente')+': '+escHtml(v.vehiculo||v.codigo||'');
-    showNotif(msg,'Fecha límite: '+fmtDate(v.fechaLimDocs),vencida?'danger':'warning');
-  });
-  // Vehículos sin costos
-  const sinCostos=DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id));
-  if(sinCostos.length>0)showNotif(sinCostos.length+' vehículo(s) sin costos registrados','Registre los gastos en Gastos de Vehículo.','warning');
-  // Alarmas de tiempo sin vender
+  // Obtener alertas permitidas del usuario actual
+  const alertasPermitidas=currentUser?.role==='admin'
+    ?null // admin ve todo
+    :(currentUser?.alertasPermitidas||['SIN_VIN','SIN_COSTO','CXP','CXC_VENCIDA','CXC','SIN_VENDER_6M','SIN_VENDER_1A','DOCS']);
+  const puedeVer=tipo=>!alertasPermitidas||alertasPermitidas.includes(tipo);
+
+  if(puedeVer('SIN_VIN')){
+    const sinVin=DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!v.vin);
+    if(sinVin.length>0)showNotif(sinVin.length+' vehículo(s) sin Chasis/VIN','Verifique el inventario.','warning');
+  }
+  if(puedeVer('CXP')){
+    const cxpPend=(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0);
+    if(cxpPend.length>0){const t=cxpPend.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);showNotif(cxpPend.length+' gasto(s) de vehículo por pagar','Pendiente: '+fmt(t),'danger');}
+  }
+  if(puedeVer('CXC')){
+    const cxcPend=(DB.cxc||[]).filter(x=>x.status==='PENDIENTE'||x.status==='PARCIAL');
+    if(cxcPend.length>0){const t=cxcPend.reduce((a,x)=>a+parseFloat(x.saldo||0),0);showNotif(cxcPend.length+' cuenta(s) por cobrar pendientes','Total: '+fmt(t),'warning');}
+  }
+  if(puedeVer('CXC_VENCIDA')){
+    (DB.cxc||[]).filter(x=>(x.status==='PENDIENTE'||x.status==='PARCIAL')&&x.fechaVence&&x.fechaVence<=hoy).forEach(x=>{showNotif('⚠️ CxC VENCIDA: '+x.cliente,'Vence: '+fmtDate(x.fechaVence)+' — '+fmt(x.saldo),'danger');});
+  }
+  if(puedeVer('DOCS')){
+    const docsPend=DB.ventas.filter(v=>v.docsPendientes&&v.fechaLimDocs);
+    docsPend.forEach(v=>{const vencida=v.fechaLimDocs<=hoy;showNotif('Entrega docs '+(vencida?'VENCIDA':'pendiente')+': '+(v.vehiculo||''),'Límite: '+fmtDate(v.fechaLimDocs),vencida?'danger':'warning');});
+  }
+  if(puedeVer('SIN_COSTO')){
+    const sinCostos=DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id));
+    if(sinCostos.length>0)showNotif(sinCostos.length+' vehículo(s) sin costos registrados','Registre los gastos en Gastos de Vehículo.','warning');
+  }
   const hoyDate=new Date();
   DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&v.fecha).forEach(v=>{
-    const fechaIngreso=new Date(v.fecha+'T12:00:00');
-    const diasSinVender=Math.floor((hoyDate-fechaIngreso)/(1000*60*60*24));
-    if(diasSinVender>=365){
-      const depreciacion=Math.round((parseFloat(v.costo||0))*0.15*100)/100;
-      showNotif('⏰ 1 AÑO SIN VENDER: '+escHtml(v.codigo+' '+v.marca+' '+v.modelo),
-        'Ingresó: '+fmtDate(v.fecha)+' ('+diasSinVender+' días). Depreciación est. 15%: '+fmt(depreciacion),'danger');
-    } else if(diasSinVender>=180){
-      showNotif('⚠️ 6 MESES SIN VENDER: '+escHtml(v.codigo+' '+v.marca+' '+v.modelo),
-        'Ingresó: '+fmtDate(v.fecha)+' ('+diasSinVender+' días). Revisar precio.','warning');
+    const diasSinVender=Math.floor((hoyDate-new Date(v.fecha+'T12:00:00'))/(1000*60*60*24));
+    if(diasSinVender>=365&&puedeVer('SIN_VENDER_1A')){
+      const dep=Math.round(parseFloat(v.costo||0)*0.15*100)/100;
+      showNotif('⏰ 1 AÑO SIN VENDER: '+(v.codigo+' '+v.marca+' '+v.modelo),'Ingresó: '+fmtDate(v.fecha)+' ('+diasSinVender+' días). Depreciación est.: '+fmt(dep),'danger');
+    } else if(diasSinVender>=180&&puedeVer('SIN_VENDER_6M')){
+      showNotif('⚠️ 6 MESES SIN VENDER: '+(v.codigo+' '+v.marca+' '+v.modelo),'Ingresó: '+fmtDate(v.fecha)+' ('+diasSinVender+' días). Revisar precio.','warning');
     }
   });
 }
 
 // ══ DASHBOARD ══
 function renderDashboard(){
+  // Datos frescos
+  DB.vehiculos=ls('vehiculos')||DB.vehiculos;
+  DB.ventas=ls('ventas')||DB.ventas;
+  DB.gastosVehiculos=ls('gastosVehiculos')||DB.gastosVehiculos;
+  DB.cxc=ls('cxc')||DB.cxc;
+  DB.suplidores=ls('suplidores')||DB.suplidores;
+
   const mes=document.getElementById('dash-mes')?.value||'';
   const dia=document.getElementById('dash-dia')?.value||'';
   const filtro=dia||mes;
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const ventas=filtro?DB.ventas.filter(v=>dia?v.fecha===dia:v.fecha?.startsWith(mes)):DB.ventas;
-  // Ventas por moneda
   const ventasRD=ventas.filter(v=>(v.moneda||'RD$')==='RD$');
   const ventasUSD=ventas.filter(v=>v.moneda==='USD');
   const totalVRD=ventasRD.reduce((a,v)=>a+parseFloat(v.precioVenta||0),0);
   const totalVUSD=ventasUSD.reduce((a,v)=>a+parseFloat(v.precioVenta||0),0);
-  // Vehículos por estado
   const vActivos=DB.vehiculos.filter(v=>v.status==='ACTIVO');
   const vAduana=DB.vehiculos.filter(v=>v.status==='ADUANA');
   const vTransito=DB.vehiculos.filter(v=>v.status==='TRÁNSITO');
-  const vVendidos=DB.vehiculos.filter(v=>v.status==='VENDIDO');
-  // Vehículos sin costos registrados
-  const vSinCostos=DB.vehiculos.filter(v=>{
-    const gastos=(DB.gastosVehiculos||[]).filter(g=>g.vehiculoId===v.id);
-    return gastos.length===0&&v.status!=='VENDIDO';
-  });
-  // Inversión realizada (suma de montoFactura de gastos por vehículos activos+aduana)
-  const inversionRD=(DB.gastosVehiculos||[]).filter(g=>{
-    const veh=DB.vehiculos.find(v=>v.id===g.vehiculoId);
-    return veh&&veh.status!=='VENDIDO'&&(g.moneda||'RD$')==='RD$';
-  }).reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
-  const inversionUSD=(DB.gastosVehiculos||[]).filter(g=>{
-    const veh=DB.vehiculos.find(v=>v.id===g.vehiculoId);
-    return veh&&veh.status!=='VENDIDO'&&g.moneda==='USD';
-  }).reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
-  // Vehículos vendidos en tránsito
-  const vendTransito=DB.ventas.filter(v=>{
-    const veh=DB.vehiculos.find(x=>x.id===v.vehiculoId||x.codigo===v.vehiculoCodigo);
-    return veh&&veh.status==='TRÁNSITO';
-  });
-  const vendTransitoPendDoc=DB.ventas.filter(v=>v.pendienteDocumentos);
-  const vendTransitoPendCobro=(DB.cxc||[]).filter(x=>x.status!=='SALDADO');
-  // CXC y CXP pendientes
+  const vEEUU=DB.vehiculos.filter(v=>v.status==='EN EEUU');
+  const vSinCostos=DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id));
+  const inversionRD=(DB.gastosVehiculos||[]).filter(g=>{const veh=DB.vehiculos.find(v=>v.id===g.vehiculoId);return veh&&veh.status!=='VENDIDO'&&(g.moneda||'RD$')==='RD$';}).reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const inversionUSD=(DB.gastosVehiculos||[]).filter(g=>{const veh=DB.vehiculos.find(v=>v.id===g.vehiculoId);return veh&&veh.status!=='VENDIDO'&&g.moneda==='USD';}).reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const vendTransito=DB.ventas.filter(v=>{const veh=DB.vehiculos.find(x=>x.id===v.vehiculoId||x.codigo===v.vehiculoCodigo);return veh&&veh.status==='TRÁNSITO';});
   const cxcPend=(DB.cxc||[]).filter(x=>x.status!=='SALDADO');
   const cxpPend=(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0);
-  const cxpMonto=cxpPend.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const cxpRD=cxpPend.filter(g=>(g.moneda||'RD$')==='RD$').reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const cxpUSD=cxpPend.filter(g=>g.moneda==='USD').reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
   const cxcMonto=cxcPend.reduce((a,x)=>a+parseFloat(x.saldo||0),0);
   const periodo=dia?'Día: '+fmtDate(dia):mes?'Mes: '+mes:'Todos los registros';
+  const ahora=new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});
+
   document.getElementById('page-dashboard').innerHTML=`
     <div class="page-header">
-      <div><h1>🏠 Inicio</h1><p>${escHtml(DB.config.empresa||'Dealer System')} — ${periodo}</p></div>
+      <div>
+        <h1>🏠 Inicio</h1>
+        <p>${escHtml(DB.config.empresa||'MAEDIG')} — ${periodo} <span style="color:var(--green);font-size:11px;margin-left:8px">● Actualizado ${ahora}</span></p>
+      </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="month" id="dash-mes" style="padding:7px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px" onchange="document.getElementById('dash-dia').value='';renderDashboard()" value="${mes}">
         <input type="date" id="dash-dia" style="padding:7px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px" onchange="document.getElementById('dash-mes').value='';renderDashboard()" value="${dia}">
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('dash-mes').value='';document.getElementById('dash-dia').value='';renderDashboard()">🔄 Todo</button>
+        <button class="btn btn-primary btn-sm" onclick="renderDashboard()">↻ Actualizar</button>
       </div>
     </div>
 
-    <!-- ESTADOS DE VEHÍCULOS -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
-      <div class="stat-card blue" style="cursor:pointer" onclick="showPage('inventario')">
-        <div class="stat-ico">🟢</div><div class="stat-label">Vehículos Activos</div>
-        <div class="stat-value">${vActivos.length}</div>
-        <div class="stat-sub">Disponibles para venta</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+      <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:14px;padding:18px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.3)" onclick="showPage('inventario')">
+        <div style="font-size:26px;margin-bottom:4px">🟢</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.8">Activos</div>
+        <div style="font-size:30px;font-weight:900;margin:4px 0">${vActivos.length}</div>
+        <div style="font-size:11px;opacity:.75">Para venta</div>
       </div>
-      <div class="stat-card amber" style="cursor:pointer" onclick="showPage('inventario')">
-        <div class="stat-ico">🟡</div><div class="stat-label">En Aduana</div>
-        <div class="stat-value">${vAduana.length}</div>
-        <div class="stat-sub">En proceso de importación</div>
+      <div style="background:linear-gradient(135deg,#d97706,#b45309);border-radius:14px;padding:18px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(217,119,6,.3)" onclick="showPage('inventario')">
+        <div style="font-size:26px;margin-bottom:4px">🏛️</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.8">En Aduana</div>
+        <div style="font-size:30px;font-weight:900;margin:4px 0">${vAduana.length}</div>
+        <div style="font-size:11px;opacity:.75">Importación</div>
       </div>
-      <div class="stat-card purple" style="cursor:pointer" onclick="showPage('inventario')">
-        <div class="stat-ico">🚢</div><div class="stat-label">En Tránsito</div>
-        <div class="stat-value">${vTransito.length}</div>
-        <div class="stat-sub">En camino</div>
+      <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);border-radius:14px;padding:18px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,.3)" onclick="showPage('inventario')">
+        <div style="font-size:26px;margin-bottom:4px">🚢</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.8">En Tránsito</div>
+        <div style="font-size:30px;font-weight:900;margin:4px 0">${vTransito.length}</div>
+        <div style="font-size:11px;opacity:.75">En camino</div>
       </div>
-      <div class="stat-card ${vSinCostos.length>0?'red':'green'}">
-        <div class="stat-ico">⚠️</div><div class="stat-label">Sin Costos Registrados</div>
-        <div class="stat-value">${vSinCostos.length}</div>
-        <div class="stat-sub">Vehículos sin gastos</div>
+      <div style="background:linear-gradient(135deg,#0369a1,#0284c7);border-radius:14px;padding:18px;color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(3,105,161,.3)" onclick="showPage('inventario')">
+        <div style="font-size:26px;margin-bottom:4px">🇺🇸</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.8">En EEUU</div>
+        <div style="font-size:30px;font-weight:900;margin:4px 0">${vEEUU.length}</div>
+        <div style="font-size:11px;opacity:.75">En EEUU</div>
+      </div>
+      <div style="background:linear-gradient(135deg,${vSinCostos.length>0?'#dc2626,#b91c1c':'#16a34a,#15803d'});border-radius:14px;padding:18px;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15)">
+        <div style="font-size:26px;margin-bottom:4px">${vSinCostos.length>0?'⚠️':'✅'}</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.8">Sin Costos</div>
+        <div style="font-size:30px;font-weight:900;margin:4px 0">${vSinCostos.length}</div>
+        <div style="font-size:11px;opacity:.75">Sin gastos reg.</div>
       </div>
     </div>
 
-    <!-- INVERSIÓN Y VENTAS -->
-    <div class="stats-grid" style="margin-bottom:16px">
-      <div class="stat-card green">
-        <div class="stat-ico">💰</div><div class="stat-label">Ventas del Período</div>
-        ${totalVRD>0?`<div class="stat-value" style="font-size:16px">${fmt(totalVRD)}</div><div class="stat-sub">RD\$ — ${ventasRD.length} venta(s)</div>`:''}
-        ${totalVUSD>0?`<div class="stat-value" style="font-size:16px;color:#2563eb;margin-top:${totalVRD>0?'4px':'0'}">$${totalVUSD.toLocaleString('en-US',{minimumFractionDigits:2})} USD</div><div class="stat-sub">USD — ${ventasUSD.length} venta(s)</div>`:''}
-        ${totalVRD===0&&totalVUSD===0?`<div class="stat-value">RD\$ 0.00</div><div class="stat-sub">Sin ventas</div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="card" style="margin-bottom:0;border-top:4px solid var(--green)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">💰 Ventas del Período</div>
+        ${totalVRD>0?`<div style="font-size:18px;font-weight:800;color:var(--green)">${totalVRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div><div style="font-size:11px;color:var(--gray)">RD$ — ${ventasRD.length} venta(s)</div>`:'' }
+        ${totalVUSD>0?`<div style="font-size:18px;font-weight:800;color:var(--blue);margin-top:4px">$${totalVUSD.toLocaleString('en-US',{minimumFractionDigits:2})} USD</div><div style="font-size:11px;color:var(--gray)">${ventasUSD.length} venta(s)</div>`:'' }
+        ${totalVRD===0&&totalVUSD===0?`<div style="font-size:16px;font-weight:700;color:var(--gray)">Sin ventas en período</div>`:'' }
       </div>
-      <div class="stat-card blue">
-        <div class="stat-ico">💼</div><div class="stat-label">Inversión Realizada</div>
-        ${inversionRD>0?`<div class="stat-value" style="font-size:15px">${fmt(inversionRD)}</div><div class="stat-sub">RD\$ en vehículos activos</div>`:''}
-        ${inversionUSD>0?`<div class="stat-value" style="font-size:15px;color:#2563eb">$${inversionUSD.toLocaleString('en-US',{minimumFractionDigits:2})} USD</div><div class="stat-sub">USD en vehículos activos</div>`:''}
-        ${inversionRD===0&&inversionUSD===0?`<div class="stat-value">RD\$ 0.00</div><div class="stat-sub">Sin inversión registrada</div>`:''}
+      <div class="card" style="margin-bottom:0;border-top:4px solid var(--blue)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">💼 Inversión en Inventario</div>
+        ${inversionRD>0?`<div style="font-size:18px;font-weight:800;color:var(--navy)">${inversionRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div><div style="font-size:11px;color:var(--gray)">RD$ acumulados</div>`:'' }
+        ${inversionUSD>0?`<div style="font-size:18px;font-weight:800;color:var(--blue);margin-top:4px">$${inversionUSD.toLocaleString('en-US',{minimumFractionDigits:2})} USD</div><div style="font-size:11px;color:var(--gray)">USD acumulados</div>`:'' }
+        ${inversionRD===0&&inversionUSD===0?`<div style="font-size:16px;font-weight:700;color:var(--gray)">Sin inversión</div>`:'' }
       </div>
-      <div class="stat-card amber"><div class="stat-ico">💱</div><div class="stat-label">Tasa del Dólar</div><div class="stat-value" style="font-size:18px">RD\$ ${tasa.toLocaleString('es-DO',{minimumFractionDigits:2})}</div><div class="stat-sub">por 1 USD</div></div>
-      <div class="stat-card blue"><div class="stat-ico">🏭</div><div class="stat-label">Suplidores</div><div class="stat-value">${DB.suplidores.length}</div><div class="stat-sub">Registrados</div></div>
+      <div class="card" style="margin-bottom:0;border-top:4px solid var(--amber)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">💱 Tasa & Suplidores</div>
+        <div style="font-size:18px;font-weight:800;color:var(--amber)">RD$ ${tasa.toLocaleString('es-DO',{minimumFractionDigits:2})}</div>
+        <div style="font-size:11px;color:var(--gray);margin-bottom:8px">por 1 USD</div>
+        <div style="font-size:16px;font-weight:700;color:var(--navy)">${DB.suplidores.length} <span style="font-size:12px;font-weight:400;color:var(--gray)">suplidores</span></div>
+      </div>
     </div>
 
-    <!-- VENDIDOS EN TRÁNSITO + CXC + CXP -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-      <div class="stat-card ${vendTransito.length>0?'purple':'green'}">
-        <div class="stat-ico">🚗💨</div><div class="stat-label">Vendidos en Tránsito</div>
-        <div class="stat-value">${vendTransito.length}</div>
-        <div class="stat-sub" style="cursor:pointer;color:var(--blue)" onclick="showPage('ventas')">Ver detalle →</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+      <div class="card" style="margin-bottom:0;border-top:4px solid ${vendTransito.length>0?'var(--purple)':'var(--green)'}">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px">🚗💨 Vendidos en Tránsito</div>
+        <div style="font-size:28px;font-weight:900;color:var(--purple)">${vendTransito.length}</div>
+        <div style="font-size:12px;color:var(--blue);cursor:pointer;margin-top:4px" onclick="showPage('ventas');setTimeout(()=>ventasTab('entregas'),200)">Ver entregas →</div>
       </div>
-      <div class="stat-card ${cxcPend.length>0?'amber':'green'}" style="cursor:pointer" onclick="showPage('cxc')">
-        <div class="stat-ico">📬</div><div class="stat-label">Por Cobrar Pendientes</div>
-        <div class="stat-value">${cxcPend.length}</div>
-        <div class="stat-sub">${fmt(cxcMonto)} pendiente(s)</div>
+      <div class="card" style="margin-bottom:0;border-top:4px solid ${cxcPend.length>0?'var(--amber)':'var(--green)'};cursor:pointer" onclick="showPage('cxc')">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px">📬 Por Cobrar</div>
+        <div style="font-size:28px;font-weight:900;color:var(--amber)">${cxcPend.length}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">${cxcMonto.toLocaleString('es-DO',{minimumFractionDigits:2})} pendiente</div>
       </div>
-      <div class="stat-card ${cxpPend.length>0?'red':'green'}" style="cursor:pointer" onclick="showPage('cxp')">
-        <div class="stat-ico">📑</div><div class="stat-label">Por Pagar Pendientes</div>
-        <div class="stat-value">${cxpPend.length}</div>
-        <div class="stat-sub">${fmt(cxpMonto)} por pagar</div>
+      <div class="card" style="margin-bottom:0;border-top:4px solid ${cxpPend.length>0?'var(--red)':'var(--green)'};cursor:pointer" onclick="showPage('cxp')">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px">📑 Por Pagar</div>
+        <div style="font-size:28px;font-weight:900;color:var(--red)">${cxpPend.length}</div>
+        ${cxpRD>0?`<div style="font-size:11px;color:var(--gray)">RD$ ${cxpRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div>`:''}
+        ${cxpUSD>0?`<div style="font-size:11px;color:var(--blue)">$${cxpUSD.toLocaleString('en-US',{minimumFractionDigits:2})} USD</div>`:''}
       </div>
     </div>
 
     <div class="two-col">
       <div class="card"><div class="card-title">🚗 Inventario por Propietario</div>${renderInvChart()}</div>
       <div class="card"><div class="card-title">💰 Ventas Recientes</div>
-        ${ventas.length?`<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Vehículo</th><th>Cliente</th><th>Moneda</th><th>Precio</th></tr></thead><tbody>${ventas.slice(-5).reverse().map(v=>{
+        ${ventas.length?`<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Vehículo</th><th>Cliente</th><th>Moneda</th><th>Precio</th></tr></thead><tbody>${ventas.slice(-6).reverse().map(v=>{
           const esUSD=v.moneda==='USD';
-          return`<tr><td>${fmtDate(v.fecha)}</td><td style="font-size:12px">${escHtml(v.vehiculo||'—')}</td><td>${escHtml(v.cliente||'—')}</td><td><span class="badge ${esUSD?'badge-blue':'badge-green'}" style="font-size:10px">${v.moneda||'RD\$'}</span></td><td style="font-weight:700;color:var(--green)">${esUSD?'\$'+parseFloat(v.precioVenta||0).toLocaleString('en-US',{minimumFractionDigits:2}):fmt(v.precioVenta)}</td></tr>`;
+          return`<tr><td style="font-size:11px">${fmtDate(v.fecha)}</td><td style="font-size:12px;font-weight:600">${escHtml(v.vehiculo||'—')}</td><td style="font-size:12px">${escHtml(v.cliente||'—')}</td><td><span class="badge ${esUSD?'badge-blue':'badge-green'}" style="font-size:10px">${v.moneda||'RD$'}</span></td><td style="font-weight:700;color:var(--green);font-size:12px">${esUSD?'$'+parseFloat(v.precioVenta||0).toLocaleString('en-US',{minimumFractionDigits:2}):fmt(v.precioVenta)}</td></tr>`;
         }).join('')}</tbody></table></div>`:'<div style="text-align:center;padding:24px;color:var(--gray)">Sin ventas aún</div>'}
       </div>
     </div>`;
 }
+
 
 function renderInvChart(){
   const owners={};
@@ -746,13 +842,14 @@ function renderInvChart(){
 }
 
 // ══ INVENTARIO ══
-function getPrefijo(){return DB.config.prefijoCodigo||(DB.config.empresa?DB.config.empresa[0].toUpperCase():'F');}
+function getPrefijo(){const p=DB.config.prefijoCodigo||(DB.config.empresa?DB.config.empresa[0].toUpperCase():'M');return (p.replace(/[^A-Za-z]/g,'').toUpperCase()[0])||'M';}
 function generarCodigo(){
   const pref=getPrefijo();
   const nums=DB.vehiculos.map(v=>{const m=(v.codigo||'').match(/(\d+)$/);return m?parseInt(m[1]):0;});
   const next=nums.length?Math.max(...nums)+1:1;
-  const cod=pref+'-'+String(next).padStart(4,'0');
-  const inp=document.getElementById('v-cod');if(inp)inp.value=cod;
+  const cod=pref+'-'+String(next).padStart(5,'0');
+  const inp=document.getElementById('v-cod');if(inp){inp.value=cod;inp.focus();}
+  toast('Código generado: '+cod,'success');
 }
 function agregarPropietarioRapido(){
   const nombre=prompt('Nombre del nuevo propietario:');
@@ -807,9 +904,10 @@ function renderInventario(){
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <select id="inv-estado-filter" onchange="renderInventario()" style="width:150px;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
           <option value="ALL">Todos los estados</option>
-          <option value="TRÁNSITO">En Tránsito</option>
+          <option value="EN EEUU">En EEUU</option>
           <option value="ADUANA">En Aduana</option>
           <option value="ACTIVO">Activo</option>
+          <option value="TRÁNSITO">En Tránsito (auto)</option>
           <option value="VENDIDO">Vendido</option>
         </select>
         <select id="inv-tipo-filter" onchange="renderInventario()" style="width:150px;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
@@ -903,7 +1001,7 @@ function formVehiculo(v){
       <div class="form-field"><label>Millaje</label><input type="number" id="v-millas" value="${v?.millas||0}"></div>
     </div>
     <div class="form-row c3">
-      <div class="form-field"><label>Estado</label><select id="v-status">${['ADUANA','ACTIVO'].map(s=>`<option ${s===v?.status?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Estado</label><select id="v-status">${['EN EEUU','ADUANA','ACTIVO'].map(s=>`<option ${s===v?.status?'selected':''}>${s}</option>`).join('')}</select></div>
       <div class="form-field"><label>Tipo de Compra</label><select id="v-tipo-compra">${[['IMPORTACION','Importación'],['LOCAL','Compra Local'],['RECIBIDO','Recibido']].map(([val,lbl])=>`<option value="${val}" ${val===v?.tipoCompra?'selected':''}>${lbl}</option>`).join('')}</select></div>
       <div class="form-field"><label>Fecha de Compra</label><input type="date" id="v-fecha" value="${v?.fecha||today()}"></div>
     </div>
@@ -922,22 +1020,13 @@ function formVehiculo(v){
       </div>
     </div>
     <div class="form-row c2">
-      <div class="form-field"><label>Suplidor</label>
+      <div class="form-field"><label>Compañía Importadora</label>
         <select id="v-suplidor">
-          <option value="">-- Sin suplidor --</option>
-          ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===v?.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre||'')}${s.propietario?' — '+s.propietario:''}</option>`).join('')}
+          <option value="">-- Sin compañía --</option>
+          ${DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo').map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===v?.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre||'')}${s.propietario?' — '+s.propietario:''}</option>`).join('')}
         </select>
       </div>
       <div class="form-field"><label>Notas</label><textarea id="v-notas" rows="1" placeholder="Notas adicionales...">${escHtml(v?.notas||'')}</textarea></div>
-    </div>
-    <div class="form-row c2">
-      <div class="form-field"><label>Precio de Venta Sugerido</label>
-        <input type="text" id="v-precio-venta" value="${v?.precioVenta||''}" placeholder="0.00" oninput="fmtMoneyInput(this)">
-      </div>
-      <div class="form-field"><label>Precio de Compra / Costo</label>
-        <input type="text" id="v-costo-manual" value="${v?.costo||''}" placeholder="0.00" oninput="fmtMoneyInput(this)">
-        <div style="font-size:10px;color:var(--gray);margin-top:2px">Se actualiza automáticamente con los gastos del vehículo</div>
-      </div>
     </div>`;
 }
 
@@ -951,7 +1040,10 @@ function guardarVehiculo(id){
   const modelo=document.getElementById('v-modelo').value.trim();
   const anio=document.getElementById('v-anio').value;
   const vin=document.getElementById('v-vin').value.trim();
+  // Validar formato: UNA letra mayúscula + guion + exactamente 5 dígitos
+  const codRegex=/^[A-Z]-\d{5}$/;
   if(!cod){toast('El código es requerido','error');return;}
+  if(!codRegex.test(cod)){toast('⚠️ Código inválido. Formato requerido: Una letra mayúscula + guion + 5 dígitos. Ej: M-00001','error');return;}
   if(!prop){toast('Seleccione un propietario','error');return;}
   if(!marca){toast('Seleccione la marca','error');return;}
   if(!modelo){toast('El modelo es requerido','error');return;}
@@ -974,12 +1066,8 @@ function guardarVehiculo(id){
     vin,placa:document.getElementById('v-placa').value,
     foto:fotoEl?.style.display!=='none'&&fotoEl?.src?fotoEl.src:(id?DB.vehiculos.find(x=>x.id===id)?.foto||'':''),
     carfax:carfaxEl?.style.display!=='none'&&carfaxEl?.src?carfaxEl.src:(id?DB.vehiculos.find(x=>x.id===id)?.carfax||'':''),
-    notas:document.getElementById('v-notas').value,
-    precioVenta:parseFloat((document.getElementById('v-precio-venta')?.value||'0').replace(/,/g,''))||0
+    notas:document.getElementById('v-notas').value
   };
-  // Solo actualizar costo manual si se ingresó
-  const costoManual=parseFloat((document.getElementById('v-costo-manual')?.value||'0').replace(/,/g,''));
-  if(costoManual>0)obj.costo=costoManual;
   if(id){
     const i=DB.vehiculos.findIndex(x=>x.id===id);
     if(i>=0){
@@ -990,7 +1078,10 @@ function guardarVehiculo(id){
     obj.costo=0;
     DB.vehiculos.push(obj);
   }
-  sDB('vehiculos');closeModal();toast(id?'Vehículo actualizado ✓':'Vehículo agregado ✓','success');renderInventario();
+  sDB('vehiculos');
+  toast(id?'Vehículo actualizado ✓':'Vehículo agregado ✓','success');
+  renderInventario();
+  preguntarCerrar('closeModal()');
 }
 
 function agregarMarcaRapida(){
@@ -1057,14 +1148,15 @@ function gastosVehiculo(vid){
   const costo=parseFloat(v.costo||0);
   const totalInversion=costo+totalGastos;
   const tasa=parseFloat(DB.config.tasaCambio||60);
-  const filas=gastos.map(g=>`<tr>
+  const filas=gastos.map(g=>{const esUSD=g.moneda==='USD';const fV=(n)=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(n);return`<tr>
     <td>${fmtDate(g.fecha)}</td><td style="font-size:12px">${escHtml(g.tipo||'—')}</td><td>${escHtml(g.descripcion||'—')}</td>
     <td>${escHtml(g.cuenta||'—')}</td>
     <td><span class="badge ${g.formaPago==='CREDITO'?'badge-amber':'badge-green'}">${g.formaPago==='CREDITO'?'Crédito':'Contado'}</span></td>
-    <td style="font-weight:700;color:var(--red)">${fmt(g.monto)}</td>
-    <td style="font-size:11px;color:var(--gray)">$${(g.monto/tasa).toFixed(2)}</td>
+    <td style="font-weight:700;color:var(--red)">${fV(g.montoFactura||g.monto||0)}</td>
+    <td style="color:var(--green);font-weight:600">${fV(g.montoPagado||0)}</td>
+    <td style="font-weight:700;color:${parseFloat(g.montoPendiente||0)>0?'var(--red)':'var(--green)'}">${fV(g.montoPendiente||0)}</td>
     <td>${currentUser?.role==='admin'?`<button class="btn btn-red btn-sm" onclick="eliminarGastoVeh('${g.id}','${vid}')">🗑</button>`:''}</td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   openModal(`💸 Gastos — ${v.codigo} ${v.marca} ${v.modelo} ${v.anio}`,`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;background:var(--gray2);padding:12px;border-radius:8px">
       <div class="form-field" style="margin:0"><label style="font-size:10px">Costo del Vehículo (RD$)</label>
@@ -1101,7 +1193,7 @@ function gastosVehiculo(vid){
       </div>
     </div>
     <div style="max-height:220px;overflow-y:auto"><table style="width:100%;font-size:12px">
-      <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Cuenta</th><th>Pago</th><th>RD$</th><th>USD</th><th></th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Cuenta</th><th>Pago</th><th>Factura</th><th>Abonado</th><th>Pendiente</th><th></th></tr></thead>
       <tbody>${filas||'<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--gray)">Sin gastos</td></tr>'}</tbody>
     </table></div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cerrar</button><button class="btn btn-primary" onclick="imprimirGastosVehiculo('${vid}')">🖨️ Imprimir</button>`);
@@ -1131,179 +1223,12 @@ function eliminarGastoVeh(gid,vid){if(currentUser?.role!=='admin'){toast('Solo a
 function imprimirGastosVehiculo(vid){
   const v=DB.vehiculos.find(x=>x.id===vid);if(!v)return;
   const gastos=(DB.gastosVehiculos||[]).filter(g=>g.vehiculoId===vid);
-  const totalGastos=gastos.reduce((a,g)=>a+parseFloat(g.monto||0),0);
-  const costo=parseFloat(v.costo||0);
-  const tasa=parseFloat(DB.config.tasaCambio||60);
-  const win=window.open('','_blank','width=820,height=640');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hoja de Costos — ${v.codigo}</title>
-  <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}h2{font-size:16px;font-weight:800;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{background:#0f172a;color:#fff;padding:7px 10px;text-align:left;font-size:11px}td{padding:7px 10px;border-bottom:1px solid #e2e8f0}.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:#f8fafc;padding:12px;border-radius:6px;margin-bottom:16px}.info-item label{font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;display:block}.totals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px}.t-box{text-align:center;padding:12px;border-radius:6px;border:1px solid #e2e8f0}.t-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280}.t-val{font-size:18px;font-weight:800}.t-usd{font-size:11px;color:#6b7280}@media print{.no-print{display:none}}
-.sidebar-toggle{display:none}
-.sidebar-overlay{display:none;position:fixed;inset:0;top:0;background:rgba(0,0,0,.5);z-index:199}
-.sidebar-overlay.open{display:block}
-/* ═══ RESPONSIVE MÓVIL ═══ */
-@media(max-width:768px){
-  /* SIDEBAR deslizable */
-  .sidebar{transform:translateX(-100%);transition:transform .25s ease;top:0;z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.18);width:260px!important}
-  .sidebar.open{transform:translateX(0)}
-  .content-wrap{margin-left:0!important}
-
-  /* TOPBAR */
-  .topbar{padding:0 10px;gap:6px;height:52px}
-  .sidebar-toggle{display:flex!important;align-items:center;justify-content:center;width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:22px;cursor:pointer;flex-shrink:0}
-
-  /* MAIN */
-  .main{padding:14px}
-
-  /* PAGE HEADER */
-  .page-header{flex-direction:column;align-items:flex-start;gap:10px;padding-bottom:12px}
-  .page-header h1{font-size:18px}
-  .page-header>div:last-child{display:flex;flex-wrap:wrap;gap:6px;width:100%}
-  .page-header .btn{flex:1;min-width:120px;justify-content:center}
-
-  /* STATS */
-  .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
-  .stat-card{padding:12px}
-  .stat-value{font-size:16px}
-  .stat-sub{font-size:11px}
-  .stat-ico{font-size:20px}
-
-  /* CARDS */
-  .card{padding:12px;margin-bottom:14px}
-  .card-title{font-size:14px}
-
-  /* GRIDS a 1 columna */
-  .two-col{grid-template-columns:1fr!important}
-  .form-row.c2,.form-row.c3,.form-row.c4{grid-template-columns:1fr!important}
-  .form-field{margin-bottom:14px}
-
-  /* INPUTS grandes para toque */
-  select,
-  input[type=text],input[type=number],input[type=date],
-  input[type=email],input[type=password],input[type=month],
-  input[type=color],textarea{
-    font-size:16px!important;
-    padding:12px 14px!important;
-    min-height:46px!important;
-    border-radius:8px!important;
-  }
-  textarea{min-height:80px!important}
-
-  /* BOTONES */
-  .btn{padding:10px 14px;font-size:13px}
-  .btn-sm{padding:7px 10px;font-size:12px}
-  .btn-row{flex-direction:column;gap:8px}
-  .btn-row .btn{width:100%;justify-content:center}
-
-  /* TABLAS: scroll horizontal */
-  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
-  table{min-width:520px;font-size:12px}
-  th{padding:9px 10px;font-size:10px}
-  td{padding:9px 10px;font-size:12px}
-
-  /* MODAL */
-  .modal-overlay{padding:8px;align-items:flex-end}
-  .modal{
-    width:100vw!important;
-    max-width:100vw!important;
-    padding:20px 14px 28px!important;
-    max-height:95vh!important;
-    overflow-y:auto!important;
-    border-radius:18px 18px 0 0!important;
-    margin:0!important;
-  }
-  .modal-title{font-size:16px}
-  .modal-footer{flex-direction:column;gap:8px}
-  .modal-footer .btn{width:100%!important;padding:14px!important;font-size:15px!important;justify-content:center}
-
-  /* LOGIN: solo columna derecha */
-  .lft{display:none!important}
-  .rgt{width:100%!important;padding:28px 20px!important;min-height:100vh}
-  .rgt-inner{max-width:100%!important}
-
-  /* WELCOME SCREEN */
-  .wc-title{font-size:28px!important}
-
-  /* TOPBAR empresa y nombre — ocultar en móvil si no hay espacio */
-  #topbar-empresa{display:none}
-
-  /* FILTROS en 1 columna */
-  [style*="grid-template-columns:1fr 1fr 1fr 1fr"]{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-  }
-  [style*="grid-template-columns:repeat(4,1fr)"]{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-  }
-  [style*="grid-template-columns:repeat(3,1fr)"]{
-    display:grid!important;
-    grid-template-columns:1fr!important;
-  }
-
-  /* CHART BARS */
-  .chart-bar-label{width:100px!important;font-size:11px}
-  .chart-bar-val{width:80px!important;font-size:11px}
-
-  /* SIDEBAR developer credit */
-  .sidebar .nav-item{padding:10px 16px;font-size:13px}
-
-  /* TABS de suplidores */
-  [onclick^="renderSuplidores"]{
-    font-size:12px!important;
-    padding:8px 10px!important;
-    flex:1;
-    justify-content:center;
-  }
-}
-
-/* Tabletas — 2 columnas */
-@media(min-width:769px) and (max-width:1024px){
-  .sidebar{width:200px}
-  .content-wrap{margin-left:200px}
-  .stats-grid{grid-template-columns:repeat(2,1fr)!important}
-  .main{padding:18px}
-}
-
-/* Landscape en móvil */
-@media(max-width:900px) and (orientation:landscape){
-  .form-row.c2{grid-template-columns:1fr 1fr!important}
-  .form-row.c3{grid-template-columns:1fr 1fr!important}
-  .modal{max-height:90vh!important;border-radius:12px!important}
-  .modal-overlay{align-items:center;padding:12px}
-  .lft{display:none!important}
-  .rgt{width:100%!important}
-}
-</style></head><body>
-  <div style="display:flex;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px">
-    <div><h2>${escHtml(DB.config.empresa||'Dealer System')}</h2><div style="color:#6b7280">HOJA DE COSTOS DEL VEHÍCULO</div></div>
-    <div style="text-align:right;font-size:11px;color:#6b7280">Fecha: ${fmtDate(today())}</div>
-  </div>
-  <div class="info-grid">
-    <div class="info-item"><label>Código</label><strong>${escHtml(v.codigo||'—')}</strong></div>
-    <div class="info-item"><label>Vehículo</label><strong>${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio}</strong></div>
-    <div class="info-item"><label>Color</label>${escHtml(v.color||'—')}</div>
-    <div class="info-item"><label>VIN/Chasis</label>${escHtml(v.vin||'—')}</div>
-    <div class="info-item"><label>Propietario</label>${escHtml(v.propietario||'—')}</div>
-    <div class="info-item"><label>Suplidor</label>${escHtml(v.suplidor||'—')}</div>
-    <div class="info-item"><label>Tipo Compra</label>${v.tipoCompra==='IMPORTACION'?'Importación':v.tipoCompra==='LOCAL'?'Compra Local':'Recibido'}</div>
-    <div class="info-item"><label>Estado</label>${escHtml(v.status||'—')}</div>
-    <div class="info-item"><label>Fecha Compra</label>${fmtDate(v.fecha)}</div>
-  </div>
-  <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Forma Pago</th><th>Cuenta</th><th>Monto RD$</th><th>USD</th></tr></thead><tbody>
-    ${gastos.map(g=>`<tr><td>${fmtDate(g.fecha)}</td><td>${escHtml(g.tipo)}</td><td>${escHtml(g.descripcion||'—')}</td><td>${g.formaPago==='CREDITO'?'Crédito':'Contado'}</td><td>${escHtml(g.cuenta||'—')}</td><td style="font-weight:700;color:#dc2626">${fmt(g.monto)}</td><td style="color:#6b7280">$${(g.monto/tasa).toFixed(2)}</td></tr>`).join('')}
-    ${!gastos.length?'<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:12px">Sin gastos</td></tr>':''}
-  </tbody></table>
-  <div class="totals">
-    <div class="t-box"><div class="t-label">Costo Vehículo</div><div class="t-val" style="color:#2563eb">${fmt(costo)}</div><div class="t-usd">$${(costo/tasa).toFixed(2)} USD</div></div>
-    <div class="t-box"><div class="t-label">Total Gastos</div><div class="t-val" style="color:#dc2626">${fmt(totalGastos)}</div><div class="t-usd">$${(totalGastos/tasa).toFixed(2)} USD</div></div>
-    <div class="t-box" style="background:#fffbeb"><div class="t-label">TOTAL INVERSIÓN</div><div class="t-val" style="color:#d97706">${fmt(costo+totalGastos)}</div><div class="t-usd">$${((costo+totalGastos)/tasa).toFixed(2)} USD</div></div>
-  </div>
-  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:60px">
-    <div style="border-top:1px solid #000;padding-top:4px;text-align:center;font-size:11px">Elaborado por</div>
-    <div style="border-top:1px solid #000;padding-top:4px;text-align:center;font-size:11px">Autorizado por</div>
-  </div>
-  <div style="margin-top:20px;text-align:center" class="no-print"><button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / PDF</button></div>
-  </body></html>`);win.document.close();
+  const tasaActual=DB.config.tasaCambio||60;
+  const tasaStr=prompt('💱 Ingresa la tasa del dólar del día (RD$ por 1 USD):',tasaActual);
+  if(tasaStr===null)return;
+  const tasa=parseFloat(tasaStr)||tasaActual;
+  // Usar función general con gastos de este vehículo
+  _generarPDFGastosVeh(gastos,tasa,'',vid,true);
 }
 
 
@@ -2238,7 +2163,117 @@ function guardarUsuario(idx){
 
 
 
-// ══ CONFIGURACIÓN ══
+// ══ MÓDULO DE ALERTAS ══
+let alertasSeleccionadas=new Set();
+function renderAlertas(){
+  const hoy=today();
+  const hoyDate=new Date();
+  const alertas=[];
+
+  // 1. Vehículos sin VIN
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!v.vin).forEach(v=>{
+    alertas.push({tipo:'SIN_VIN',nivel:'warning',titulo:'Vehículo sin Chasis/VIN',msg:`${v.codigo||''} ${v.marca} ${v.modelo} ${v.anio}`,modulo:'inventario',id:'vin_'+v.id});
+  });
+  // 2. Vehículos sin costos
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id)).forEach(v=>{
+    alertas.push({tipo:'SIN_COSTO',nivel:'warning',titulo:'Vehículo sin costos registrados',msg:`${v.codigo||''} ${v.marca} ${v.modelo} ${v.anio}`,modulo:'gastosVeh',id:'costo_'+v.id});
+  });
+  // 3. CXP pendientes
+  (DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).forEach(g=>{
+    const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+    alertas.push({tipo:'CXP',nivel:'danger',titulo:'Gasto pendiente por pagar',msg:`${v?v.codigo+' '+v.marca+' '+v.modelo:'Vehículo'} — ${g.tipo} — ${(g.moneda||'RD$')==='USD'?'$'+parseFloat(g.montoPendiente).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(g.montoPendiente)}`,modulo:'cxp',id:'cxp_'+g.id});
+  });
+  // 4. CXC vencidas
+  (DB.cxc||[]).filter(x=>(x.status==='PENDIENTE'||x.status==='PARCIAL')&&x.fechaVence&&x.fechaVence<=hoy).forEach(x=>{
+    alertas.push({tipo:'CXC_VENCIDA',nivel:'danger',titulo:'CxC Vencida',msg:`${x.cliente} — ${fmt(x.saldo)} — Venció: ${fmtDate(x.fechaVence)}`,modulo:'cxc',id:'cxcv_'+x.id});
+  });
+  // 5. CXC pendientes
+  (DB.cxc||[]).filter(x=>(x.status==='PENDIENTE'||x.status==='PARCIAL')&&(!x.fechaVence||x.fechaVence>hoy)).forEach(x=>{
+    alertas.push({tipo:'CXC',nivel:'warning',titulo:'Cuenta por cobrar pendiente',msg:`${x.cliente} — ${fmt(x.saldo)}`,modulo:'cxc',id:'cxc_'+x.id});
+  });
+  // 6. Vehículos sin vender 6+ meses
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&v.fecha).forEach(v=>{
+    const dias=Math.floor((hoyDate-new Date(v.fecha+'T12:00:00'))/(1000*60*60*24));
+    if(dias>=365)alertas.push({tipo:'SIN_VENDER_1A',nivel:'danger',titulo:'1 Año sin venderse',msg:`${v.codigo||''} ${v.marca} ${v.modelo} — ${dias} días`,modulo:'inventario',id:'sv1_'+v.id});
+    else if(dias>=180)alertas.push({tipo:'SIN_VENDER_6M',nivel:'warning',titulo:'6 Meses sin venderse',msg:`${v.codigo||''} ${v.marca} ${v.modelo} — ${dias} días`,modulo:'inventario',id:'sv6_'+v.id});
+  });
+  // 7. Documentos de venta pendientes
+  DB.ventas.filter(v=>v.docsPendientes&&v.fechaLimDocs).forEach(v=>{
+    const venc=v.fechaLimDocs<=hoy;
+    alertas.push({tipo:'DOCS',nivel:venc?'danger':'warning',titulo:venc?'Documentos de entrega VENCIDOS':'Documentos de entrega pendientes',msg:`${v.vehiculo||''} — Límite: ${fmtDate(v.fechaLimDocs)}`,modulo:'ventas',id:'doc_'+v.id});
+  });
+
+  const danger=alertas.filter(a=>a.nivel==='danger');
+  const warning=alertas.filter(a=>a.nivel==='warning');
+
+  document.getElementById('page-alertas').innerHTML=`
+    <div class="page-header">
+      <div><h1>🔔 Alertas del Sistema</h1><p>${danger.length} críticas — ${warning.length} advertencias</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="alertasSeleccionadas=new Set(document.querySelectorAll('.alerta-check').forEach(c=>{c.checked=true;alertasSeleccionadas.add(c.value);})||alertasSeleccionadas);renderAlertas()">☑️ Seleccionar Todas</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportarAlertasPDF()">📄 Exportar PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="renderAlertas()">🔄 Actualizar</button>
+      </div>
+    </div>
+    ${alertas.length===0?`<div class="card" style="text-align:center;padding:48px"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:18px;font-weight:700;color:var(--green)">Sin alertas activas</div><p style="color:var(--gray);margin-top:8px">El sistema está en orden</p></div>`:`
+    <div class="card">
+      ${danger.length?`<div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--red2)">🔴 Críticas (${danger.length})</div>
+      ${danger.map(a=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;margin-bottom:6px;background:var(--red2);border-radius:8px;border-left:4px solid var(--red)">
+        <input type="checkbox" class="alerta-check" value="${a.id}" ${alertasSeleccionadas.has(a.id)?'checked':''} onchange="if(this.checked)alertasSeleccionadas.add(this.value);else alertasSeleccionadas.delete(this.value)" style="width:16px;height:16px;margin-top:2px;flex-shrink:0">
+        <div style="flex:1"><div style="font-weight:700;font-size:13px;color:var(--red)">${escHtml(a.titulo)}</div><div style="font-size:12px;color:var(--navy);margin-top:2px">${escHtml(a.msg)}</div></div>
+        <button class="btn btn-sm" style="background:var(--red);color:#fff;flex-shrink:0" onclick="showPage('${a.modulo}')">Ver →</button>
+      </div>`).join('')}`:''}
+      ${warning.length?`<div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--amber2);margin-top:${danger.length?'16px':'0'}">🟡 Advertencias (${warning.length})</div>
+      ${warning.map(a=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:10px;margin-bottom:6px;background:var(--amber2);border-radius:8px;border-left:4px solid var(--amber)">
+        <input type="checkbox" class="alerta-check" value="${a.id}" ${alertasSeleccionadas.has(a.id)?'checked':''} onchange="if(this.checked)alertasSeleccionadas.add(this.value);else alertasSeleccionadas.delete(this.value)" style="width:16px;height:16px;margin-top:2px;flex-shrink:0">
+        <div style="flex:1"><div style="font-weight:700;font-size:13px;color:var(--amber)">${escHtml(a.titulo)}</div><div style="font-size:12px;color:var(--navy);margin-top:2px">${escHtml(a.msg)}</div></div>
+        <button class="btn btn-sm" style="background:var(--amber);color:#fff;flex-shrink:0" onclick="showPage('${a.modulo}')">Ver →</button>
+      </div>`).join('')}`:''}
+    </div>`}`;
+}
+function exportarAlertasPDF(){
+  const hoy=today();const hoyDate=new Date();
+  const alertas=[];
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!v.vin).forEach(v=>alertas.push({nivel:'🔴',titulo:'Sin Chasis/VIN',msg:`${v.codigo||''} ${v.marca} ${v.modelo} ${v.anio}`}));
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id)).forEach(v=>alertas.push({nivel:'🟡',titulo:'Sin costos',msg:`${v.codigo||''} ${v.marca} ${v.modelo}`}));
+  (DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).forEach(g=>{const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);alertas.push({nivel:'🔴',titulo:'CxP Pendiente',msg:`${v?v.codigo:'?'} ${g.tipo} ${fmt(g.montoPendiente)}`});});
+  (DB.cxc||[]).filter(x=>(x.status==='PENDIENTE'||x.status==='PARCIAL')&&x.fechaVence&&x.fechaVence<=hoy).forEach(x=>alertas.push({nivel:'🔴',titulo:'CxC Vencida',msg:`${x.cliente} — ${fmt(x.saldo)}`}));
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&v.fecha).forEach(v=>{const d=Math.floor((hoyDate-new Date(v.fecha+'T12:00:00'))/(1000*60*60*24));if(d>=365)alertas.push({nivel:'🔴',titulo:'1 Año sin vender',msg:`${v.codigo} ${v.marca} ${v.modelo} — ${d} días`});else if(d>=180)alertas.push({nivel:'🟡',titulo:'6 Meses sin vender',msg:`${v.codigo} ${v.marca} ${v.modelo} — ${d} días`});});
+  const win=window.open('','_blank','width=800,height=600');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Alertas</title><style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}h2{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#0f172a;color:#fff;padding:8px;font-size:11px;text-align:left}td{padding:8px;border-bottom:1px solid #e2e8f0}@media print{button{display:none}}</style></head><body>
+  ${DB.config.logoData?`<img src="${DB.config.logoData}" style="max-height:50px;margin-bottom:8px;display:block">`:''}
+  <h2>${escHtml(DB.config.empresa||'MAEDIG')} — REPORTE DE ALERTAS</h2>
+  <div style="color:#6b7280;font-size:11px;margin-bottom:16px">Fecha: ${fmtDate(hoy)} | Total: ${alertas.length} alertas</div>
+  <table><thead><tr><th>Nivel</th><th>Tipo</th><th>Detalle</th></tr></thead><tbody>
+  ${alertas.map(a=>`<tr><td>${a.nivel}</td><td style="font-weight:700">${escHtml(a.titulo)}</td><td>${escHtml(a.msg)}</td></tr>`).join('')}
+  </tbody></table>
+  <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir PDF</button></div>
+  </body></html>`);
+  win.document.close();
+}
+
+function guardarPermisosUsuarioConfig(i){
+  if(currentUser?.role!=='admin'){toast('Solo el administrador puede editar usuarios','error');return;}
+  const u=DB.users[i];
+  if(!u)return;
+  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones'];
+  const ALERT_IDS=['SIN_VIN','SIN_COSTO','CXP','CXC_VENCIDA','CXC','SIN_VENDER_6M','SIN_VENDER_1A','DOCS'];
+  if(u.role!=='admin'){
+    const mods=MODS_IDS.filter(id=>document.getElementById(`cfg-mod-${i}-${id}`)?.checked);
+    const alertas=ALERT_IDS.filter(id=>document.getElementById(`cfg-alerta-${i}-${id}`)?.checked);
+    const puedeEditar=document.getElementById(`cfg-edit-${i}`)?.checked||false;
+    const puedeEliminar=document.getElementById(`cfg-del-${i}`)?.checked||false;
+    const puedeImprimir=document.getElementById(`cfg-print-${i}`)?.checked!==false;
+    DB.users[i].modulos=mods;
+    DB.users[i].alertasPermitidas=alertas;
+    DB.users[i].permisos={editar:puedeEditar,eliminar:puedeEliminar,imprimir:puedeImprimir};
+    if(currentUser.id===u.id){currentUser=DB.users[i];}
+  }
+  sDB('users');
+  toast(`Usuario ${escHtml(u.nombre)} actualizado ✓`,'success');
+  if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
+}
+
 function renderConfig(){
   const c=DB.config;
   // Si Firebase activo pero aún no cargó, mostrar aviso
@@ -2302,14 +2337,19 @@ function renderConfig(){
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px;border-bottom:1px solid var(--gray3);padding-bottom:4px">🎨 Colores Principales del Sistema</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
         ${[
-          {id:'blue',      label:'Color Principal (Botones/Links)', def:'#2563eb'},
-          {id:'navy',      label:'Fondo Menú Lateral', def:'#0f172a'},
-          {id:'navy2',     label:'Fondo Topbar', def:'#1e293b'},
-          {id:'sidebarBg', label:'Fondo Interior Menú', def:'#0f172a'},
-          {id:'mainBg',    label:'Fondo del Contenido', def:'#f1f5f9'},
-          {id:'green',     label:'Color Éxito (Verde)', def:'#16a34a'},
-          {id:'red',       label:'Color Alerta (Rojo)', def:'#dc2626'},
-          {id:'amber',     label:'Color Advertencia (Ámbar)', def:'#d97706'},
+          {id:'blue',        label:'Color Principal (Botones/Links)', def:'#2563eb'},
+          {id:'navy',        label:'Fondo Menú Lateral / Topbar', def:'#0f172a'},
+          {id:'navy2',       label:'Fondo Topbar (secundario)', def:'#1e293b'},
+          {id:'sidebarBg',   label:'Fondo Interior Menú', def:'#0f172a'},
+          {id:'sidebarText', label:'Color Letras del Menú', def:'#cbd5e1'},
+          {id:'sidebarActive',label:'Color Item Activo Menú', def:'#2563eb'},
+          {id:'sidebarActiveText',label:'Letras Item Activo Menú', def:'#ffffff'},
+          {id:'sidebarHover', label:'Color Hover Menú', def:'rgba(255,255,255,0.10)'},
+          {id:'mainBg',      label:'Fondo del Contenido', def:'#f1f5f9'},
+          {id:'mainBg',      label:'Fondo Principal del Sistema', def:'#f1f5f9'},
+          {id:'green',       label:'Color Éxito (Verde)', def:'#16a34a'},
+          {id:'red',         label:'Color Alerta (Rojo)', def:'#dc2626'},
+          {id:'amber',       label:'Color Advertencia (Ámbar)', def:'#d97706'},
         ].map(c=>`
           <div class="form-field">
             <label style="font-size:11px">${escHtml(c.label)}</label>
@@ -2479,6 +2519,41 @@ function renderConfig(){
       </div>
     </div>
 
+    </div>
+    <!-- GESTIÓN USUARIOS DESDE CONFIG -->
+    <div class="card">
+      <div class="card-title">👥 Gestión de Usuarios y Permisos</div>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:12px">El administrador puede editar módulos, permisos y alertas de cada usuario. Los cambios se guardan de inmediato.</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${DB.users.map((u,ui)=>{
+          const MODS_LIST=[{id:'dashboard',label:'Inicio'},{id:'informes',label:'Informe'},{id:'suplidores',label:'Suplidores'},{id:'inventario',label:'Reg. Vehículo'},{id:'gastosVeh',label:'Gastos Veh.'},{id:'cxp',label:'CxP'},{id:'clientes',label:'Clientes'},{id:'ventas',label:'Ventas'},{id:'cxc',label:'CxC'},{id:'gastos',label:'Gastos Emp.'},{id:'nomina',label:'Nómina'},{id:'caja',label:'Caja'},{id:'cotizaciones',label:'Cotizaciones'},{id:'autorizaciones',label:'Autorizaciones'}];
+          const ALERT_TYPES=[{id:'SIN_VIN',label:'Sin VIN'},{id:'SIN_COSTO',label:'Sin costos'},{id:'CXP',label:'CxP pendientes'},{id:'CXC_VENCIDA',label:'CxC vencidas'},{id:'CXC',label:'CxC pendientes'},{id:'SIN_VENDER_6M',label:'6m sin vender'},{id:'SIN_VENDER_1A',label:'1 año sin vender'},{id:'DOCS',label:'Docs pendientes'}];
+          const mods=u.modulos||[];
+          const alertas=u.alertasPermitidas||ALERT_TYPES.map(a=>a.id);
+          return '<div style="background:var(--gray2);border-radius:10px;padding:14px;border:1px solid var(--gray3);margin-bottom:8px">'
+            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+            +'<div><strong>'+escHtml(u.nombre)+'</strong> <span class="badge '+(u.role==='admin'?'badge-purple':'badge-blue')+'" style="font-size:10px">'+(u.role==='admin'?'Admin':_getRolLabel(u.role))+'</span></div>'
+            +'<button class="btn btn-primary btn-sm" onclick="guardarPermisosUsuarioConfig('+ui+')">💾 Guardar</button>'
+            +'</div>'
+            +(u.role==='admin'?'<div style="font-size:12px;color:var(--gray);font-style:italic">El administrador tiene acceso total a todos los módulos.</div>'
+            :'<div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">Módulos:</div>'
+            +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">'
+            +MODS_LIST.map(m=>'<label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 7px;background:#fff;border:1px solid var(--gray3);border-radius:6px;cursor:pointer"><input type="checkbox" id="cfg-mod-'+ui+'-'+m.id+'" '+(mods.includes(m.id)?'checked':'')+' style="accent-color:var(--blue)"> '+m.label+'</label>').join('')
+            +'</div>'
+            +'<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
+            +'<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="cfg-edit-'+ui+'" '+((u.permisos&&u.permisos.editar)?'checked':'')+' style="accent-color:var(--amber)"> ✏️ Puede Editar</label>'
+            +'<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="cfg-del-'+ui+'" '+((u.permisos&&u.permisos.eliminar)?'checked':'')+' style="accent-color:var(--red)"> 🗑 Puede Eliminar</label>'
+            +'<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" id="cfg-print-'+ui+'" '+(u.permisos&&u.permisos.imprimir!==false?'checked':'')+' style="accent-color:var(--green)"> 🖨️ Puede Imprimir</label>'
+            +'</div>'
+            +'<div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">Alertas que ve:</div>'
+            +'<div style="display:flex;flex-wrap:wrap;gap:5px">'
+            +ALERT_TYPES.map(a=>'<label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 7px;background:#fff;border:1px solid var(--gray3);border-radius:6px;cursor:pointer"><input type="checkbox" id="cfg-alerta-'+ui+'-'+a.id+'" '+(alertas.includes(a.id)?'checked':'')+' style="accent-color:var(--amber)"> '+a.label+'</label>').join('')
+            +'</div>')
+            +'</div>';
+        }).join('')}
+      </div>
+    </div>
+
     </div>`;
 }
 function agregarRolConfig(){
@@ -2604,9 +2679,9 @@ function guardarConfig(){
   // Mantener compatibilidad con campo bancos simple
   DB.config.bancos=bancoCuentas.map(b=>b.banco);
   // Guardar colores
-  const _colorIds=['blue','navy','navy2','sidebarBg','mainBg','green','red','amber','loginBg1','loginBg2','loginAccent','welcomeBg1','welcomeBg2','welcomeText'];
+  const _colorIds=['blue','navy','navy2','sidebarBg','sidebarText','sidebarActive','sidebarActiveText','sidebarHover','mainBg','green','red','amber','loginBg1','loginBg2','loginAccent','welcomeBg1','welcomeBg2','welcomeText'];
   const colores={};
-  _colorIds.forEach(id=>{const el=document.getElementById('cf-color-'+id);if(el)colores[id]=el.value;});
+  _colorIds.forEach(id=>{const hexEl=document.getElementById('cf-color-'+id+'-hex');const colEl=document.getElementById('cf-color-'+id);const val=(hexEl?.value||colEl?.value||'').trim();if(val)colores[id]=val;});
   DB.config.colores=colores;
   aplicarColoresSistema();
   // Guardar compañías de seguros
@@ -2616,15 +2691,17 @@ function guardarConfig(){
   const emp=document.getElementById('topbar-empresa');
   if(emp&&DB.config.empresa)emp.textContent=DB.config.empresa;
   actualizarLogoSidebar();
-  // Mostrar mensaje inmediatamente
+  // Toast prominente
   toast('✅ Configuración guardada correctamente','success');
-  // Sincronizar con Firebase en segundo plano
+  // Botón feedback visual
+  const btnG=document.getElementById('btn-guardar-config');
+  if(btnG){const orig=btnG.innerHTML;btnG.innerHTML='✅ Guardado';btnG.style.background='var(--green)';setTimeout(()=>{btnG.innerHTML=orig;btnG.style.background='';},2500);}
   if(typeof fbGuardar==='function'&&window._fbActivo){
     fbGuardar('config').catch(e=>console.warn('FB config save:',e));
   }
 }
 function previsualizarColores(){
-  const ids=['blue','navy','navy2','green','red','amber','loginBg1','loginBg2','loginAccent','welcomeBg1','welcomeBg2','welcomeText'];
+  const ids=['blue','navy','navy2','sidebarBg','sidebarText','sidebarActive','sidebarActiveText','sidebarHover','mainBg','green','red','amber','loginBg1','loginBg2','loginAccent','welcomeBg1','welcomeBg2','welcomeText'];
   const colores={};
   ids.forEach(id=>{const el=document.getElementById('cf-color-'+id);if(el)colores[id]=el.value;});
   DB.config.colores={...DB.config.colores,...colores};
@@ -2632,7 +2709,7 @@ function previsualizarColores(){
   toast('Previsualización aplicada — Guarda la configuración para conservar los cambios','success');
 }
 function resetColores(){
-  const defaults={blue:'#2563eb',navy:'#0f172a',navy2:'#1e293b',green:'#16a34a',red:'#dc2626',amber:'#d97706',loginBg1:'#0f172a',loginBg2:'#1e3a5f',loginAccent:'#2563eb',welcomeBg1:'#0f172a',welcomeBg2:'#1e3a5f',welcomeText:'#ffffff'};
+  const defaults={blue:'#2563eb',navy:'#0f172a',navy2:'#1e293b',sidebarBg:'#0f172a',sidebarText:'#cbd5e1',sidebarActive:'#2563eb',sidebarActiveText:'#ffffff',sidebarHover:'rgba(255,255,255,0.08)',mainBg:'#f1f5f9',green:'#16a34a',red:'#dc2626',amber:'#d97706',loginBg1:'#0f172a',loginBg2:'#1e3a5f',loginAccent:'#2563eb',welcomeBg1:'#0f172a',welcomeBg2:'#1e3a5f',welcomeText:'#ffffff'};
   Object.entries(defaults).forEach(([id,val])=>{
     const p=document.getElementById('cf-color-'+id);
     const h=document.getElementById('cf-color-'+id+'-hex');
@@ -2682,6 +2759,15 @@ function renderGastosVeh(){
   if(filtroVeh)gastos=gastos.filter(g=>g.vehiculoId===filtroVeh);
   if(filtroSup)gastos=gastos.filter(g=>g.suplidor===filtroSup);
   if(filtroStatus)gastos=gastos.filter(g=>(g.statusGasto||'PENDIENTE')===filtroStatus);
+  // Separar por moneda
+  const gastosRD=gastos.filter(g=>(g.moneda||'RD$')==='RD$');
+  const gastosUSD=gastos.filter(g=>g.moneda==='USD');
+  const totalRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const pagadoRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const pendRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const totalUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const pagadoUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const pendUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
   const totalMonto=gastos.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
   const totalPagado=gastos.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
   const totalPendiente=gastos.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
@@ -2690,7 +2776,7 @@ function renderGastosVeh(){
 
   document.getElementById('page-gastosVeh').innerHTML=`
     <div class="page-header">
-      <div><h1>💸 Gastos de Vehículo</h1><p>${gastos.length} registro(s) — Pendiente: <strong style="color:var(--red)">${fmt(totalPendiente)}</strong></p></div>
+      <div><h1>💸 Gastos de Vehículo</h1><p>${gastos.length} registro(s) — Pendiente RD$: <strong style="color:var(--red)">${pendRD.toLocaleString('es-DO',{minimumFractionDigits:2})} | USD: $${pendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></p></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="gveh-btn-pagar" disabled class="btn btn-sm btn-green" style="${ds}" onclick="gvehAccion('pagar')">💵 Registrar Pago</button>
         ${currentUser?.role==='admin'?`<button id="gveh-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="gvehAccion('editar')">✏️ Editar</button>
@@ -2709,10 +2795,10 @@ function renderGastosVeh(){
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Suplidor</label>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Suplidor (Vehículos)</label>
           <select id="gveh-filtro-sup" onchange="renderGastosVeh()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
             <option value="">Todos los suplidores</option>
-            ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===filtroSup?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
+            ${DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo').map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===filtroSup?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
@@ -2730,10 +2816,24 @@ function renderGastosVeh(){
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
-      <div class="stat-card red"><div class="stat-ico">💸</div><div class="stat-label">Total Facturado</div><div class="stat-value">${fmt(totalMonto)}</div><div class="stat-sub">$${(totalMonto/tasa).toFixed(2)} USD</div></div>
-      <div class="stat-card green"><div class="stat-ico">✅</div><div class="stat-label">Total Pagado</div><div class="stat-value">${fmt(totalPagado)}</div><div class="stat-sub">$${(totalPagado/tasa).toFixed(2)} USD</div></div>
-      <div class="stat-card amber"><div class="stat-ico">⏳</div><div class="stat-label">Total Pendiente</div><div class="stat-value">${fmt(totalPendiente)}</div><div class="stat-sub">$${(totalPendiente/tasa).toFixed(2)} USD</div></div>
+    <!-- RESUMEN POR MONEDA -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+      <div class="card" style="margin-bottom:0;border-top:3px solid var(--green)">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">🇩🇴 Gastos en Pesos (RD$)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Total</div><div style="font-size:15px;font-weight:800;color:var(--navy)">${totalRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pagado</div><div style="font-size:15px;font-weight:800;color:var(--green)">${pagadoRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pendiente</div><div style="font-size:15px;font-weight:800;color:var(--red)">${pendRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;border-top:3px solid var(--blue)">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">🇺🇸 Gastos en Dólares (USD)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Total</div><div style="font-size:15px;font-weight:800;color:var(--navy)">$${totalUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pagado</div><div style="font-size:15px;font-weight:800;color:var(--green)">$${pagadoUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pendiente</div><div style="font-size:15px;font-weight:800;color:var(--red)">$${pendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -2746,7 +2846,7 @@ function renderGastosVeh(){
           <th>Suplidor</th>
           <th>Tipo de Gasto</th>
           <th>Moneda</th>
-          <th>Cuenta Salida</th>
+          <th>Banco / Cuenta</th>
           <th>Factura</th>
           <th>Abonado</th>
           <th>Pendiente</th>
@@ -2764,9 +2864,9 @@ function renderGastosVeh(){
             <td><span class="badge badge-amber" style="font-size:11px">${escHtml(g.tipo||'—')}</span></td>
             <td><span class="badge badge-blue" style="font-size:11px">${g.moneda||'RD$'}</span></td>
             <td style="font-size:12px">${escHtml(g.cuenta||'—')}</td>
-            <td style="font-weight:700;color:var(--navy)">${fmt(g.montoFactura||0)}</td>
-            <td style="color:var(--green);font-weight:600">${fmt(g.montoPagado||0)}</td>
-            <td style="font-weight:700;color:${parseFloat(g.montoPendiente||0)>0?'var(--red)':'var(--green)'}">${fmt(g.montoPendiente||0)}</td>
+            <td style="font-weight:700;color:var(--navy)">${g.moneda==='USD'?'$'+parseFloat(g.montoFactura||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(g.montoFactura||0)}</td>
+            <td style="color:var(--green);font-weight:600">${g.moneda==='USD'?'$'+parseFloat(g.montoPagado||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(g.montoPagado||0)}</td>
+            <td style="font-weight:700;color:${parseFloat(g.montoPendiente||0)>0?'var(--red)':'var(--green)'}">${g.moneda==='USD'?'$'+parseFloat(g.montoPendiente||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(g.montoPendiente||0)}</td>
             <td style="font-size:12px;color:var(--gray)">${fmtDate(g.fechaPago)||'—'}</td>
             <td><span class="badge ${sColor[g.statusGasto||'PENDIENTE']||'badge-gray'}">${g.statusGasto||'PENDIENTE'}</span></td>
 
@@ -2797,11 +2897,9 @@ function nuevoGastoVeh(){
         </select>
       </div>
       <div class="form-field"><label class="required">Suplidor</label>
-        <select id="ngv-sup" onchange="mostrarTipoSuplidor(this.value,'ngv-tipo-sup-info')">
-          <option value="">Seleccionar suplidor...</option>
-          ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" data-tipo="${escHtml(s.tipoSuplidor||'')}">${escHtml(s.empresa||s.nombre||'')}${s.propietario?' — '+s.propietario:''}</option>`).join('')}
+        <select id="ngv-sup">
+          ${(()=>{const supVeh=DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo');return supVeh.length?supVeh.map((s,i)=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${i===0?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join(''):'<option value="">Sin suplidores de vehículos</option>';})()}
         </select>
-        <div id="ngv-tipo-sup-info" style="font-size:11px;color:var(--gray);margin-top:3px"></div>
       </div>
     </div>
     <div class="form-row c3">
@@ -2815,14 +2913,24 @@ function nuevoGastoVeh(){
         </div>
       </div>
       <div class="form-field"><label class="required">Moneda</label>
-        <select id="ngv-moneda" onchange="calcPendienteGVeh()">
+        <select id="ngv-moneda" onchange="toggleGVehMoneda();calcPendienteGVeh()">
           <option value="RD$">RD$ — Pesos</option>
           <option value="USD">USD — Dólares</option>
         </select>
       </div>
-      <div class="form-field"><label class="required">Banco / Cuenta de Salida</label>
+      <div class="form-field" id="ngv-tasa-wrap" style="display:none"><label>Tasa de Cambio (RD$ x USD)</label>
+        <input type="number" id="ngv-tasa" value="${DB.config.tasaCambio||60}" step="0.01" oninput="calcPendienteGVeh()">
+      </div>
+    </div>
+    <div class="form-row c2" id="ngv-banco-wrap">
+      <div class="form-field"><label class="required">Banco</label>
+        <select id="ngv-banco" onchange="actualizarCuentasNGV()">
+          ${(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>'}
+        </select>
+      </div>
+      <div class="form-field"><label class="required">Cuenta de Salida</label>
         <select id="ngv-cuenta">
-          ${opcionesBanco.join('')}
+          ${(()=>{const bcs=DB.config.bancoCuentas||[];const b=bcs[0];return b?(b.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';})()}
         </select>
       </div>
     </div>
@@ -2849,14 +2957,24 @@ function nuevoGastoVeh(){
      <button class="btn btn-primary" onclick="guardarNuevoGastoVeh()">💾 Guardar</button>`);
 }
 
-function mostrarTipoSuplidor(nombre, infoId){
-  const inf=document.getElementById(infoId);
-  if(!inf)return;
+function toggleGVehMoneda(){
+  const moneda=document.getElementById('ngv-moneda')?.value;
+  const tasaWrap=document.getElementById('ngv-tasa-wrap');
+  if(tasaWrap)tasaWrap.style.display=moneda==='USD'?'block':'none';
+}
+function actualizarCuentasNGV(){
+  const bancoEl=document.getElementById('ngv-banco');
+  const cuentaEl=document.getElementById('ngv-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  cuentaEl.innerHTML=(b&&b.cuentas&&b.cuentas.length)?b.cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';
+}
+function mostrarTipoSuplidor(nombre,infoId){
+  const inf=document.getElementById(infoId);if(!inf)return;
   const sup=DB.suplidores.find(s=>(s.empresa||s.nombre||'')===nombre);
   if(!sup){inf.textContent='';return;}
-  const tipo=sup.tipoSuplidor==='vehiculo'?'🚗 Suplidor de Vehículos':
-             sup.tipoSuplidor==='empresa'?'🏢 Suplidor de Empresa':'';
-  inf.textContent=tipo?'Tipo: '+tipo:'';
+  inf.textContent=sup.tipoSuplidor==='vehiculo'?'Tipo: 🚗 Suplidor de Vehículos':sup.tipoSuplidor==='empresa'?'Tipo: 🏢 Suplidor de Empresa':'';
 }
 
 function calcPendienteGVeh(){
@@ -2876,13 +2994,19 @@ function guardarNuevoGastoVeh(){
   if(!factura){toast('El monto de factura es requerido','error');return;}
   const abono=parseFloat((document.getElementById('ngv-abono').value||'0').replace(/,/g,''));
   const pendiente=factura-abono;
+  const moneda=document.getElementById('ngv-moneda').value;
+  const tasaUsada=moneda==='USD'?parseFloat(document.getElementById('ngv-tasa')?.value||DB.config.tasaCambio||60):parseFloat(DB.config.tasaCambio||60);
+  const bancoVal=document.getElementById('ngv-banco')?.value||'';
+  const cuentaVal=document.getElementById('ngv-cuenta')?.value||'';
   const g={
     id:uid(),
     vehiculoId:vid,
     suplidor:sup,
     tipo,
-    moneda:document.getElementById('ngv-moneda').value,
-    cuenta:document.getElementById('ngv-cuenta').value,
+    moneda,
+    tasaCambio:tasaUsada,
+    banco:bancoVal,
+    cuenta:cuentaVal,
     montoFactura:factura,
     montoPagado:abono,
     montoPendiente:pendiente,
@@ -2900,9 +3024,9 @@ function guardarNuevoGastoVeh(){
     sDB('vehiculos');
   }
   sDB('gastosVehiculos');
-  closeModal();
   toast('Gasto registrado ✓','success');
   renderGastosVeh();
+  preguntarCerrar('closeModal()');
 }
 
 function abonarGastoVeh(gid){
@@ -3074,39 +3198,96 @@ function exportarGastosVehPDF(){
   if(filtroVeh)gastos=gastos.filter(g=>g.vehiculoId===filtroVeh);
   if(filtroSup)gastos=gastos.filter(g=>g.suplidor===filtroSup);
   if(filtroStatus)gastos=gastos.filter(g=>(g.statusGasto||'PENDIENTE')===filtroStatus);
-  const tasa=parseFloat(DB.config.tasaCambio||60);
-  const totalFactura=gastos.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
-  const totalPagado=gastos.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
-  const totalPend=gastos.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
-  const win=window.open('','_blank','width=1100,height=750');
-  const empresa=DB.config.empresa||'DealerSystem';
+  // Pedir tasa del día
+  const tasaActual=DB.config.tasaCambio||60;
+  const tasaStr=prompt('💱 Ingresa la tasa del dólar del día (RD$ por 1 USD):',tasaActual);
+  if(tasaStr===null)return; // canceló
+  const tasa=parseFloat(tasaStr)||tasaActual;
+  _generarPDFGastosVeh(gastos,tasa,filtroSup,filtroVeh,false);
+}
+
+function _generarPDFGastosVeh(gastos,tasa,filtroSup,filtroVeh,soloUnVeh){
+  const empresa=DB.config.empresa||'MAEDIG';
+  const logo=DB.config.logoData||'';
+  const rnc=DB.config.rnc||'';
+  const tel=DB.config.telefono||'';
+  const dir=DB.config.direccion||'';
   const filtroLabel=filtroSup?('Suplidor: '+filtroSup):(filtroVeh?('Vehículo: '+(DB.vehiculos.find(v=>v.id===filtroVeh)?.codigo||'')):'General');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Gastos de Vehículo</title>
+  // Separar por moneda
+  const gastosRD=gastos.filter(g=>(g.moneda||'RD$')==='RD$');
+  const gastosUSD=gastos.filter(g=>g.moneda==='USD');
+  // Totales RD$
+  const totFactRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const totPagRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const totPendRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  // Totales USD
+  const totFactUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const totPagUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const totPendUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  // Total general en RD$
+  const totGenRD=totFactRD+(totFactUSD*tasa);
+  const totPendGenRD=totPendRD+(totPendUSD*tasa);
+  const fmtUSD=(n)=>'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2});
+  const sc={PAGADO:'g',ABONADO:'a',PENDIENTE:'r'};
+  const filas=(lista,esUSD)=>lista.map(g=>{
+    const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+    const fV=esUSD?fmtUSD:fmt;
+    return`<tr><td>${fmtDate(g.fecha)}</td><td>${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td><td>${escHtml(g.suplidor||'—')}</td><td>${escHtml(g.tipo||'—')}</td><td>${escHtml(g.cuenta||'—')}</td><td style="font-weight:700">${fV(g.montoFactura||0)}</td><td style="color:#16a34a">${fV(g.montoPagado||0)}</td><td style="color:#dc2626;font-weight:700">${fV(g.montoPendiente||0)}</td><td><span class="badge ${sc[g.statusGasto||'PENDIENTE']||'r'}">${g.statusGasto||'PENDIENTE'}</span></td></tr>`;
+  }).join('');
+  const win=window.open('','_blank','width=1100,height=750');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Gastos de Vehículo — ${escHtml(empresa)}</title>
   <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px;color:#0f172a}
   h2{font-size:18px;margin:0}h3{font-size:13px;margin:4px 0;color:#475569}
-  table{width:100%;border-collapse:collapse;margin-top:16px}
-  th{background:#0f172a;color:#fff;padding:8px 10px;text-align:left;font-size:11px}
-  td{padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:12px}
+  h4{font-size:13px;font-weight:800;margin:20px 0 6px;padding:6px 10px;border-radius:4px}
+  .rd{background:#fee2e2;color:#dc2626}.usd{background:#dbeafe;color:#2563eb}
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  th{background:#0f172a;color:#fff;padding:7px 10px;text-align:left;font-size:11px}
+  td{padding:7px 10px;border-bottom:1px solid #e2e8f0;font-size:12px}
   tr:nth-child(even){background:#f8fafc}
   .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
   .g{background:#dcfce7;color:#16a34a}.r{background:#fee2e2;color:#dc2626}.a{background:#fef3c7;color:#d97706}
-  .totals{margin-top:16px;border-top:2px solid #2563eb;padding-top:12px;display:flex;gap:24px}
-  .tot-item{text-align:center}.tot-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase}
-  .tot-val{font-size:18px;font-weight:800;margin-top:4px}
+  .resumen{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-top:20px}
+  .res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+  .res-box{text-align:center;padding:10px;border-radius:6px;border:1px solid #e2e8f0}
+  .res-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase}
+  .res-val{font-size:16px;font-weight:800;margin-top:4px}
   @media print{.noprint{display:none}}</style></head><body>
-  <div style="border-bottom:3px solid #2563eb;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between">
-    <div><h2>${escHtml(empresa)}</h2><h3>REPORTE DE GASTOS DE VEHÍCULO — ${filtroLabel}</h3><div style="color:#6b7280;font-size:11px">Fecha: ${fmtDate(today())} | Tasa USD: RD$ ${tasa}</div></div>
+  <div style="border-bottom:3px solid #2563eb;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      ${logo?`<img src="${logo}" style="max-height:60px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block">`:''}
+      <h2>${escHtml(empresa)}</h2>
+      ${rnc?`<div style="font-size:11px;color:#475569">RNC: ${escHtml(rnc)}</div>`:''}
+      ${tel?`<div style="font-size:11px;color:#475569">Tel: ${escHtml(tel)}</div>`:''}
+      ${dir?`<div style="font-size:11px;color:#475569">${escHtml(dir)}</div>`:''}
+      <h3 style="margin-top:6px">REPORTE DE GASTOS DE VEHÍCULO — ${filtroLabel}</h3>
+      <div style="color:#6b7280;font-size:11px">Fecha: ${fmtDate(today())} | Tasa USD aplicada: RD$ ${tasa}</div>
+    </div>
     <div style="text-align:right;font-size:11px;color:#6b7280">${gastos.length} registro(s)</div>
   </div>
-  <table><thead><tr><th>Fecha</th><th>Vehículo</th><th>Suplidor</th><th>Tipo Gasto</th><th>Moneda</th><th>Cuenta</th><th>Factura</th><th>Pagado</th><th>Pendiente</th><th>Estado</th></tr></thead>
-  <tbody>${gastos.map(g=>{const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
-    const sc={PAGADO:'g',ABONADO:'a',PENDIENTE:'r'};
-    return`<tr><td>${fmtDate(g.fecha)}</td><td>${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td><td>${escHtml(g.suplidor||'—')}</td><td>${escHtml(g.tipo||'—')}</td><td>${g.moneda||'RD$'}</td><td>${escHtml(g.cuenta||'—')}</td><td style="font-weight:700">${fmt(g.montoFactura||0)}</td><td style="color:#16a34a">${fmt(g.montoPagado||0)}</td><td style="color:#dc2626;font-weight:700">${fmt(g.montoPendiente||0)}</td><td><span class="badge ${sc[g.statusGasto||'PENDIENTE']||''}">${g.statusGasto||'PENDIENTE'}</span></td></tr>`;
-  }).join('')}</tbody></table>
-  <div class="totals">
-    <div class="tot-item"><div class="tot-label">Total Facturado</div><div class="tot-val">${fmt(totalFactura)}</div><div style="font-size:11px;color:#6b7280">$${(totalFactura/tasa).toFixed(2)} USD</div></div>
-    <div class="tot-item"><div class="tot-label">Total Pagado</div><div class="tot-val" style="color:#16a34a">${fmt(totalPagado)}</div></div>
-    <div class="tot-item"><div class="tot-label">Total Pendiente</div><div class="tot-val" style="color:#dc2626">${fmt(totalPend)}</div></div>
+  ${gastosRD.length>0?`
+  <h4 class="rd">💰 Gastos en RD$ — Pesos Dominicanos</h4>
+  <table><thead><tr><th>Fecha</th><th>Vehículo</th><th>Suplidor</th><th>Tipo Gasto</th><th>Cuenta</th><th>Factura RD$</th><th>Pagado RD$</th><th>Pendiente RD$</th><th>Estado</th></tr></thead>
+  <tbody>${filas(gastosRD,false)}
+  <tr style="background:#fee2e2"><td colspan="5" style="font-weight:800;text-align:right">SUBTOTAL RD$:</td>
+  <td style="font-weight:800">${fmt(totFactRD)}</td><td style="color:#16a34a;font-weight:800">${fmt(totPagRD)}</td><td style="color:#dc2626;font-weight:800">${fmt(totPendRD)}</td><td></td></tr>
+  </tbody></table>`:``}
+  ${gastosUSD.length>0?`
+  <h4 class="usd">💵 Gastos en USD — Dólares Americanos</h4>
+  <table><thead><tr><th>Fecha</th><th>Vehículo</th><th>Suplidor</th><th>Tipo Gasto</th><th>Cuenta</th><th>Factura USD</th><th>Pagado USD</th><th>Pendiente USD</th><th>Estado</th></tr></thead>
+  <tbody>${filas(gastosUSD,true)}
+  <tr style="background:#dbeafe"><td colspan="5" style="font-weight:800;text-align:right">SUBTOTAL USD:</td>
+  <td style="font-weight:800">${fmtUSD(totFactUSD)}</td><td style="color:#16a34a;font-weight:800">${fmtUSD(totPagUSD)}</td><td style="color:#2563eb;font-weight:800">${fmtUSD(totPendUSD)}</td><td></td></tr>
+  </tbody></table>`:``}
+  <div class="resumen">
+    <div style="font-size:13px;font-weight:800;margin-bottom:4px">📊 RESUMEN GENERAL (Tasa: RD$ ${tasa} x USD)</div>
+    <div class="res-grid">
+      <div class="res-box"><div class="res-label">Total Facturado RD$</div><div class="res-val">${fmt(totFactRD)}</div></div>
+      <div class="res-box"><div class="res-label">Total Facturado USD</div><div class="res-val" style="color:#2563eb">${fmtUSD(totFactUSD)}</div><div style="font-size:11px;color:#6b7280">≈ ${fmt(totFactUSD*tasa)}</div></div>
+      <div class="res-box" style="background:#fff3cd"><div class="res-label">TOTAL GENERAL RD$</div><div class="res-val" style="color:#d97706">${fmt(totGenRD)}</div></div>
+      <div class="res-box"><div class="res-label">Pendiente RD$</div><div class="res-val" style="color:#dc2626">${fmt(totPendRD)}</div></div>
+      <div class="res-box"><div class="res-label">Pendiente USD</div><div class="res-val" style="color:#2563eb">${fmtUSD(totPendUSD)}</div><div style="font-size:11px;color:#6b7280">≈ ${fmt(totPendUSD*tasa)}</div></div>
+      <div class="res-box" style="background:#fee2e2"><div class="res-label">TOTAL PENDIENTE RD$</div><div class="res-val" style="color:#dc2626">${fmt(totPendGenRD)}</div></div>
+    </div>
   </div>
   <div class="noprint" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="padding:10px 28px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button></div>
   </body></html>`);
@@ -3170,7 +3351,18 @@ function renderVentas(){
         <div class="stat-sub">En tránsito: ${ventasFilt.filter(v=>v.estadoVenta==='TRÁNSITO').length}</div>
       </div>
     </div>
-    <div class="card">
+    <!-- TABS: Ventas / Entregas -->
+    <div style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--gray3)">
+      <button onclick="ventasTab('ventas')" id="vtab-ventas" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;padding:9px 20px;font-size:13px;background:var(--blue);color:#fff;font-weight:700;border:none">💰 Ventas</button>
+      <button onclick="ventasTab('entregas')" id="vtab-entregas" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;margin-left:4px;padding:9px 20px;font-size:13px;background:var(--gray2);color:var(--navy);border:none">
+        🚗 Entregas Pendientes
+        ${(()=>{const n=DB.ventas.filter(v=>v.estadoVenta==='TRÁNSITO').length;return n>0?`<span style="background:var(--red);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px;font-weight:800">${n}</span>`:'';})()}
+      </button>
+    </div>
+
+    <!-- PANEL VENTAS -->
+    <div id="vpanel-ventas">
+    <div class="card" style="border-radius:0 12px 12px 12px">
       <div class="search-wrap"><input class="search-input" placeholder="Buscar por factura, cliente, vehículo, chasis..." oninput="filterTable('ventas-tbl',this.value)"></div>
       <div class="table-wrap"><table id="ventas-tbl">
         <thead><tr>
@@ -3232,8 +3424,81 @@ function renderVentas(){
         }).join(''):'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--gray)">Sin ventas registradas</td></tr>'}
         </tbody>
       </table></div>
+    </div>
+    </div><!-- /vpanel-ventas -->
+
+    <!-- PANEL ENTREGAS -->
+    <div id="vpanel-entregas" style="display:none">
+    <div class="card" style="border-radius:0 12px 12px 12px;margin-top:0">
+      <div style="padding:4px 0 12px;font-size:13px;color:var(--gray)">Vehículos en tránsito — pendientes de entrega de placa/matrícula al cliente.</div>
+      <div class="table-wrap"><table id="entregas-tbl">
+        <thead><tr>
+          <th>Factura</th><th>Fecha Venta</th><th>Vehículo</th><th>Chasis</th>
+          <th>Cliente</th><th>CxC</th><th>CxP Gestor</th><th>Días</th><th>Acción</th>
+        </tr></thead>
+        <tbody id="entregas-tbody">
+        </tbody>
+      </table></div>
+    </div>
+    </div><!-- /vpanel-entregas -->
     </div>`;
   const ms=document.getElementById('ventas-mes');if(ms)ms.value=mes;
+  // Renderizar contenido de entregas
+  renderEntregasTabla();
+}
+
+function renderEntregasTabla(){
+  const tbody=document.getElementById('entregas-tbody');
+  if(!tbody)return;
+  const transito=DB.ventas.filter(v=>v.estadoVenta==='TRÁNSITO');
+  if(!transito.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--gray)">✅ Sin entregas pendientes</td></tr>';
+    return;
+  }
+  tbody.innerHTML=transito.slice().reverse().map(v=>{
+    const veh=DB.vehiculos.find(x=>x.id===v.vehiculoId);
+    const cxcPend=(DB.cxc||[]).filter(x=>x.ventaId===v.id&&x.status!=='SALDADO');
+    const cxpPend=(DB.gastosVehiculos||[]).filter(g=>g.ventaId===v.id&&parseFloat(g.montoPendiente||0)>0);
+    const dias=Math.floor((new Date()-new Date(v.fecha))/(1000*60*60*24));
+    const diasColor=dias>30?'var(--red)':dias>15?'var(--amber)':'var(--green)';
+    const cxcBadge=cxcPend.length
+      ?`<span style="background:var(--red2);color:var(--red);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">💰 ${cxcPend.length} CxC pend.</span>`
+      :'<span style="background:var(--green2);color:var(--green);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">✅ Cobrado</span>';
+    const cxpBadge=cxpPend.length
+      ?`<span style="background:var(--amber2);color:var(--amber);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">⏳ ${cxpPend.length} CxP pend.</span>`
+      :'<span style="background:var(--green2);color:var(--green);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">✅ Pagado</span>';
+    const fotoEntrega=v.fotoEntrega?`<span style="background:var(--green2);color:var(--green);padding:2px 7px;border-radius:4px;font-size:11px">📷 Foto OK</span>`:'';
+    return `<tr>
+      <td style="font-family:monospace;font-size:11px;font-weight:700;color:var(--blue)">${escHtml(v.factura||'—')}</td>
+      <td style="font-size:12px">${fmtDate(v.fecha)}</td>
+      <td style="font-size:12px;font-weight:700">${escHtml(v.vehiculo||'—')}<br><span style="font-size:10px;color:var(--blue);font-family:monospace">${escHtml(v.codigo||'')}</span></td>
+      <td style="font-family:monospace;font-size:11px;color:var(--gray)">${escHtml(veh?.vin||'—')}</td>
+      <td style="font-weight:700">${escHtml(v.cliente||'—')}</td>
+      <td>${cxcBadge}</td>
+      <td>${cxpBadge}</td>
+      <td style="font-weight:800;color:${diasColor}">${dias}d ${fotoEntrega}</td>
+      <td><button class="btn btn-green btn-sm" onclick="registrarEntrega('${v.id}')">📦 Registrar Entrega</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function ventasTab(tab){
+  const pv=document.getElementById('vpanel-ventas');
+  const pe=document.getElementById('vpanel-entregas');
+  const tv=document.getElementById('vtab-ventas');
+  const te=document.getElementById('vtab-entregas');
+  if(tab==='ventas'){
+    if(pv)pv.style.display='block';
+    if(pe)pe.style.display='none';
+    if(tv){tv.style.background='var(--blue)';tv.style.color='#fff';}
+    if(te){te.style.background='var(--gray2)';te.style.color='var(--navy)';}
+  } else {
+    if(pv)pv.style.display='none';
+    if(pe)pe.style.display='block';
+    if(tv){tv.style.background='var(--gray2)';tv.style.color='var(--navy)';}
+    if(te){te.style.background='var(--blue)';te.style.color='#fff';}
+    renderEntregasTabla();
+  }
 }
 
 function nuevaVenta(){
@@ -3281,12 +3546,15 @@ function nuevaVenta(){
     </div>
     <div class="form-row c3" style="margin-bottom:4px">
       <div class="form-field"><label>Moneda de Venta</label>
-        <select id="sv-moneda" onchange="calcPend()">
+        <select id="sv-moneda" onchange="toggleTasaVenta();calcPend()">
           <option value="RD$">RD$ — Pesos</option>
           <option value="USD">USD — Dólares</option>
         </select>
       </div>
-      <div id="sv-equiv-wrap" style="display:none" class="form-field"><label>Equivalente</label>
+      <div id="sv-tasa-wrap" style="display:none" class="form-field"><label>💱 Tasa del Día (RD$ x USD)</label>
+        <input type="number" id="sv-tasa" step="0.01" value="${DB.config.tasaCambio||60}" placeholder="Ej: 60.50" oninput="calcPend()">
+      </div>
+      <div id="sv-equiv-wrap" style="display:none" class="form-field"><label>Equivalente en RD$</label>
         <input type="text" id="sv-equiv" readonly style="background:#f8fafc;font-weight:700;color:var(--blue)">
       </div>
     </div>
@@ -3302,23 +3570,52 @@ function nuevaVenta(){
       </div>
     </div>
     <div style="background:var(--blue3);border-radius:8px;padding:12px;margin-top:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-size:13px;font-weight:700;color:var(--blue)">📋 Tipo de Transferencia</div>
-      </div>
-      <div class="form-row c2" style="margin-bottom:0">
+      <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">📋 Tipo de Transferencia</div>
+      <div class="form-row c2" style="margin-bottom:10px">
         <div class="form-field" style="margin:0"><label style="font-size:10px">Tipo</label>
           <select id="sv-tipo-transferencia" onchange="toggleTraspasoFields()">
-            <option value="endoso">Endoso</option>
-            <option value="traspaso">Traspaso</option>
+            <option value="endoso">Endoso (empresa paga placa)</option>
+            <option value="traspaso">Traspaso (cliente paga matrícula)</option>
           </select>
         </div>
-        <div class="form-field" style="margin:0" id="sv-traspaso-monto-wrap" style="display:none">
-          <label style="font-size:10px">Costo del Traspaso (lo paga el cliente)</label>
-          <input type="text" id="sv-traspaso-monto" value="0" oninput="fmtMoneyInput(this)" placeholder="0.00">
+        <div class="form-field" style="margin:0">
+          <label style="font-size:10px">Gestor / Tramitador</label>
+          <select id="sv-gestor">
+            <option value="">-- Seleccionar gestor --</option>
+            ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}">${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
+          </select>
         </div>
       </div>
-      <div id="sv-traspaso-info" style="display:none;margin-top:8px;background:var(--amber2);border-radius:6px;padding:8px;font-size:12px">
-        ⚠️ El traspaso se agrega al monto de la venta. Se registrará como <strong>pendiente de pago</strong> separado para controlar si fue pagado.
+      <!-- Endoso -->
+      <div id="sv-endoso-wrap">
+        <div class="form-row c2" style="margin-bottom:0">
+          <div class="form-field" style="margin:0"><label style="font-size:10px">💰 Costo del Endoso (lo paga la empresa)</label>
+            <input type="text" id="sv-endoso-monto" value="0" oninput="fmtMoneyInput(this)" placeholder="0.00">
+          </div>
+          <div style="font-size:11px;color:var(--blue);padding:8px;background:#fff;border-radius:6px;align-self:flex-end">
+            ℹ️ Se creará CXP automática al gestor. Se suma al costo del vehículo.
+          </div>
+        </div>
+      </div>
+      <!-- Traspaso -->
+      <div id="sv-traspaso-wrap" style="display:none">
+        <div class="form-row c2" style="margin-bottom:8px">
+          <div class="form-field" style="margin:0"><label style="font-size:10px">💰 Costo del Traspaso / Matrícula</label>
+            <input type="text" id="sv-traspaso-monto" value="0" oninput="fmtMoneyInput(this)" placeholder="0.00">
+          </div>
+          <div class="form-field" style="margin:0"><label style="font-size:10px">¿El cliente pagó el traspaso?</label>
+            <select id="sv-traspaso-pagado" onchange="toggleTraspasoFields()">
+              <option value="si">✅ Sí, el cliente pagó</option>
+              <option value="no">❌ No, quedó pendiente (CxC)</option>
+            </select>
+          </div>
+        </div>
+        <div id="sv-traspaso-info-cxc" style="display:none;background:var(--amber2);border-radius:6px;padding:8px;font-size:12px">
+          ⚠️ Se creará <strong>Cuenta por Cobrar</strong> al cliente por el monto del traspaso. Y CXP al gestor igualmente.
+        </div>
+        <div id="sv-traspaso-info-cxp" style="background:#dcfce7;border-radius:6px;padding:8px;font-size:12px">
+          ✅ Cliente pagó. Se creará <strong>CXP al gestor</strong> hasta que tramite y entregue la matrícula.
+        </div>
       </div>
     </div>
     <div style="background:var(--gray2);border-radius:8px;padding:12px;margin-top:8px">
@@ -3381,13 +3678,90 @@ function ventaAccion(accion){
        <button class="btn btn-red" onclick="confirmarEliminarVenta('${ventaSelectedId}')">🗑 Eliminar</button>`);
   }
 }
+
+function registrarEntrega(ventaId){
+  const v=DB.ventas.find(x=>x.id===ventaId);
+  if(!v)return;
+  const veh=DB.vehiculos.find(x=>x.id===v.vehiculoId);
+  const cxcPend=(DB.cxc||[]).filter(x=>x.ventaId===ventaId&&x.status!=='SALDADO');
+  const cxpPend=(DB.gastosVehiculos||[]).filter(g=>g.ventaId===ventaId&&parseFloat(g.montoPendiente||0)>0);
+  openModal(`📦 Registrar Entrega — ${escHtml(v.factura||'')}`,`
+    <div style="background:var(--blue3);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
+        <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Vehículo</div><div style="font-weight:700">${escHtml(v.vehiculo||'—')}</div><div style="font-size:10px;font-family:monospace;color:var(--blue)">${escHtml(veh?.vin||'')}</div></div>
+        <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Cliente</div><div style="font-weight:700">${escHtml(v.cliente||'—')}</div></div>
+        <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Factura</div><div style="font-weight:700;font-family:monospace">${escHtml(v.factura||'—')}</div></div>
+      </div>
+    </div>
+    ${cxcPend.length?`<div style="background:var(--red2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--red);font-weight:600">⚠️ ${cxcPend.length} Cuenta(s) por cobrar aún pendiente(s). Se puede entregar igualmente.</div>`:''}
+    ${cxpPend.length?`<div style="background:var(--amber2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--amber);font-weight:600">⏳ ${cxpPend.length} CxP al gestor aún pendiente(s).</div>`:''}
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Fecha de Entrega</label>
+        <input type="date" id="ent-fecha" value="${today()}">
+      </div>
+      <div class="form-field"><label>Tipo de Entrega</label>
+        <select id="ent-tipo">
+          <option value="ENDOSO">📋 Endoso de Placa</option>
+          <option value="TRASPASO">🔄 Traspaso / Matrícula</option>
+          <option value="AMBOS">📋🔄 Endoso + Traspaso</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field">
+      <label>📷 Foto de Placa / Matrícula (adjuntar)</label>
+      <input type="file" id="ent-foto" accept="image/*" onchange="previewFoto('ent-foto','ent-foto-prev')">
+      <img id="ent-foto-prev" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-top:8px;border:2px solid var(--green)">
+    </div>
+    <div class="form-field">
+      <label>Notas de Entrega</label>
+      <textarea id="ent-notas" rows="2" placeholder="Ej: Placa entregada correctamente. Firmado por el cliente..."></textarea>
+    </div>
+    <div style="background:var(--green2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green);font-weight:600">
+      ✅ Al confirmar: la venta pasa a <strong>VENDIDO</strong> y el vehículo se marca como <strong>VENDIDO</strong>.
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-green" onclick="confirmarEntrega('${ventaId}')">✅ Confirmar Entrega</button>`);
+}
+
+function confirmarEntrega(ventaId){
+  const fecha=document.getElementById('ent-fecha').value;
+  const tipo=document.getElementById('ent-tipo').value;
+  const notas=document.getElementById('ent-notas').value;
+  if(!fecha){toast('La fecha de entrega es requerida','error');return;}
+  const fotoEl=document.getElementById('ent-foto-prev');
+  const foto=fotoEl&&fotoEl.style.display!=='none'&&fotoEl.src?fotoEl.src:'';
+  // Actualizar venta
+  const vi=DB.ventas.findIndex(x=>x.id===ventaId);
+  if(vi<0)return;
+  DB.ventas[vi].estadoVenta='VENDIDO';
+  DB.ventas[vi].fechaEntrega=fecha;
+  DB.ventas[vi].tipoEntrega=tipo;
+  DB.ventas[vi].notasEntrega=notas;
+  DB.ventas[vi].fotoEntrega=foto;
+  DB.ventas[vi].docsPendientes=false;
+  sDB('ventas');
+  // Actualizar vehículo
+  const vId=DB.ventas[vi].vehiculoId;
+  const vIdx=DB.vehiculos.findIndex(x=>x.id===vId);
+  if(vIdx>=0){
+    DB.vehiculos[vIdx].status='VENDIDO';
+    DB.vehiculos[vIdx].fechaEntrega=fecha;
+    sDB('vehiculos');
+  }
+  closeModal();
+  toast('✅ Entrega registrada — Venta marcada como VENDIDO','success');
+  renderVentas();
+  // Ir a tab entregas para ver el resultado
+  setTimeout(()=>ventasTab('entregas'),300);
+}
+
 function confirmarEliminarVenta(id){
   if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar','error');return;}
   // Restaurar estado del vehículo
   const v=DB.ventas.find(x=>x.id===id);
   if(v){
     const vi=DB.vehiculos.findIndex(x=>x.id===v.vehiculoId);
-    if(vi>=0){DB.vehiculos[vi].status='ACTIVO';sDB('vehiculos');}
+    if(vi>=0){DB.vehiculos[vi].status='ACTIVO';DB.vehiculos[vi].fechaVenta='';DB.vehiculos[vi].precioVentaFinal=0;sDB('vehiculos');}
     // Eliminar CxC asociada
     DB.cxc=DB.cxc.filter(x=>x.ventaId!==id);sDB('cxc');
   }
@@ -3408,12 +3782,23 @@ function actualizarCuentasVenta(){
   const b=bcs.find(x=>x.banco===bancoEl.value);
   cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
 }
+function toggleTasaVenta(){
+  const moneda=document.getElementById('sv-moneda')?.value||'RD$';
+  const wrap=document.getElementById('sv-tasa-wrap');
+  if(wrap)wrap.style.display=moneda==='USD'?'block':'none';
+}
 function toggleTraspasoFields(){
   const tipo=document.getElementById('sv-tipo-transferencia')?.value;
-  const wrap=document.getElementById('sv-traspaso-monto-wrap');
-  const info=document.getElementById('sv-traspaso-info');
-  if(wrap)wrap.style.display=tipo==='traspaso'?'block':'none';
-  if(info)info.style.display=tipo==='traspaso'?'block':'none';
+  const endosoWrap=document.getElementById('sv-endoso-wrap');
+  const traspasoWrap=document.getElementById('sv-traspaso-wrap');
+  if(endosoWrap)endosoWrap.style.display=tipo==='endoso'?'block':'none';
+  if(traspasoWrap)traspasoWrap.style.display=tipo==='traspaso'?'block':'none';
+  // Sub-toggle traspaso pagado/no pagado
+  const pagado=document.getElementById('sv-traspaso-pagado')?.value;
+  const infoCxc=document.getElementById('sv-traspaso-info-cxc');
+  const infoCxp=document.getElementById('sv-traspaso-info-cxp');
+  if(infoCxc)infoCxc.style.display=(tipo==='traspaso'&&pagado==='no')?'block':'none';
+  if(infoCxp)infoCxp.style.display=(tipo==='traspaso'&&pagado==='si')?'block':'none';
 }
 function llenarInfoVenta(vid){
   const v=DB.vehiculos.find(x=>x.id===vid);
@@ -3437,13 +3822,13 @@ function calcPend(){
   if(pd)pd.value=Math.max(0,p-i-rec).toFixed(2);
   // Mostrar equivalente si es USD
   const moneda=document.getElementById('sv-moneda')?.value||'RD$';
-  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const tasa=parseFloat(document.getElementById('sv-tasa')?.value||DB.config.tasaCambio||60);
   const wrap=document.getElementById('sv-equiv-wrap');
   const equiv=document.getElementById('sv-equiv');
   if(wrap&&equiv){
     if(moneda==='USD'&&p>0){
       wrap.style.display='block';
-      equiv.value='RD$ '+fmt(p*tasa)+' (T: '+tasa+')';
+      equiv.value='RD$ '+fmt(p*tasa);
     } else {
       wrap.style.display='none';
     }
@@ -3469,9 +3854,12 @@ function confirmarVenta(nf){
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const totalGastos=(DB.gastosVehiculos||[]).filter(g=>g.vehiculoId===vid).reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
   // Estado automático según pendiente
-  const estadoAuto=pendiente>0?'TRÁNSITO':'VENDIDO';
+  const estadoAuto='TRÁNSITO'; // Siempre TRÁNSITO hasta que se registre la entrega
   const tipoTransferencia=document.getElementById('sv-tipo-transferencia')?.value||'endoso';
   const montoTraspaso=tipoTransferencia==='traspaso'?parseFloat((document.getElementById('sv-traspaso-monto')?.value||'0').replace(/,/g,'')):0;
+  const montoEndoso=tipoTransferencia==='endoso'?parseFloat((document.getElementById('sv-endoso-monto')?.value||'0').replace(/,/g,'')):0;
+  const gestorTransf=document.getElementById('sv-gestor')?.value||'';
+  const traspasoPagadoCliente=(document.getElementById('sv-traspaso-pagado')?.value||'si')==='si';
   const comentarioVenta=document.getElementById('sv-comentario')?.value||'';
   const venta={
     id:uid(),factura:nf,fecha:document.getElementById('sv-fecha').value,
@@ -3487,10 +3875,13 @@ function confirmarVenta(nf){
     precioUSD:monedaVenta==='USD'?precio:precio/tasa,
     precioRD:monedaVenta==='USD'?precio*tasa:precio,
     estadoVenta:estadoAuto,
-    docsPendientes:pendiente<=0?true:false,
-    fechaLimDocs:pendiente<=0?addDays(document.getElementById('sv-fecha').value,30):'',
+    docsPendientes:true,
+    fechaLimDocs:addDays(document.getElementById('sv-fecha').value,30),
     tipoTransferencia,
     montoTraspaso,
+    montoEndoso,
+    gestorTransf,
+    traspasoPagadoCliente,
     traspassoPagado:montoTraspaso<=0,
     comentario:comentarioVenta
   };
@@ -3516,7 +3907,7 @@ function confirmarVenta(nf){
       const nums=DB.vehiculos.map(v=>{const m=(v.codigo||'').match(/(\d+)$/);return m?parseInt(m[1]):0;});
       const nextNum=(nums.length?Math.max(...nums):0)+1;
       const pref=getPrefijo();
-      const nuevoCodigo=pref+'-'+String(nextNum).padStart(4,'0');
+      const nuevoCodigo=pref+'-'+String(nextNum).padStart(5,'0');
       // Verificar que no exista el chasis
       const vinExiste=recVin&&DB.vehiculos.find(v=>v.vin&&v.vin.toUpperCase()===recVin.toUpperCase());
       if(!vinExiste){
@@ -3548,7 +3939,7 @@ function confirmarVenta(nf){
   // Actualizar estado vehículo
   const vi=DB.vehiculos.findIndex(x=>x.id===vid);
   if(vi>=0){
-    DB.vehiculos[vi].status=estadoAuto==='VENDIDO'?'VENDIDO':'TRÁNSITO';
+    DB.vehiculos[vi].status='TRÁNSITO';
     DB.vehiculos[vi].fechaVenta=venta.fecha;
     DB.vehiculos[vi].precioVentaFinal=precio;
     sDB('vehiculos');
@@ -3560,6 +3951,68 @@ function confirmarVenta(nf){
     const abonadoInicial=inicial+montoRecibido;
     DB.cxc.push({id:uid(),ventaId:venta.id,factura:nf,cliente:cliNombre,clienteId:cliId,vehiculo:`${v.codigo} ${v.marca} ${v.modelo}`,concepto:'Pendiente de venta',moneda:monedaVenta,total:precio,abonado:abonadoInicial,saldo:pendiente,fecha:venta.fecha,fechaVence:'',status:pendiente<=0?'SALDADO':abonadoInicial>0?'PARCIAL':'PENDIENTE',pagos:[]});
     sDB('cxc');
+  }
+  // ═══ ENDOSO → CXP al gestor (empresa lo paga) ═══
+  if(tipoTransferencia==='endoso'&&montoEndoso>0&&gestorTransf){
+    const cxpEndoso={
+      id:uid(),vehiculoId:vid,
+      tipo:'ENDOSO',
+      suplidor:gestorTransf,
+      descripcion:'Endoso de placa — Vehículo: '+v.codigo+' '+v.marca+' '+v.modelo,
+      moneda:'RD$',
+      montoFactura:montoEndoso,montoPagado:0,montoPendiente:montoEndoso,
+      statusGasto:'PENDIENTE',
+      fecha:venta.fecha,
+      cuenta:'',formaPago:'CREDITO',
+      origenVenta:nf,ventaId:venta.id,
+      esTransferencia:true
+    };
+    if(!DB.gastosVehiculos)DB.gastosVehiculos=[];
+    DB.gastosVehiculos.push(cxpEndoso);
+    sDB('gastosVehiculos');
+    // Actualizar costo del vehículo
+    const vi2=DB.vehiculos.findIndex(x=>x.id===vid);
+    if(vi2>=0){DB.vehiculos[vi2].costo=(parseFloat(DB.vehiculos[vi2].costo||0)+montoEndoso);sDB('vehiculos');}
+    toast('CXP de Endoso creada al gestor: '+gestorTransf,'success');
+  }
+  // ═══ TRASPASO → CXP al gestor + CXC al cliente si no pagó ═══
+  if(tipoTransferencia==='traspaso'&&montoTraspaso>0&&gestorTransf){
+    // Siempre CXP al gestor
+    const cxpTraspaso={
+      id:uid(),vehiculoId:vid,
+      tipo:'TRASPASO',
+      suplidor:gestorTransf,
+      descripcion:'Traspaso/Matrícula — Vehículo: '+v.codigo+' '+v.marca+' '+v.modelo,
+      moneda:'RD$',
+      montoFactura:montoTraspaso,montoPagado:0,montoPendiente:montoTraspaso,
+      statusGasto:'PENDIENTE',
+      fecha:venta.fecha,
+      cuenta:'',formaPago:'CREDITO',
+      origenVenta:nf,ventaId:venta.id,
+      esTransferencia:true
+    };
+    if(!DB.gastosVehiculos)DB.gastosVehiculos=[];
+    DB.gastosVehiculos.push(cxpTraspaso);
+    sDB('gastosVehiculos');
+    // Si el cliente NO pagó → CXC al cliente
+    if(!traspasoPagadoCliente){
+      const cxcTraspaso={
+        id:uid(),ventaId:venta.id,factura:nf,
+        cliente:cliNombre,clienteId:cliId,
+        vehiculo:v.codigo+' '+v.marca+' '+v.modelo,
+        concepto:'Traspaso/Matrícula pendiente — '+v.codigo,
+        moneda:'RD$',
+        total:montoTraspaso,abonado:0,saldo:montoTraspaso,
+        fecha:venta.fecha,fechaVence:'',
+        status:'PENDIENTE',pagos:[],
+        esTraspaso:true
+      };
+      DB.cxc.push(cxcTraspaso);
+      sDB('cxc');
+      toast('CXC de Traspaso creada al cliente: '+cliNombre,'success');
+    } else {
+      toast('CXP de Traspaso creada al gestor: '+gestorTransf,'success');
+    }
   }
   sDB('ventas');sDB('caja');
   closeModal();
@@ -4300,7 +4753,7 @@ function renderSuplidores(tabActivo){
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="sup-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('editar')">✏️ Editar</button>
         ${currentUser?.role==='admin'?`<button id="sup-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('eliminar')">🗑 Eliminar</button>`:''}
-        <button class="btn btn-primary" onclick="nuevoSuplidor()">➕ Nuevo Suplidor</button>
+        <button class="btn btn-primary" onclick="nuevoSuplidor('${tabActivo}')">➕ Nuevo Suplidor</button>
       </div>
     </div>
     <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--gray3)">
@@ -4315,18 +4768,18 @@ function renderSuplidores(tabActivo){
       </tr></thead>
       <tbody>${filasSup(lista)}</tbody></table></div></div>`;
 }
-function nuevoSuplidor(){
+function nuevoSuplidor(tipoCtx){
+  tipoCtx=tipoCtx||'vehiculo';
   const nextId='SUP-'+String(DB.suplidores.length+1).padStart(4,'0');
-  openModal('Nuevo Suplidor',`
-    <div class="form-row c2" style="margin-bottom:10px">
-      <div class="form-field"><label>ID Suplidor</label><input type="text" id="s-supid" value="${nextId}" readonly style="background:#f1f5f9;font-weight:700;font-family:monospace"></div>
-      <div class="form-field"><label class="required">Tipo de Suplidor</label>
-        <select id="s-tipo-suplidor" style="border:2px solid var(--blue);font-weight:700">
-          <option value="">-- Seleccionar tipo --</option>
-          <option value="vehiculo">🚗 Suplidor de Vehículos</option>
-          <option value="empresa">🏢 Suplidor de Empresa</option>
-        </select>
-      </div>
+  const tipoLabel=tipoCtx==='vehiculo'?'🚗 Suplidor de Vehículos':'🏢 Suplidor de Empresa';
+  const tipoBg=tipoCtx==='vehiculo'?'var(--blue3)':'var(--green2)';
+  const tipoColor=tipoCtx==='vehiculo'?'var(--blue)':'var(--green)';
+  openModal('Nuevo '+tipoLabel,`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;background:${tipoBg};border-radius:var(--radius-sm);border:2px solid ${tipoColor}">
+      <div style="font-weight:800;font-size:14px;color:${tipoColor}">${tipoLabel}</div>
+      <div style="font-size:12px;color:${tipoColor};opacity:.8">ID: ${nextId}</div>
+      <input type="hidden" id="s-supid" value="${nextId}">
+      <input type="hidden" id="s-tipo-suplidor" value="${tipoCtx}">
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Nombre Empresa</label><input type="text" id="s-empresa" placeholder="Ej: Motors del Norte SRL"></div>
@@ -4373,7 +4826,10 @@ function guardarSuplidor(idx){
     direccion:document.getElementById('s-dir').value.trim()
   };
   if(idx!==undefined)DB.suplidores[idx]=s;else DB.suplidores.push(s);
-  sDB('suplidores');closeModal();toast('Suplidor guardado ✓','success');renderSuplidores(tipoSuplidor);
+  sDB('suplidores');
+  toast('Suplidor guardado ✓','success');
+  renderSuplidores(tipoSuplidor);
+  preguntarCerrar('closeModal()');
 }
 function editarSuplidor(i){
   const s=DB.suplidores[i];
@@ -4511,15 +4967,23 @@ function supAccionDirecta(accion,id){
 
 // ══ CUENTAS POR PAGAR (CxP) ══
 function renderCXP(){
-  // CxP se genera automáticamente desde Gastos de Vehículo con pendiente
   const filtroSup=document.getElementById('cxp-filtro-sup')?.value||'';
   const filtroVeh=document.getElementById('cxp-filtro-veh')?.value||'';
+  const filtroMoneda=document.getElementById('cxp-filtro-moneda')?.value||'';
 
-  // Tomar todos los gastos de vehículo con monto pendiente > 0
   let gastosPend=(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0);
   if(filtroSup)gastosPend=gastosPend.filter(g=>g.suplidor===filtroSup);
   if(filtroVeh)gastosPend=gastosPend.filter(g=>g.vehiculoId===filtroVeh);
+  if(filtroMoneda)gastosPend=gastosPend.filter(g=>(g.moneda||'RD$')===filtroMoneda);
 
+  const gRD=gastosPend.filter(g=>(g.moneda||'RD$')==='RD$');
+  const gUSD=gastosPend.filter(g=>g.moneda==='USD');
+  const totalPendRD=gRD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const totalFactRD=gRD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const totalPagRD=gRD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const totalPendUSD=gUSD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const totalFactUSD=gUSD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const totalPagUSD=gUSD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
   const totalPend=gastosPend.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
   const totalFactura=gastosPend.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
   const totalPagado=gastosPend.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
@@ -4528,7 +4992,7 @@ function renderCXP(){
   document.getElementById('page-cxp').innerHTML=`
     <div class="page-header">
       <div><h1>📑 Cuentas por Pagar — Vehículos</h1>
-        <p>${gastosPend.length} pendiente(s) — <strong style="color:var(--red)">${fmt(totalPend)}</strong> por pagar</p>
+        <p>${gastosPend.length} pendiente(s) — RD$: <strong style="color:var(--red)">${totalPendRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</strong> | USD: <strong style="color:var(--blue)">$${totalPendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></p>
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="imprimirCXP()">📄 Exportar PDF</button>
@@ -4538,34 +5002,56 @@ function renderCXP(){
 
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:8px">
       <span>ℹ️</span>
-      <span>Las cuentas por pagar se generan automáticamente al registrar gastos de vehículo con saldo pendiente. También puedes agregar cuentas manualmente con el botón <strong>➕ CXP Manual</strong>.</span>
+      <span>Las cuentas por pagar se generan automáticamente al registrar gastos de vehículo con saldo pendiente.</span>
     </div>
     <div class="card" style="margin-bottom:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
         <div style="display:flex;flex-direction:column;gap:4px">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Filtrar por Suplidor</label>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Suplidor</label>
           <select id="cxp-filtro-sup" onchange="renderCXP()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
             <option value="">Todos los suplidores</option>
             ${[...new Set((DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).map(g=>g.suplidor).filter(Boolean))].map(s=>`<option value="${escHtml(s)}" ${s===filtroSup?'selected':''}>${escHtml(s)}</option>`).join('')}
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Filtrar por Vehículo</label>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Vehículo</label>
           <select id="cxp-filtro-veh" onchange="renderCXP()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
             <option value="">Todos los vehículos</option>
             ${DB.vehiculos.filter(v=>(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id&&parseFloat(g.montoPendiente||0)>0)).map(v=>`<option value="${v.id}" ${v.id===filtroVeh?'selected':''}>${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)}</option>`).join('')}
           </select>
         </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Moneda</label>
+          <select id="cxp-filtro-moneda" onchange="renderCXP()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+            <option value="">Todas las monedas</option>
+            <option value="RD$" ${filtroMoneda==='RD$'?'selected':''}>🇩🇴 Pesos (RD$)</option>
+            <option value="USD" ${filtroMoneda==='USD'?'selected':''}>🇺🇸 Dólares (USD)</option>
+          </select>
+        </div>
         <div style="display:flex;align-items:flex-end">
-          <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('cxp-filtro-sup').value='';document.getElementById('cxp-filtro-veh').value='';renderCXP()">🔄 Limpiar filtros</button>
+          <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('cxp-filtro-sup').value='';document.getElementById('cxp-filtro-veh').value='';document.getElementById('cxp-filtro-moneda').value='';renderCXP()">🔄 Limpiar</button>
         </div>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
-      <div class="stat-card blue"><div class="stat-ico">💼</div><div class="stat-label">Total Facturado</div><div class="stat-value">${fmt(totalFactura)}</div><div class="stat-sub">$${(totalFactura/tasa).toFixed(2)} USD</div></div>
-      <div class="stat-card green"><div class="stat-ico">✅</div><div class="stat-label">Total Pagado</div><div class="stat-value">${fmt(totalPagado)}</div></div>
-      <div class="stat-card red"><div class="stat-ico">⏳</div><div class="stat-label">Total Pendiente</div><div class="stat-value">${fmt(totalPend)}</div><div class="stat-sub">$${(totalPend/tasa).toFixed(2)} USD</div></div>
+    <!-- RESUMEN POR MONEDA -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+      <div class="card" style="margin-bottom:0;border-top:3px solid var(--green)">
+        <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:8px">🇩🇴 Pesos (RD$)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Facturado</div><div style="font-size:14px;font-weight:800">${totalFactRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pagado</div><div style="font-size:14px;font-weight:800;color:var(--green)">${totalPagRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pendiente</div><div style="font-size:14px;font-weight:800;color:var(--red)">${totalPendRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;border-top:3px solid var(--blue)">
+        <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:8px">🇺🇸 Dólares (USD)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Facturado</div><div style="font-size:14px;font-weight:800">$${totalFactUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pagado</div><div style="font-size:14px;font-weight:800;color:var(--green)">$${totalPagUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pendiente</div><div style="font-size:14px;font-weight:800;color:var(--red)">$${totalPendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -4587,16 +5073,18 @@ function renderCXP(){
         </tr></thead>
         <tbody>${gastosPend.length?gastosPend.slice().reverse().map(g=>{
           const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+          const esUSD=(g.moneda||'RD$')==='USD';
+          const fmtMon=n=>esUSD?`$${parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})} USD`:fmt(n);
           return`<tr>
             <td style="font-size:12px">${fmtDate(g.fecha)}</td>
             <td style="font-weight:700">${escHtml(g.suplidor||'—')}</td>
             <td style="font-size:12px">${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td>
             <td style="font-family:monospace;font-size:11px;color:var(--gray)">${escHtml(v?.vin||'—')}</td>
             <td><span class="badge badge-amber" style="font-size:11px">${escHtml(g.tipo||'—')}</span></td>
-            <td><span class="badge badge-blue" style="font-size:11px">${g.moneda||'RD$'}</span></td>
-            <td style="font-weight:600">${fmt(g.montoFactura||0)}</td>
-            <td style="color:var(--green)">${fmt(g.montoPagado||0)}</td>
-            <td style="font-weight:800;color:var(--red)">${fmt(g.montoPendiente||0)}</td>
+            <td><span class="badge ${esUSD?'badge-blue':'badge-green'}" style="font-size:11px">${g.moneda||'RD$'}</span></td>
+            <td style="font-weight:600">${fmtMon(g.montoFactura||0)}</td>
+            <td style="color:var(--green)">${fmtMon(g.montoPagado||0)}</td>
+            <td style="font-weight:800;color:var(--red)">${fmtMon(g.montoPendiente||0)}</td>
             <td style="font-size:12px;color:${g.fechaPago&&g.fechaPago<=today()?'var(--red)':'var(--gray)'}">${fmtDate(g.fechaPago)||'—'}</td>
             <td><span class="badge badge-${g.statusGasto==='ABONADO'?'amber':'red'}">${g.statusGasto||'PENDIENTE'}</span></td>
             <td>
@@ -4612,6 +5100,7 @@ function renderCXP(){
     </div>`;
   const fs=document.getElementById('cxp-filtro-sup');if(fs)fs.value=filtroSup;
   const fv=document.getElementById('cxp-filtro-veh');if(fv)fv.value=filtroVeh;
+  const fm=document.getElementById('cxp-filtro-moneda');if(fm)fm.value=filtroMoneda;
 }
 
 function actualizarCuentasCXPP(){
@@ -4908,6 +5397,10 @@ function imprimirCXP(){
     const sc={ABONADO:'a',PENDIENTE:'r'};
     return`<tr><td>${fmtDate(g.fecha)}</td><td style="font-weight:700">${escHtml(g.suplidor||'—')}</td><td>${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td><td style="font-family:monospace;font-size:10px">${escHtml(v?.vin||'—')}</td><td>${escHtml(g.tipo||'—')}</td><td>${fV(g.montoFactura||0)}</td><td style="color:#16a34a">${fV(g.montoPagado||0)}</td><td style="font-weight:800;color:#dc2626">${fV(g.montoPendiente||0)}</td><td><span class="badge ${sc[g.statusGasto||'PENDIENTE']||'r'}">${g.statusGasto||'PENDIENTE'}</span></td></tr>`;
   }).join('');
+  const logoCXP=DB.config.logoData||'';
+  const rncCXP=DB.config.rnc||'';
+  const telCXP=DB.config.telefono||'';
+  const dirCXP=DB.config.direccion||'';
   const win=window.open('','_blank','width=1100,height=750');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CxP Vehículos — ${escHtml(empresa)}</title>
   <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px;color:#0f172a}
@@ -4922,9 +5415,16 @@ function imprimirCXP(){
   .a{background:#fef3c7;color:#d97706}.r{background:#fee2e2;color:#dc2626}
   .tot{display:flex;justify-content:flex-end;padding:8px 10px;font-weight:800;font-size:13px;border-top:2px solid #0f172a}
   @media print{.noprint{display:none}}</style></head><body>
-  <div style="border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between">
-    <div><h2>${escHtml(empresa)}</h2><h3>CUENTAS POR PAGAR — VEHÍCULOS</h3>
-    <div style="font-size:11px;color:#6b7280">Filtro: ${filtroLabel} | Fecha: ${fmtDate(today())} | Tasa: RD$ ${tasa} x USD</div></div>
+  <div style="border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      ${logoCXP?`<img src="${logoCXP}" style="max-height:55px;max-width:150px;object-fit:contain;margin-bottom:6px;display:block">`:''}
+      <h2>${escHtml(empresa)}</h2>
+      ${rncCXP?`<div style="font-size:11px;color:#475569">RNC: ${escHtml(rncCXP)}</div>`:''}
+      ${telCXP?`<div style="font-size:11px;color:#475569">Tel: ${escHtml(telCXP)}</div>`:''}
+      ${dirCXP?`<div style="font-size:11px;color:#475569">${escHtml(dirCXP)}</div>`:''}
+      <h3>CUENTAS POR PAGAR — VEHÍCULOS</h3>
+      <div style="font-size:11px;color:#6b7280">Filtro: ${filtroLabel} | Fecha: ${fmtDate(today())} | Tasa: RD$ ${tasa} x USD</div>
+    </div>
     <div style="text-align:right">
       ${totalRD>0?`<div style="font-size:11px;color:#6b7280">Pendiente RD$</div><div style="font-size:18px;font-weight:800;color:#dc2626">${fmt(totalRD)}</div>`:''}
       ${totalUSD>0?`<div style="font-size:11px;color:#6b7280;margin-top:4px">Pendiente USD</div><div style="font-size:18px;font-weight:800;color:#2563eb">$${totalUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div>`:''}
@@ -5039,20 +5539,24 @@ function renderCXC(){
         <thead><tr>
           <th style="width:36px"></th>
           <th>Factura</th><th>Cliente</th><th>Vehículo</th>
+          <th>Concepto</th>
           <th>Total</th><th>Cobrado</th><th>Saldo</th>
           <th>Vence</th><th>Estado</th>
         </tr></thead>
-        <tbody>${items.length?items.slice().reverse().map(x=>`<tr onclick="selCXC('${x.id}',this)" style="cursor:pointer">
+        <tbody>${items.length?items.slice().reverse().map(x=>{
+          const tipoBadge=x.esTraspaso?'<span style="background:#fef3c7;color:#d97706;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700">🔄 TRASPASO</span>':x.esEndoso?'<span style="background:#ede9fe;color:#7c3aed;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700">📋 ENDOSO</span>':'<span style="background:#dbeafe;color:#2563eb;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700">💰 VENTA</span>';
+          return`<tr onclick="selCXC('${x.id}',this)" style="cursor:pointer">
           <td style="text-align:center"><input type="radio" name="cxc-sel" onclick="event.stopPropagation();selCXC('${x.id}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
           <td><div style="font-family:monospace;font-size:11px;font-weight:700;color:var(--blue)">${escHtml(x.factura||'—')}</div></td>
           <td><div style="font-weight:700">${escHtml(x.cliente||'—')}</div></td>
           <td style="font-size:12px">${escHtml(x.vehiculo||'—')}</td>
+          <td>${tipoBadge}<div style="font-size:11px;color:var(--gray);margin-top:2px">${escHtml(x.concepto||'—')}</div></td>
           <td style="font-weight:600">${fV(x.total)}</td>
           <td style="color:var(--green);font-weight:600">${fV(x.abonado||0)}</td>
           <td style="font-weight:800;color:${parseFloat(x.saldo||0)>0?'var(--red)':'var(--green)'}">${fV(x.saldo||0)}</td>
           <td style="font-size:12px;color:${x.fechaVence&&x.fechaVence<=today()?'var(--red)':'var(--gray)'}">${fmtDate(x.fechaVence)||'—'}</td>
           <td><span class="badge ${x.status==='SALDADO'?'badge-green':x.status==='PARCIAL'?'badge-amber':'badge-red'}">${x.status||'—'}</span></td>
-        </tr>`).join(''):`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--gray)">Sin cuentas por cobrar en ${filtroMoneda}</td></tr>`}
+        </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gray)">Sin cuentas por cobrar en ${filtroMoneda}</td></tr>`}
         </tbody>
       </table></div>
     </div>`;
@@ -5095,7 +5599,7 @@ function nuevaCXCManual(){
     </div>
     <div class="form-row c3">
       <div class="form-field"><label class="required">Monto Total</label>
-        <input type="number" id="ncxc-total" step="0.01" placeholder="0.00" oninput="calcSaldoCXC()">
+        <input type="number" id="ncxc-total" step="0.01" placeholder="0.00" oninput="calcSaldoCXC();calcEquivCXC()">
       </div>
       <div class="form-field"><label>Monto Inicial / Abono</label>
         <input type="number" id="ncxc-abono" step="0.01" value="0" placeholder="0.00" oninput="calcSaldoCXC()">
@@ -5104,27 +5608,65 @@ function nuevaCXCManual(){
         <input type="number" id="ncxc-saldo" step="0.01" readonly style="background:#f1f5f9;font-weight:700">
       </div>
     </div>
-    <div class="form-row c2">
+    <div class="form-row c3">
       <div class="form-field"><label>Moneda</label>
-        <select id="ncxc-moneda">
-          <option value="RD$">RD$ - Pesos</option>
-          <option value="USD">USD - Dólares</option>
+        <select id="ncxc-moneda" onchange="toggleTasaCXC()">
+          <option value="RD$">RD$ — Pesos</option>
+          <option value="USD">USD — Dólares</option>
+        </select>
+      </div>
+      <div class="form-field" id="ncxc-tasa-wrap" style="display:none"><label>💱 Tasa del Día (RD$ x USD)</label>
+        <input type="number" id="ncxc-tasa" value="${DB.config.tasaCambio||60}" step="0.01" placeholder="Ej: 60.50">
+      </div>
+      <div class="form-field" id="ncxc-tasa-eq" style="display:none"><label>Equivalente en RD$</label>
+        <input type="text" id="ncxc-equiv" readonly style="background:#f8fafc;font-weight:700;color:var(--blue)" placeholder="—">
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Banco</label>
+        <select id="ncxc-banco" onchange="actualizarCuentasCXCManual()">
+          ${(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>'}
         </select>
       </div>
       <div class="form-field"><label>Cuenta de Entrada</label>
         <select id="ncxc-cuenta">
-          ${cuentas.map(ct=>`<option>${escHtml(ct)}</option>`).join('')}
+          ${(()=>{const bcs=DB.config.bancoCuentas||[];const b=bcs[0];return b&&b.cuentas&&b.cuentas.length?b.cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';})()}
         </select>
       </div>
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="guardarCXCManual()">💾 Guardar</button>`);
 }
+function toggleTasaCXC(){
+  const moneda=document.getElementById('ncxc-moneda')?.value;
+  const tw=document.getElementById('ncxc-tasa-wrap');
+  const eq=document.getElementById('ncxc-tasa-eq');
+  if(tw)tw.style.display=moneda==='USD'?'block':'none';
+  if(eq)eq.style.display=moneda==='USD'?'block':'none';
+  calcEquivCXC();
+}
+function calcEquivCXC(){
+  const moneda=document.getElementById('ncxc-moneda')?.value;
+  const total=parseFloat(document.getElementById('ncxc-total')?.value||0);
+  const tasa=parseFloat(document.getElementById('ncxc-tasa')?.value||DB.config.tasaCambio||60);
+  const equiv=document.getElementById('ncxc-equiv');
+  if(equiv&&moneda==='USD'&&total>0)equiv.value='RD$ '+fmt(total*tasa);
+  else if(equiv)equiv.value='';
+}
+function actualizarCuentasCXCManual(){
+  const bancoEl=document.getElementById('ncxc-banco');
+  const cuentaEl=document.getElementById('ncxc-cuenta');
+  if(!bancoEl||!cuentaEl)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===bancoEl.value);
+  cuentaEl.innerHTML=(b&&b.cuentas&&b.cuentas.length)?b.cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';
+}
 function calcSaldoCXC(){
   const total=parseFloat(document.getElementById('ncxc-total')?.value||0);
   const abono=parseFloat(document.getElementById('ncxc-abono')?.value||0);
   const saldo=document.getElementById('ncxc-saldo');
   if(saldo)saldo.value=Math.max(0,total-abono).toFixed(2);
+  calcEquivCXC();
 }
 function guardarCXCManual(){
   const cliId=document.getElementById('ncxc-cli').value;
@@ -5137,7 +5679,9 @@ function guardarCXCManual(){
   const abono=parseFloat(document.getElementById('ncxc-abono').value||0);
   const saldo=Math.max(0,total-abono);
   const cuenta=document.getElementById('ncxc-cuenta').value;
+  const banco=document.getElementById('ncxc-banco')?.value||'';
   const moneda=document.getElementById('ncxc-moneda').value;
+  const tasaCXC=moneda==='USD'?parseFloat(document.getElementById('ncxc-tasa')?.value||DB.config.tasaCambio||60):parseFloat(DB.config.tasaCambio||60);
   const fecha=document.getElementById('ncxc-fecha').value;
   const vence=document.getElementById('ncxc-vence').value;
   if(!DB.cxc)DB.cxc=[];
@@ -5148,7 +5692,7 @@ function guardarCXCManual(){
     total,abono,saldo,
     fecha,fechaVence:vence,
     status:saldo<=0?'SALDADO':abono>0?'PARCIAL':'PENDIENTE',
-    cuenta,pagos:[],
+    cuenta,banco,tasaCambio:tasaCXC,pagos:[],
     esManual:true
   });
   if(abono>0)DB.caja.push({id:uid(),fecha,tipo:'ENTRADA',categoria:'CxC Manual',
@@ -5239,7 +5783,7 @@ function confirmarAbonarCXC(id){
     if(vi>=0){
       DB.ventas[vi].pendiente=DB.cxc[i].saldo;
       DB.ventas[vi].inicial=(DB.ventas[vi].inicial||0)+monto;
-      if(saldado){DB.ventas[vi].estadoVenta='VENDIDO';DB.ventas[vi].docsPendientes=true;DB.ventas[vi].fechaLimDocs=addDays(fechaCobro,30);}
+      if(saldado){if(DB.ventas[vi].fechaEntrega){DB.ventas[vi].estadoVenta='VENDIDO';}else{DB.ventas[vi].estadoVenta='TRÁNSITO';}DB.ventas[vi].docsPendientes=!DB.ventas[vi].fechaEntrega;}
       sDB('ventas');
     }
   }
@@ -5255,6 +5799,10 @@ function imprimirCXC(){
   const filtroMoneda=document.getElementById('cxc-filtro-moneda')?.value||'RD$';
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const empresa=DB.config.empresa||'DealerSystem';
+  const logo=DB.config.logoData||'';
+  const rnc=DB.config.rnc||'';
+  const tel=DB.config.telefono||'';
+  const dir=DB.config.direccion||'';
   const esUSD=filtroMoneda==='USD';
   const fV=(n)=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2}):fmt(n);
 
@@ -5280,9 +5828,13 @@ function imprimirCXC(){
   .tot label{font-size:10px;font-weight:700;text-transform:uppercase;display:block;margin-bottom:4px}
   .tot span{font-size:18px;font-weight:800;display:block}
   @media print{.noprint{display:none}}</style></head><body>
-  <div style="border-bottom:3px solid ${esUSD?'#2563eb':'#d97706'};padding-bottom:12px;margin-bottom:14px;display:flex;justify-content:space-between">
+  <div style="border-bottom:3px solid ${esUSD?'#2563eb':'#d97706'};padding-bottom:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start">
     <div>
+      ${logo?`<img src="${logo}" style="max-height:55px;max-width:150px;object-fit:contain;margin-bottom:6px;display:block">`:''} 
       <h2>${escHtml(empresa)}</h2>
+      ${rnc?`<div style="font-size:11px;color:#475569">RNC: ${escHtml(rnc)}</div>`:''}
+      ${tel?`<div style="font-size:11px;color:#475569">Tel: ${escHtml(tel)}</div>`:''}
+      ${dir?`<div style="font-size:11px;color:#475569">${escHtml(dir)}</div>`:''}
       <h3>CUENTAS POR COBRAR — ${esUSD?'USD DÓLARES':'RD$ PESOS'}</h3>
       <div style="font-size:11px;color:#6b7280">Fecha: ${fmtDate(today())}${esUSD?' | Tasa: RD$ '+tasa+' x USD':''}</div>
     </div>
@@ -6693,7 +7245,21 @@ function aplicarColoresSistema(){
   if(c.navy){root.style.setProperty('--navy',c.navy);}
   if(c.navy2){root.style.setProperty('--navy2',c.navy2);}else if(c.navy)root.style.setProperty('--navy2',c.navy);
   if(c.sidebarBg){root.style.setProperty('--sidebar-bg',c.sidebarBg);}else if(c.navy)root.style.setProperty('--sidebar-bg',c.navy);
-  if(c.mainBg){root.style.setProperty('--main-bg',c.mainBg);}
+  if(c.mainBg){root.style.setProperty('--main-bg',c.mainBg);document.body.style.background=c.mainBg;}
+  // Colores de letras del menú
+  if(c.sidebarText){
+    document.querySelectorAll('.nav-item').forEach(el=>{if(!el.classList.contains('active'))el.style.color=c.sidebarText;});
+    root.style.setProperty('--sidebar-text',c.sidebarText);
+  }
+  if(c.sidebarActive){
+    document.querySelectorAll('.nav-item.active').forEach(el=>{el.style.color=c.sidebarActive;});
+    root.style.setProperty('--sidebar-active',c.sidebarActive);
+  }
+  if(c.sidebarActiveText){
+    document.querySelectorAll('.nav-item.active').forEach(el=>{el.style.color=c.sidebarActiveText;});
+    root.style.setProperty('--sidebar-active-text',c.sidebarActiveText);
+  }
+  if(c.sidebarHover){root.style.setProperty('--sidebar-hover',c.sidebarHover);}
   if(c.green)root.style.setProperty('--green',c.green);
   if(c.red)root.style.setProperty('--red',c.red);
   if(c.amber)root.style.setProperty('--amber',c.amber);
