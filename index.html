@@ -2314,6 +2314,7 @@ function renderConfig(){
         <div class="form-field"><label>Prefijo Código de Vehículo</label><input type="text" id="cf-prefijo" value="${escHtml(c.prefijoCodigo||'')}" placeholder="Se toma del nombre del negocio" maxlength="5"><div style="font-size:11px;color:var(--gray);margin-top:4px">Ej: F → F-001 | Vacío = primera letra del negocio</div></div>
         <div class="form-field"><label>Tasa de Cambio (RD$ por 1 USD)</label><input type="number" id="cf-tasa" value="${c.tasaCambio||60}" step="0.01"></div>
       </div>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarInfoNegocio()">💾 Guardar</button></div>
     </div>
     <div class="card" style="margin-top:16px">
       <div class="card-title">👥 Propietarios de Vehículos</div>
@@ -2321,6 +2322,7 @@ function renderConfig(){
         ${(c.propietarios||[]).map((p,i)=>`<div style="display:flex;gap:6px"><input type="text" value="${escHtml(p)}" id="cf-prop-${i}" style="flex:1"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button></div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarPropConfig()">➕ Agregar Propietario</button>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarPropietarios()">💾 Guardar</button></div>
     </div>
     <div class="card" style="margin-top:16px">
       <div class="card-title">💳 Cuentas de la Empresa <span style="font-size:11px;font-weight:400;color:var(--gray)">(Para cotizaciones)</span></div>
@@ -2328,6 +2330,7 @@ function renderConfig(){
         ${(c.cuentas||['Caja General']).map((ct,i)=>`<div style="display:flex;gap:6px"><input type="text" value="${escHtml(ct)}" id="cf-cuenta-${i}" style="flex:1"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button></div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarCuentaConfig()">➕ Agregar Cuenta</button>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarCuentasEmpresa()">💾 Guardar</button></div>
     </div>
     <!-- COLORES DEL SISTEMA -->
     <div class="card">
@@ -2407,6 +2410,7 @@ function renderConfig(){
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="previsualizarColores()">👁️ Previsualizar</button>
         <button class="btn btn-secondary" onclick="resetColores()">🔄 Restablecer Todo</button>
+        <button class="btn btn-green" onclick="guardarColores()">💾 Guardar Colores</button>
       </div>
     </div>
     <!-- COMPAÑÍAS DE SEGUROS -->
@@ -2421,15 +2425,10 @@ function renderConfig(){
           </div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarSeguroConfig()">➕ Agregar Compañía</button>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarSegurosConfig()">💾 Guardar</button></div>
     </div>
 
-    <div class="btn-row" style="margin-top:16px">
-      <button class="btn btn-primary" id="btn-guardar-config" onclick="guardarConfig()">💾 Guardar Configuración</button>
-      ${currentUser?.role==='admin'?`
-      <div style="margin-left:auto">
-        <button class="btn btn-secondary" onclick="confirmarResetDatos()" style="color:var(--red);border:1.5px solid var(--red)">🗑 Limpiar Todos los Datos</button>
-      </div>`:''}
-    </div>
+    ${currentUser?.role==='admin'?`<div class="btn-row" style="margin-top:8px;justify-content:flex-end"><button class="btn btn-secondary" onclick="confirmarResetDatos()" style="color:var(--red);border:1.5px solid var(--red)">🗑 Limpiar Todos los Datos</button></div>`:''}
 
     <!-- ROLES DE USUARIOS -->
     <div class="card">
@@ -2444,6 +2443,7 @@ function renderConfig(){
           </div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarRolConfig()">➕ Agregar Rol</button>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarRoles()">💾 Guardar</button></div>
     </div>
 
     <!-- TIPOS DE GASTO DE VEHÍCULO -->
@@ -2458,6 +2458,7 @@ function renderConfig(){
           </div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarTipoGastoVehConfig()">➕ Agregar Tipo</button>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarTiposGastoVeh()">💾 Guardar</button></div>
     </div>
 
     <!-- CATEGORÍAS DE GASTOS DE EMPRESA -->
@@ -2472,6 +2473,7 @@ function renderConfig(){
           </div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarCatGastoConfig()">➕ Agregar Categoría</button>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarCategoriasGastos()">💾 Guardar</button></div>
     </div>
 
     <!-- BANCOS Y CUENTAS -->
@@ -2504,6 +2506,7 @@ function renderConfig(){
           </div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarBancoConfig()">🏦 Agregar Banco</button>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarBancoCuentas()">💾 Guardar</button></div>
     </div>
 
     <!-- RESPONSABLE Y OBSERVACIÓN RECIBO -->
@@ -2517,6 +2520,7 @@ function renderConfig(){
           <input type="text" id="cf-obs-recibo" value="${escHtml(c.observacionRecibo||'')}" placeholder="Ej: Gracias por su compra. Vehículo vendido en las condiciones actuales.">
         </div>
       </div>
+      <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarDatosRecibo()">💾 Guardar</button></div>
     </div>
 
     </div>
@@ -2634,6 +2638,105 @@ function cargarLogoConfig(input){
   };
   reader.readAsDataURL(file);
 }
+
+// ══ GUARDAR POR SECCIÓN ══
+function guardarInfoNegocio(){
+  const c=DB.config;
+  c.empresa=document.getElementById('cf-empresa')?.value.trim()||c.empresa||'';
+  c.telefono=document.getElementById('cf-tel')?.value||'';
+  c.correo=document.getElementById('cf-correo')?.value||'';
+  c.direccion=document.getElementById('cf-dir')?.value||'';
+  c.moneda=document.getElementById('cf-moneda')?.value||'RD$';
+  c.rnc=document.getElementById('cf-rnc')?.value||'';
+  c.prefijoCodigo=document.getElementById('cf-prefijo')?.value.trim()||'';
+  c.tasaCambio=parseFloat(document.getElementById('cf-tasa')?.value||60);
+  sDB('config');
+  const emp=document.getElementById('topbar-empresa');
+  if(emp&&c.empresa)emp.textContent=c.empresa;
+  actualizarLogoSidebar();
+  toast('✅ Información del negocio guardada','success');
+}
+function guardarPropietarios(){
+  const props=[];
+  document.querySelectorAll('[id^="cf-prop-"]').forEach(inp=>{const v=inp.value.trim();if(v)props.push(v);});
+  DB.config.propietarios=props;
+  sDB('config');
+  toast('✅ Propietarios guardados','success');
+}
+function guardarCuentasEmpresa(){
+  const cuentas=[];
+  document.querySelectorAll('[id^="cf-cuenta-"]').forEach(inp=>{const v=inp.value.trim();if(v)cuentas.push(v);});
+  DB.config.cuentas=cuentas.length?cuentas:['Caja General'];
+  sDB('config');
+  toast('✅ Cuentas guardadas','success');
+}
+function guardarColores(){
+  const ids=['blue','navy','navy2','sidebarBg','sidebarText','sidebarActive','sidebarActiveText','sidebarHover','mainBg','green','red','amber','loginBg1','loginBg2','loginAccent','welcomeBg1','welcomeBg2','welcomeText'];
+  const colores={};
+  ids.forEach(id=>{const hexEl=document.getElementById('cf-color-'+id+'-hex');const colEl=document.getElementById('cf-color-'+id);const val=(hexEl?.value||colEl?.value||'').trim();if(val)colores[id]=val;});
+  DB.config.colores=colores;
+  aplicarColoresSistema();
+  sDB('config');
+  toast('✅ Colores guardados','success');
+}
+function guardarSegurosConfig(){
+  const compSeg=[];
+  document.querySelectorAll('[id^="cf-seguro-"]').forEach(inp=>{const v=inp.value.trim();if(v)compSeg.push(v);});
+  DB.config.companiasSeguro=compSeg.length?compSeg:['Universal','Mapfre BHD','Reservas','Otra'];
+  sDB('config');
+  toast('✅ Compañías de seguros guardadas','success');
+}
+function guardarRoles(){
+  const roles=[];
+  document.querySelectorAll('[id^="cf-rol-nombre-"]').forEach(inp=>{
+    const v=inp.value.trim();
+    const i=inp.id.replace('cf-rol-nombre-','');
+    const rid=document.getElementById('cf-rol-id-'+i)?.value||'rol_'+Date.now()+'_'+i;
+    if(v)roles.push({id:rid,nombre:v});
+  });
+  DB.config.roles=roles.length?roles:[{id:'usuario',nombre:'Usuario'}];
+  sDB('config');
+  toast('✅ Roles guardados','success');
+}
+function guardarTiposGastoVeh(){
+  const tgv=[];
+  document.querySelectorAll('[id^="cf-tgv-"]').forEach(inp=>{const v=inp.value.trim();if(v)tgv.push(v);});
+  DB.config.tiposGastoVeh=tgv.length?tgv:['Compra Vehículo','Aduana','Flete','Otros'];
+  sDB('config');
+  toast('✅ Tipos de gasto guardados','success');
+}
+function guardarCategoriasGastos(){
+  const catg=[];
+  document.querySelectorAll('[id^="cf-catg-"]').forEach(inp=>{const v=inp.value.trim();if(v)catg.push(v);});
+  DB.config.categoriasGastos=catg.length?catg:['Alquiler','Servicios','Otros'];
+  sDB('config');
+  toast('✅ Categorías guardadas','success');
+}
+function guardarBancoCuentas(){
+  const bancoCuentas=[];
+  document.querySelectorAll('.bc-banco-block').forEach(block=>{
+    const nombreInp=block.querySelector('[id^="bcb-nombre-"]');
+    const banco=nombreInp?nombreInp.value.trim():'';
+    if(!banco)return;
+    const cuentas=[];
+    block.querySelectorAll('.bc-cuenta-row').forEach(row=>{
+      const num=row.querySelector('.bc-cnum')?.value.trim()||'';
+      const tipo=row.querySelector('.bc-ctipo')?.value||'RD$ — Pesos';
+      if(num)cuentas.push({numero:num,tipo,banco});
+    });
+    bancoCuentas.push({banco,cuentas});
+  });
+  DB.config.bancoCuentas=bancoCuentas;
+  DB.config.bancos=bancoCuentas.map(b=>b.banco);
+  sDB('config');
+  toast('✅ Bancos y cuentas guardados','success');
+}
+function guardarDatosRecibo(){
+  DB.config.responsable=document.getElementById('cf-responsable')?.value.trim()||'';
+  DB.config.observacionRecibo=document.getElementById('cf-obs-recibo')?.value.trim()||'';
+  sDB('config');
+  toast('✅ Datos del recibo guardados','success');
+}
 function guardarConfig(){
   DB.config.empresa=document.getElementById('cf-empresa').value.trim();
   DB.config.telefono=document.getElementById('cf-tel').value;
@@ -2691,11 +2794,7 @@ function guardarConfig(){
   const emp=document.getElementById('topbar-empresa');
   if(emp&&DB.config.empresa)emp.textContent=DB.config.empresa;
   actualizarLogoSidebar();
-  // Toast prominente
   toast('✅ Configuración guardada correctamente','success');
-  // Botón feedback visual
-  const btnG=document.getElementById('btn-guardar-config');
-  if(btnG){const orig=btnG.innerHTML;btnG.innerHTML='✅ Guardado';btnG.style.background='var(--green)';setTimeout(()=>{btnG.innerHTML=orig;btnG.style.background='';},2500);}
   if(typeof fbGuardar==='function'&&window._fbActivo){
     fbGuardar('config').catch(e=>console.warn('FB config save:',e));
   }
