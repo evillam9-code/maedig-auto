@@ -2474,6 +2474,18 @@ function guardarPermisosUsuarioConfig(i){
   sDB('users');
   toast(`Usuario ${escHtml(u.nombre)} actualizado ✓`,'success');
   if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
+  // Re-renderizar página activa para reflejar permisos inmediatamente
+  const _ap=document.querySelector('.page.active');
+  if(_ap){
+    const _pid=_ap.id.replace('page-','');
+    const _rm={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,
+      clientes:renderClientes,suplidores:renderSuplidores,gastos:renderGastos,
+      nomina:renderNomina,cxc:renderCXC,cxp:renderCXP,caja:renderCaja,
+      gastosVeh:renderGastosVeh,cotizaciones:renderCotizaciones,
+      autorizaciones:renderAutorizaciones,usuarios:renderUsuarios,
+      informes:renderInformes,config:renderConfig};
+    if(_rm[_pid])setTimeout(_rm[_pid],100);
+  }
 }
 
 function renderConfig(){
@@ -5884,7 +5896,7 @@ function renderCXC(){
         ${currentUser?.role==='admin'?`<button id="cxc-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="cxcAccion('eliminar')">🗑 Eliminar</button>`:''}
         <div style="width:1px;height:28px;background:var(--gray3);margin:0 2px"></div>
         <button class="btn btn-secondary btn-sm" onclick="imprimirCXC()">📄 PDF</button>
-        ${currentUser?.role==='admin'?`<button class="btn btn-primary" onclick="nuevaCXCManual()">➕ Nueva CxC</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('editar'))?`<button class="btn btn-primary" onclick="nuevaCXCManual()">➕ Nueva CxC</button>`:''}
       </div>
     </div>
 
