@@ -7974,14 +7974,19 @@ window.fbIniciar = async function(){
       if(_empFb&&DB.config.empresa)_empFb.textContent=DB.config.empresa;
       // Aplicar colores inmediatamente tras cargar Firebase
       if(typeof aplicarColoresSistema==='function'&&DB.config.colores)aplicarColoresSistema();
-      // Si estamos en config, re-renderizar con datos actualizados
+      // Re-renderizar CUALQUIER página activa con los datos de Firebase
       const _activePage=document.querySelector('.page.active');
-      if(_activePage&&_activePage.id==='page-config'){
-        if(typeof renderConfig==='function') renderConfig();
-      }
-      // Si estamos en dashboard, actualizar
-      if(_activePage&&_activePage.id==='page-dashboard'){
-        if(typeof renderDashboard==='function') renderDashboard();
+      if(_activePage){
+        const _pid=_activePage.id.replace('page-','');
+        const _renderMap={
+          dashboard:renderDashboard,inventario:renderInventario,
+          gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,
+          ventas:renderVentas,clientes:renderClientes,suplidores:renderSuplidores,
+          gastos:renderGastos,nomina:renderNomina,caja:renderCaja,
+          cotizaciones:renderCotizaciones,autorizaciones:renderAutorizaciones,
+          usuarios:renderUsuarios,config:renderConfig,informes:renderInformes
+        };
+        if(_renderMap[_pid])setTimeout(_renderMap[_pid],300);
       }
     } else {
       const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
