@@ -3446,18 +3446,28 @@ function editarGastoVeh(gid){
   const g=gastos[i];
   const tiposGasto=(DB.config.tiposGastoVeh&&DB.config.tiposGastoVeh.length)?DB.config.tiposGastoVeh:TIPOS_GASTO_VEH;
   const cuentas=DB.config.cuentas&&DB.config.cuentas.length?DB.config.cuentas:['Caja General'];
+  const vActual=DB.vehiculos.find(x=>x.id===g.vehiculoId);
   openModal('✏️ Editar Gasto de Vehículo',`
     <div class="form-row c2">
+      <div class="form-field"><label class="required">Vehículo</label>
+        <select id="egv-veh">
+          <option value="">Seleccionar vehículo...</option>
+          ${DB.vehiculos.filter(v=>v.status!=='VENDIDO').map(v=>`<option value="${v.id}" ${v.id===g.vehiculoId?'selected':''}>${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+' '+v.anio)}</option>`).join('')}
+          ${DB.vehiculos.filter(v=>v.status==='VENDIDO').length?`<option disabled>── Vendidos ──</option>${DB.vehiculos.filter(v=>v.status==='VENDIDO').map(v=>`<option value="${v.id}" ${v.id===g.vehiculoId?'selected':''}>${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+' '+v.anio)} (VENDIDO)</option>`).join('')}`:''}
+        </select>
+        ${vActual?`<div style="font-size:11px;color:var(--blue);margin-top:3px">Actual: ${escHtml(vActual.codigo+' — '+vActual.marca+' '+vActual.modelo)}</div>`:(g.vehiculo?`<div style="font-size:11px;color:var(--amber);margin-top:3px">⚠️ Guardado como texto: ${escHtml(g.vehiculo)}</div>`:'')}
+      </div>
       <div class="form-field"><label>Suplidor</label>
         <select id="egv-sup">
           <option value="">Sin suplidor</option>
           ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===g.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
         </select>
       </div>
+    </div>
+    <div class="form-row c2">
       <div class="form-field"><label>Tipo de Gasto</label>
         <select id="egv-tipo">${tiposGasto.map(t=>`<option ${t===g.tipo?'selected':''}>${t}</option>`).join('')}</select>
       </div>
-    </div>
     <div class="form-row c3">
       <div class="form-field"><label>Moneda</label>
         <select id="egv-moneda"><option value="RD$" ${(g.moneda||'RD$')==='RD$'?'selected':''}>RD$</option><option value="USD" ${g.moneda==='USD'?'selected':''}>USD</option></select>
@@ -3489,6 +3499,12 @@ function guardarEditGastoVeh(i){
   const factura=parseFloat(document.getElementById('egv-factura').value||0);
   const pagado=parseFloat(document.getElementById('egv-pagado').value||0);
   const pendiente=factura-pagado;
+  const egvVid=document.getElementById('egv-veh')?.value||DB.gastosVehiculos[i].vehiculoId;
+  if(egvVid){
+    const egvV=DB.vehiculos.find(x=>x.id===egvVid);
+    DB.gastosVehiculos[i].vehiculoId=egvVid;
+    if(egvV){DB.gastosVehiculos[i].codigo=egvV.codigo||'';DB.gastosVehiculos[i].vin=egvV.vin||'';DB.gastosVehiculos[i].vehiculo=egvV.marca+' '+egvV.modelo+(egvV.anio?' '+egvV.anio:'');}
+  }
   DB.gastosVehiculos[i].suplidor=document.getElementById('egv-sup').value;
   DB.gastosVehiculos[i].tipo=document.getElementById('egv-tipo').value;
   DB.gastosVehiculos[i].moneda=document.getElementById('egv-moneda').value;
