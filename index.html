@@ -916,7 +916,7 @@ function seleccionarVehiculo(id,tr){
   const esAdmin=currentUser?.role==='admin';
   const actBtn=(id,bg,color)=>{const b=document.getElementById(id);if(b){b.disabled=false;b.style.background=bg;b.style.color=color;b.style.cursor='pointer';}};
   actBtn('inv-btn-editar','#475569','#fff');
-  if(esAdmin)actBtn('inv-btn-eliminar','#dc2626','#fff');
+  if(esAdmin||canDo('eliminar'))actBtn('inv-btn-eliminar','#dc2626','#fff');
 }
 function invAccion(accion){
   if(!invSelectedId)return;
@@ -952,7 +952,7 @@ function renderInventario(){
         </select>
         <div style="width:1px;height:28px;background:var(--gray3);margin:0 2px"></div>
         <button id="inv-btn-editar" disabled class="btn btn-sm" style="${btnDis}" onclick="invAccion('editar')" title="Editar">✏️ Editar</button>
-        ${currentUser?.role==='admin'?`<button id="inv-btn-eliminar" disabled class="btn btn-sm" style="${btnDis}" onclick="invAccion('eliminar')" title="Eliminar">🗑 Eliminar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="inv-btn-eliminar" disabled class="btn btn-sm" style="${btnDis}" onclick="invAccion('eliminar')" title="Eliminar">🗑 Eliminar</button>`:''}
         <button class="btn btn-primary" onclick="nuevoVehiculo()">➕ Nuevo Vehículo</button>
       </div>
     </div>
@@ -988,7 +988,7 @@ function renderInventario(){
             <td>
               <div style="display:flex;gap:4px">
                 <button class="btn btn-sm" style="background:var(--blue3);color:var(--blue);padding:4px 8px" onclick="event.stopPropagation();editarVehiculo('${v.id}')" title="Editar">✏️</button>
-                ${currentUser?.role==='admin'?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="event.stopPropagation();eliminarVehiculo('${v.id}')" title="Eliminar">🗑</button>`:''}
+                ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="event.stopPropagation();eliminarVehiculo('${v.id}')" title="Eliminar">🗑</button>`:''}
               </div>
             </td>
           </tr>`;
@@ -1167,7 +1167,7 @@ function verVehiculo(id){
 }
 
 function eliminarVehiculo(id){
-  if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar','error');return;}
+  if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
   const v=DB.vehiculos.find(x=>x.id===id);
   openModal('Eliminar Vehículo',`<p>¿Eliminar <strong>${v?.marca} ${v?.modelo} ${v?.anio}</strong>?</p>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -1189,7 +1189,7 @@ function gastosVehiculo(vid){
     <td style="font-weight:700;color:var(--red)">${fV(g.montoFactura||g.monto||0)}</td>
     <td style="color:var(--green);font-weight:600">${fV(g.montoPagado||0)}</td>
     <td style="font-weight:700;color:${parseFloat(g.montoPendiente||0)>0?'var(--red)':'var(--green)'}">${fV(g.montoPendiente||0)}</td>
-    <td>${currentUser?.role==='admin'?`<button class="btn btn-red btn-sm" onclick="eliminarGastoVeh('${g.id}','${vid}')">🗑</button>`:''}</td>
+    <td>${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-red btn-sm" onclick="eliminarGastoVeh('${g.id}','${vid}')">🗑</button>`:''}</td>
   </tr>`;}).join('');
   openModal(`💸 Gastos — ${v.codigo} ${v.marca} ${v.modelo} ${v.anio}`,`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;background:var(--gray2);padding:12px;border-radius:8px">
@@ -1252,7 +1252,7 @@ function agregarGastoVeh(vid){
   DB.caja.push({id:uid(),fecha:g.fecha,tipo:'SALIDA',categoria:'Gasto de Vehículo',descripcion:`Gasto [${DB.vehiculos.find(v=>v.id===vid)?.codigo||vid}]: ${g.tipo} — ${g.descripcion}`,monto,referencia:g.cuenta,responsable:currentUser?.nombre||''});
   sDB('gastosVehiculos');sDB('caja');toast('Gasto agregado ✓','success');gastosVehiculo(vid);
 }
-function eliminarGastoVeh(gid,vid){if(currentUser?.role!=='admin'){toast('Solo admin puede eliminar','error');return;}DB.gastosVehiculos=(DB.gastosVehiculos||[]).filter(g=>g.id!==gid);sDB('gastosVehiculos');toast('Eliminado','success');gastosVehiculo(vid);}
+function eliminarGastoVeh(gid,vid){if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}DB.gastosVehiculos=(DB.gastosVehiculos||[]).filter(g=>g.id!==gid);sDB('gastosVehiculos');toast('Eliminado','success');gastosVehiculo(vid);}
 
 function imprimirGastosVehiculo(vid){
   const v=DB.vehiculos.find(x=>x.id===vid);if(!v)return;
@@ -1473,7 +1473,7 @@ function renderCaja(){
           <td style="font-weight:700;color:${c.tipo==='ENTRADA'?'var(--green)':'var(--red)'}">${fmt(c.monto)}</td>
           <td style="font-size:12px;color:var(--gray)">${escHtml(c.referencia||'—')}</td>
           <td style="font-size:12px">${escHtml(c.responsable||'—')}</td>
-          <td>${currentUser?.role==='admin'?`<button class="btn btn-red btn-sm" onclick="DB.caja.splice(${i},1);sDB('caja');renderCaja()">🗑</button>`:''}</td>
+          <td>${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-red btn-sm" onclick="DB.caja.splice(${i},1);sDB('caja');renderCaja()">🗑</button>`:''}</td>
         </tr>`;}).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">Sin registros</td></tr>'}
         </tbody></table></div>
     </div>`;
@@ -1571,7 +1571,7 @@ function renderGastos(){
       <div><h1>🏢 Gastos de Empresa</h1><p>Total: ${fmt(total)}</p></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="gas-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="gasAccion('editar')">✏️ Editar</button>
-        ${currentUser?.role==='admin'?`<button id="gas-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="gasAccion('eliminar')">🗑 Eliminar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="gas-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="gasAccion('eliminar')">🗑 Eliminar</button>`:''}
         <button class="btn btn-secondary btn-sm" onclick="imprimirGastos()">📄 PDF</button>
         <button class="btn btn-primary" onclick="nuevoGasto()">➕ Nuevo Gasto</button>
       </div>
@@ -1596,13 +1596,13 @@ function selGasto(id,tr){
   if(tr)tr.style.background='#e8f0fe';
   const actB=(bid,bg,c)=>{const b=document.getElementById(bid);if(b){b.disabled=false;b.style.cssText='background:'+bg+';color:'+c+';cursor:pointer;';}};
   actB('gas-btn-editar','#475569','#fff');
-  if(currentUser?.role==='admin')actB('gas-btn-eliminar','#dc2626','#fff');
+  if(currentUser?.role==='admin'||canDo('eliminar'))actB('gas-btn-eliminar','#dc2626','#fff');
 }
 function gasAccion(accion){
   if(!gasSelectedId)return;
   const i=DB.gastos.findIndex(g=>g.id===gasSelectedId);if(i<0)return;
   if(accion==='editar'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}else if(accion==='editar')editarGasto(i);
-  else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar'){if(currentUser?.role!=='admin'){toast('Solo admin','error');return;}DB.gastos.splice(i,1);sDB('gastos');toast('Eliminado','success');gasSelectedId=null;renderGastos();}
+  else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar'){if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}DB.gastos.splice(i,1);sDB('gastos');toast('Eliminado','success');gasSelectedId=null;renderGastos();}
 }
 function editarGasto(i){
   const g=DB.gastos[i];
@@ -1788,7 +1788,7 @@ function renderNomina(){
         ${tab==='empleados'?`
           <button id="nom-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('editar')">✏️ Editar</button>
           <button id="nom-btn-pago" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('pago')">💵 Registrar Pago</button>
-          ${currentUser?.role==='admin'?`<button id="nom-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('eliminar')">🗑 Eliminar</button>`:''}
+          ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="nom-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('eliminar')">🗑 Eliminar</button>`:''}
           <button class="btn btn-primary" onclick="nuevoEmpleado()">➕ Nuevo Empleado</button>
         `:`
           <button id="nom-btn-elim-pago" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('eliminar-pago')">🗑 Eliminar Pago</button>
@@ -1883,7 +1883,7 @@ function selNomPago(id,tr){
 function nomAccion(accion){
   if(accion==='eliminar-pago'){
     if(!nomPagoSelectedId){toast('Selecciona un pago','error');return;}
-    if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar pagos','error');return;}
+    if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar pagos','error');return;}
     DB.nominaPagos=(DB.nominaPagos||[]).filter(p=>p.id!==nomPagoSelectedId);
     sDB('nominaPagos');nomPagoSelectedId=null;toast('Pago eliminado','success');renderNomina();return;
   }
@@ -1892,7 +1892,7 @@ function nomAccion(accion){
   if(accion==='editar'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}else if(accion==='editar')editarEmpleado(idx);
   else if(accion==='pago')registrarPagoNomina(idx);
   else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar'){
-    if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar empleados','error');return;}
+    if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar empleados','error');return;}
     DB.nomina.splice(idx,1);sDB('nomina');nomSelectedId=null;renderNomina();
   }
 }
@@ -2372,7 +2372,21 @@ function guardarUsuario(idx){
   const nuevosPerms={};permKeys.forEach(k=>{const el=document.getElementById('u-perm-'+k);if(el)nuevosPerms[k]=el.checked;});
   if(idx!==undefined){DB.users[idx].nombre=nombre;DB.users[idx].username=user;DB.users[idx].role=document.getElementById('u-role').value;if(pass)DB.users[idx].password=pass;DB.users[idx].modulos=nuevosMods;DB.users[idx].permisos=nuevosPerms;if(currentUser.id===DB.users[idx].id){currentUser=DB.users[idx];}}
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
-  sDB('users');closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
+  sDB('users');
+  if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
+  closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
+  // Re-renderizar página activa para que permisos apliquen de inmediato
+  const _ap2=document.querySelector('.page.active');
+  if(_ap2){
+    const _pid2=_ap2.id.replace('page-','');
+    const _rm2={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,
+      clientes:renderClientes,suplidores:renderSuplidores,gastos:renderGastos,
+      nomina:renderNomina,cxc:renderCXC,cxp:renderCXP,caja:renderCaja,
+      gastosVeh:renderGastosVeh,cotizaciones:renderCotizaciones,
+      autorizaciones:renderAutorizaciones,usuarios:renderUsuarios,
+      informes:renderInformes,config:renderConfig};
+    if(_rm2[_pid2])setTimeout(_rm2[_pid2],150);
+  }
 }
 
 
@@ -2505,7 +2519,13 @@ function renderConfig(){
   // Si Firebase activo pero aún no cargó, mostrar aviso
   const fbPendiente=window._fbActivo&&!window._fbCargado;
   document.getElementById('page-config').innerHTML=`
-    <div class="page-header"><div><h1>⚙️ Configuración</h1><p>Información del negocio</p></div></div>
+    <div class="page-header"><div><h1>⚙️ Configuración</h1><p>Información del negocio</p></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="forzarSincronizacion()" style="background:#2563eb;color:#fff;border:none">
+          ☁️ Subir todo a Firebase
+        </button>
+      </div>
+    </div>
     ${fbPendiente?'<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400e;display:flex;align-items:center;gap:8px"><span>⏳</span> Sincronizando con Firebase... Los datos se actualizarán en unos segundos.</div>':''}
     <div class="card">
       <div class="card-title">🏢 Información del Negocio</div>
@@ -3102,8 +3122,7 @@ function renderGastosVeh(){
       <div><h1>💸 Gastos de Vehículo</h1><p>${gastos.length} registro(s) — Pendiente RD$: <strong style="color:var(--red)">${pendRD.toLocaleString('es-DO',{minimumFractionDigits:2})} | USD: $${pendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></p></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="gveh-btn-pagar" disabled class="btn btn-sm btn-green" style="${ds}" onclick="gvehAccion('pagar')">💵 Registrar Pago</button>
-        ${currentUser?.role==='admin'?`<button id="gveh-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="gvehAccion('editar')">✏️ Editar</button>
-        <button id="gveh-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="gvehAccion('eliminar')">🗑 Eliminar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('editar')||canDo('eliminar'))?`${(currentUser?.role==='admin'||canDo('editar'))?`<button id="gveh-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="gvehAccion('editar')">✏️ Editar</button>`:''} ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="gveh-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="gvehAccion('eliminar')">🗑 Eliminar</button>`:''}`:''}
         <button class="btn btn-primary" onclick="nuevoGastoVeh()">➕ Nuevo Gasto</button>
       </div>
     </div>
@@ -3214,10 +3233,12 @@ function nuevoGastoVeh(){
   openModal('➕ Nuevo Gasto de Vehículo',`
     <div class="form-row c2">
       <div class="form-field"><label class="required">Vehículo</label>
-        <select id="ngv-veh">
-          <option value="">Seleccionar vehículo...</option>
+        <select id="ngv-veh" style="${DB.vehiculos.length===0?'border:2px solid var(--red)':''}">
+          <option value="">${DB.vehiculos.length===0?'⚠️ No hay vehículos registrados':'Seleccionar vehículo...'}</option>
           ${DB.vehiculos.filter(v=>v.status!=='VENDIDO').map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio}</option>`).join('')}
+          ${DB.vehiculos.filter(v=>v.status==='VENDIDO').length?`<option disabled>── Vendidos ──</option>${DB.vehiculos.filter(v=>v.status==='VENDIDO').map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio} (VENDIDO)</option>`).join('')}`:''}
         </select>
+        ${DB.vehiculos.length===0?'<div style="color:var(--red);font-size:11px;margin-top:4px">⚠️ Debes registrar un vehículo antes de agregar gastos.</div>':''}
       </div>
       <div class="form-field"><label class="required">Suplidor</label>
         <select id="ngv-sup">
@@ -3311,7 +3332,12 @@ function guardarNuevoGastoVeh(){
   const vid=document.getElementById('ngv-veh').value;
   const sup=document.getElementById('ngv-sup').value;
   const tipo=document.getElementById('ngv-tipo').value;
-  if(!vid){toast('Selecciona un vehículo','error');return;}
+  if(!vid){
+    toast('⚠️ Debes seleccionar un vehículo. Ve a Registro de Vehículo primero.','error');
+    const sel=document.getElementById('ngv-veh');
+    if(sel){sel.style.border='2px solid var(--red)';setTimeout(()=>sel.style.border='',3000);}
+    return;
+  }
   if(!tipo){toast('Selecciona el tipo de gasto','error');return;}
   const factura=parseFloat((document.getElementById('ngv-factura').value||'0').replace(/,/g,''));
   if(!factura){toast('El monto de factura es requerido','error');return;}
@@ -3487,7 +3513,8 @@ function selGVeh(id,tr){
   const g=(DB.gastosVehiculos||[]).find(x=>x.id===id);
   const actB=(bid,bg,c)=>{const b=document.getElementById(bid);if(b){b.disabled=false;b.style.cssText='background:'+bg+';color:'+c+';cursor:pointer;border:none;';}};
   if(parseFloat(g?.montoPendiente||0)>0)actB('gveh-btn-pagar','#16a34a','#fff');
-  if(currentUser?.role==='admin'){actB('gveh-btn-editar','#475569','#fff');actB('gveh-btn-eliminar','#dc2626','#fff');}
+  if(currentUser?.role==='admin'||canDo('editar'))actB('gveh-btn-editar','#475569','#fff');
+  if(currentUser?.role==='admin'||canDo('eliminar'))actB('gveh-btn-eliminar','#dc2626','#fff');
 }
 
 function agregarTipoGastoVeh(){
@@ -3635,8 +3662,8 @@ function renderVentas(){
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('ventas-mes').value='';renderVentas()">🔄 Todos</button>
         <div style="width:1px;height:28px;background:var(--gray3);margin:0 2px"></div>
         <button id="vta-btn-imprimir" disabled class="btn btn-sm" style="${ds}" onclick="ventaAccion('imprimir')" title="Imprimir factura">🖨️ Imprimir</button>
-        ${currentUser?.role==='admin'?`<button id="vta-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="ventaAccion('editar')" title="Editar">✏️ Editar</button>
-        <button id="vta-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="ventaAccion('eliminar')" title="Eliminar">🗑 Eliminar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('editar'))?`<button id="vta-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="ventaAccion('editar')" title="Editar">✏️ Editar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="vta-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="ventaAccion('eliminar')" title="Eliminar">🗑 Eliminar</button>`:''}
         <div style="width:1px;height:28px;background:var(--gray3);margin:0 2px"></div>
         <button class="btn btn-secondary btn-sm" onclick="exportarVentasPDF('${mes}')">📄 PDF</button>
         <button class="btn btn-primary" onclick="nuevaVenta()">➕ Nueva Venta</button>
@@ -3993,7 +4020,7 @@ function ventaAccion(accion){
     editarVenta(ventaSelectedId);
   }
   else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar'){
-    if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar','error');return;}
+    if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
     const v=DB.ventas.find(x=>x.id===ventaSelectedId);
     if(!v)return;
     openModal('🗑 Eliminar Venta',`<p>¿Eliminar la venta <strong>${escHtml(v.factura)}</strong> de <strong>${escHtml(v.cliente)}</strong>?</p><p style="color:var(--red);font-size:12px;margin-top:8px">⚠️ Esta acción también eliminará la cuenta por cobrar asociada.</p>`,
@@ -4079,7 +4106,7 @@ function confirmarEntrega(ventaId){
 }
 
 function confirmarEliminarVenta(id){
-  if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar','error');return;}
+  if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
   // Restaurar estado del vehículo
   const v=DB.ventas.find(x=>x.id===id);
   if(v){
@@ -4410,7 +4437,7 @@ function confirmarAbVenta(vid){
 }
 
 function editarVenta(vid){
-  if(currentUser?.role!=='admin'){toast('Solo el administrador puede editar ventas','error');return;}
+  if(currentUser?.role!=='admin'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}
   const v=DB.ventas.find(x=>x.id===vid);if(!v)return;
   openModal('✏️ Editar Venta — '+escHtml(v.factura),`
     <div class="form-row c2">
@@ -4669,7 +4696,7 @@ function renderCotizaciones(){
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="cot-btn-imprimir" disabled class="btn btn-sm" style="${ds}" onclick="cotAccion('imprimir')">🖨️ Imprimir</button>
         <button id="cot-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="cotAccion('editar')">✏️ Editar</button>
-        ${currentUser?.role==='admin'?`<button id="cot-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="cotAccion('eliminar')">🗑 Eliminar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="cot-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="cotAccion('eliminar')">🗑 Eliminar</button>`:''}
         <button class="btn btn-primary" onclick="nuevaCotizacion()">➕ Nueva Cotización</button>
       </div>
     </div>
@@ -4708,7 +4735,7 @@ function selCot(id,tr){
   const actB=(bid,bg,col)=>{const b=document.getElementById(bid);if(b){b.disabled=false;b.style.cssText='background:'+bg+';color:'+col+';cursor:pointer;border:none;';}};
   actB('cot-btn-imprimir','#475569','#fff');
   actB('cot-btn-editar','#2563eb','#fff');
-  if(currentUser?.role==='admin')actB('cot-btn-eliminar','#dc2626','#fff');
+  if(currentUser?.role==='admin'||canDo('eliminar'))actB('cot-btn-eliminar','#dc2626','#fff');
 }
 function cotAccion(accion){
   if(!cotSelectedId)return;
@@ -4717,7 +4744,7 @@ function cotAccion(accion){
   if(accion==='imprimir'&&!canDo('imprimir')){toast('No tienes permiso para imprimir','error');return;}else if(accion==='imprimir')imprimirCotizacion(i);
   else if(accion==='editar'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}else if(accion==='editar')editarCotizacion(i);
   else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar'){
-    if(currentUser?.role!=='admin'){toast('Solo el administrador puede eliminar','error');return;}
+    if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
     openModal('Eliminar',`<p>¿Eliminar cotización de <strong>${escHtml(DB.cotizaciones[i].cliente)}</strong>?</p>`,
       `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
        <button class="btn btn-red" onclick="DB.cotizaciones.splice(${i},1);sDB('cotizaciones');closeModal();toast('Eliminado','success');renderCotizaciones()">🗑 Eliminar</button>`);
@@ -4755,7 +4782,7 @@ function renderClientes(){
             <td style="text-align:center"><span class="badge ${compras>0?'badge-green':'badge-gray'}">${compras}</span></td>
             <td><div style="display:flex;gap:4px">
               <button class="btn btn-sm" style="background:var(--blue3);color:var(--blue);padding:4px 8px" onclick="editarCliente(${i})" title="Editar">✏️</button>
-              ${currentUser?.role==='admin'?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="eliminarCliente(${i})" title="Eliminar">🗑</button>`:''}
+              ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="eliminarCliente(${i})" title="Eliminar">🗑</button>`:''}
             </div></td>
           </tr>`;
         }).join('')||'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">Sin clientes registrados</td></tr>'}
@@ -4765,7 +4792,7 @@ function renderClientes(){
 }
 function nuevoCliente(){openModal('Nuevo Cliente',formCliente(null),`<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarCliente()">💾 Guardar</button>`);}
 function editarCliente(i){openModal('Editar Cliente',formCliente(DB.clientes[i]),`<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarCliente(${i})">💾 Actualizar</button>`);}
-function eliminarCliente(i){if(currentUser?.role!=='admin'){toast('Solo admin puede eliminar','error');return;}openModal('Eliminar',`<p>¿Eliminar <strong>${escHtml(DB.clientes[i].nombre)}</strong>?</p>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-red" onclick="DB.clientes.splice(${i},1);sDB('clientes');closeModal();toast('Eliminado','success');renderClientes()">🗑 Eliminar</button>`);}
+function eliminarCliente(i){if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}openModal('Eliminar',`<p>¿Eliminar <strong>${escHtml(DB.clientes[i].nombre)}</strong>?</p>`,`<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-red" onclick="DB.clientes.splice(${i},1);sDB('clientes');closeModal();toast('Eliminado','success');renderClientes()">🗑 Eliminar</button>`);}
 
 
 // ══ COTIZACIONES (funciones) ══
@@ -5273,7 +5300,7 @@ function supAccion(accion){
   const idx=DB.suplidores.findIndex((x,i)=>(x.id||String(i))===supSelectedId);
   if(idx<0)return;
   if(accion==='editar'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}else if(accion==='editar')editarSuplidor(idx);
-  else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar'){if(currentUser?.role!=='admin'){toast('Solo admin puede eliminar','error');return;}DB.suplidores.splice(idx,1);sDB('suplidores');toast('Eliminado','success');renderSuplidores();}
+  else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar'){if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}DB.suplidores.splice(idx,1);sDB('suplidores');toast('Eliminado','success');renderSuplidores();}
 }
 
 function supAccionDirecta(accion,id){
@@ -5282,7 +5309,7 @@ function supAccionDirecta(accion,id){
   if(idx<0)return;
   if(accion==='editar')editarSuplidor(idx);
   else if(accion==='eliminar'){
-    if(currentUser?.role!=='admin'){toast('Solo admin puede eliminar','error');return;}
+    if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
     if(!confirm('¿Eliminar este suplidor?'))return;
     DB.suplidores.splice(idx,1);sDB('suplidores');toast('Suplidor eliminado','success');renderSuplidores();
   }
@@ -5331,7 +5358,7 @@ function renderCXP(){
       <span>Las cuentas por pagar se generan automáticamente al registrar gastos de vehículo con saldo pendiente.</span>
     </div>
     <div class="card" style="margin-bottom:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
         <div style="display:flex;flex-direction:column;gap:4px">
           <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Suplidor</label>
           <select id="cxp-filtro-sup" onchange="renderCXP()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
@@ -5346,16 +5373,8 @@ function renderCXP(){
             ${DB.vehiculos.filter(v=>(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id&&parseFloat(g.montoPendiente||0)>0)).map(v=>`<option value="${v.id}" ${v.id===filtroVeh?'selected':''}>${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)}</option>`).join('')}
           </select>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Moneda</label>
-          <select id="cxp-filtro-moneda" onchange="renderCXP()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
-            <option value="">Todas las monedas</option>
-            <option value="RD$" ${filtroMoneda==='RD$'?'selected':''}>🇩🇴 Pesos (RD$)</option>
-            <option value="USD" ${filtroMoneda==='USD'?'selected':''}>🇺🇸 Dólares (USD)</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:flex-end">
-          <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('cxp-filtro-sup').value='';document.getElementById('cxp-filtro-veh').value='';document.getElementById('cxp-filtro-moneda').value='';renderCXP()">🔄 Limpiar</button>
+        <div><input type="hidden" id="cxp-filtro-moneda" value="${filtroMoneda}">
+          <button class="btn btn-secondary" onclick="document.getElementById('cxp-filtro-sup').value='';document.getElementById('cxp-filtro-veh').value='';renderCXP()">🔄 Limpiar</button>
         </div>
       </div>
     </div>
@@ -5399,10 +5418,23 @@ function renderCXP(){
           const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
           const esUSD=(g.moneda||'RD$')==='USD';
           const fmtMon=n=>esUSD?`$${parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})} USD`:fmt(n);
+          // Extraer nombre y VIN de todas las fuentes posibles
+          const tipoTxt=g.tipo||g.descripcion||'';
+          const vinMatch=tipoTxt.match(/VIN[.# :-]*([A-HJ-NPR-Z0-9]{5,17})/i);
+          const vinFinal=v?v.vin:(g.vin||'')|| (vinMatch?vinMatch[1]:'');
+          // Nombre: del objeto vehiculo enlazado, o del campo vehiculo, o extraer del texto tipo
+          let nombreVeh='';
+          if(v) nombreVeh=v.marca+' '+v.modelo+(v.anio?' '+v.anio:'');
+          else if(g.vehiculo&&g.vehiculo!=='MANUAL') nombreVeh=g.vehiculo;
+          else if(g._origen!=='manual'&&tipoTxt&&tipoTxt!=='MANUAL'){
+            // Solo extraer nombre del texto tipo si no es un registro manual puro
+            const txtLimpio=tipoTxt.replace(/VIN[.# :-]*[A-HJ-NPR-Z0-9]{5,17}/gi,'').replace(/\s+/g,' ').trim();
+            if(txtLimpio&&txtLimpio.length>3&&txtLimpio!=='MANUAL') nombreVeh=txtLimpio;
+          }
           return`<tr>
-            <td style="font-size:12px">${fmtDate(g.fecha)}</td>
-            <td style="font-weight:700">${escHtml(g.suplidor||'—')}</td>
-            <td style="font-size:12px;min-width:130px">${(()=>{const vn=v?v.marca+' '+v.modelo+(v.anio?' '+v.anio:''):g.vehiculo||'';const vin=v?v.vin||'':g.vin||'';return vn?`<div style="font-weight:600;font-size:12px">${escHtml(vn)}</div><div style="font-family:monospace;font-size:10px;color:var(--blue)">${vin?escHtml(vin):'Sin VIN'}</div>`:'<span style="color:var(--gray)">—</span>';})()}</td>
+            <td style="font-size:11px;color:var(--gray)">${fmtDate(g.fecha)}</td>
+            <td style="font-weight:600;font-size:12px;max-width:120px">${escHtml(g.suplidor||'—')}</td>
+            <td style="min-width:140px">${nombreVeh?`<div style="font-weight:700;font-size:12px">${escHtml(nombreVeh)}</div><div style="font-family:monospace;font-size:10px;color:var(--blue);margin-top:2px">${escHtml(vinFinal||'Sin VIN')}</div>`:'<span style="color:var(--gray)">—</span>'}</td>
             <td style="max-width:130px"><span class="badge badge-amber" style="font-size:10px;white-space:normal;line-height:1.3">${escHtml(g._origen==='manual'?(g.descripcion||g.tipo||'—'):g.tipo||'—')}</span></td>
             <td style="font-weight:600">${fmtMon(g.montoFactura||0)}</td>
             <td style="color:var(--green)">${fmtMon(g.montoPagado||0)}</td>
@@ -5950,7 +5982,7 @@ function renderCXC(){
           <td style="text-align:center"><input type="radio" name="cxc-sel" onclick="event.stopPropagation();selCXC('${x.id}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
           <td><div style="font-family:monospace;font-size:11px;font-weight:700;color:var(--blue)">${escHtml(x.factura||'—')}</div></td>
           <td><div style="font-weight:700">${escHtml(x.cliente||'—')}</div></td>
-          <td style="font-size:12px">${escHtml(x.vehiculo||'—')}</td>
+          <td style="min-width:120px">${(()=>{const vCxC=DB.vehiculos.find(vv=>vv.id===x.vehiculoId);const nm=vCxC?(vCxC.marca+' '+vCxC.modelo+(vCxC.anio?' '+vCxC.anio:'')):(x.vehiculo||'');const vi=vCxC?vCxC.vin||'':'';return nm?`<div style="font-weight:700;font-size:12px">${escHtml(nm)}</div><div style="font-family:monospace;font-size:10px;color:var(--blue);margin-top:2px">${escHtml(vi||'Sin VIN')}</div>`:'<span style="color:var(--gray)">—</span>';})()}</td>
           <td>${tipoBadge}<div style="font-size:11px;color:var(--gray);margin-top:2px">${escHtml(x.concepto||'—')}</div></td>
           <td style="font-weight:600">${fV(x.total)}</td>
           <td style="color:var(--green);font-weight:600">${fV(x.abonado||0)}</td>
@@ -7176,7 +7208,7 @@ function exportarSegurosPDF(){
   win.document.close();
 }
 function eliminarSeguro(id){
-  if(currentUser?.role!=='admin'){toast('Solo admin puede eliminar','error');return;}
+  if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
   openModal('🗑 Eliminar Seguro','<p>¿Eliminar este seguro?</p>',
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-red" onclick="DB.seguros=DB.seguros.filter(x=>x.id!=='${id}');sDB('seguros');closeModal();toast('Eliminado','success');renderSeguros()">🗑 Eliminar</button>`);
@@ -7891,6 +7923,36 @@ function fbActivarListeners(){
   });
   console.log('✅ Firebase listeners activos — tiempo real habilitado');
 }
+
+window.forzarSincronizacion = async function(){
+  if(!window._fbActivo){toast('Firebase no está conectado','error');return;}
+  const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
+    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log'];
+  const dot=document.getElementById('fb-dot');
+  const txt=document.getElementById('fb-text');
+  if(dot)dot.style.background='#f59e0b';
+  if(txt)txt.textContent='Subiendo...';
+  try {
+    let count=0;
+    for(const k of keys){
+      // Solo subir si hay datos en localStorage
+      const localVal=DB[k];
+      const tieneData=Array.isArray(localVal)?localVal.length>0:(localVal&&Object.keys(localVal).length>0);
+      if(tieneData){
+        await fbGuardar(k);
+        count++;
+      }
+    }
+    if(dot)dot.style.background='#22c55e';
+    if(txt)txt.textContent='✓ Firebase';
+    toast('✅ '+count+' colecciones subidas a Firebase correctamente','success');
+    console.log('Sincronización forzada completada: '+count+' keys');
+  } catch(e){
+    if(dot)dot.style.background='#ef4444';
+    if(txt)txt.textContent='Error';
+    toast('Error al sincronizar: '+e.message,'error');
+  }
+};
 
 window.fbIniciar = async function(){
   const dot=document.getElementById('fb-dot');
