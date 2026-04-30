@@ -3196,7 +3196,11 @@ function renderGastosVeh(){
           <th>Estado</th>
         </tr></thead>
         <tbody>${gastos.length?gastos.slice().reverse().map(g=>{
-          const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+          let v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+          if(!v&&g.vehiculoId){
+            if(g.codigo) v=DB.vehiculos.find(x=>x.codigo===g.codigo);
+            if(!v&&g.vin) v=DB.vehiculos.find(x=>x.vin===g.vin);
+          }
           const sColor={PAGADO:'badge-green',ABONADO:'badge-amber',PENDIENTE:'badge-red'};
           return`<tr onclick="selGVeh('${g.id}',this)" style="cursor:pointer">
             <td style="text-align:center"><input type="radio" name="gveh-sel" onclick="event.stopPropagation();selGVeh('${g.id}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
@@ -3347,9 +3351,13 @@ function guardarNuevoGastoVeh(){
   const tasaUsada=moneda==='USD'?parseFloat(document.getElementById('ngv-tasa')?.value||DB.config.tasaCambio||60):parseFloat(DB.config.tasaCambio||60);
   const bancoVal=document.getElementById('ngv-banco')?.value||'';
   const cuentaVal=document.getElementById('ngv-cuenta')?.value||'';
+  const _vRef=DB.vehiculos.find(x=>x.id===vid);
   const g={
     id:uid(),
     vehiculoId:vid,
+    codigo:_vRef?.codigo||'',
+    vin:_vRef?.vin||'',
+    vehiculo:_vRef?(_vRef.marca+' '+_vRef.modelo+(_vRef.anio?' '+_vRef.anio:'')):'',
     suplidor:sup,
     tipo,
     moneda,
@@ -5415,19 +5423,23 @@ function renderCXP(){
           <th style="width:90px">Acción</th>
         </tr></thead>
         <tbody>${gastosPend.length?gastosPend.slice().reverse().map(g=>{
-          const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+          // Buscar vehículo por id, o por vin/codigo si el id no coincide (datos de otro dispositivo)
+          let v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+          if(!v&&g.vehiculoId){
+            // Intentar por código de vehículo guardado
+            if(g.codigo) v=DB.vehiculos.find(x=>x.codigo===g.codigo);
+            // Intentar por VIN guardado en el gasto
+            if(!v&&g.vin) v=DB.vehiculos.find(x=>x.vin===g.vin);
+          }
           const esUSD=(g.moneda||'RD$')==='USD';
           const fmtMon=n=>esUSD?`$${parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})} USD`:fmt(n);
-          // Extraer nombre y VIN de todas las fuentes posibles
           const tipoTxt=g.tipo||g.descripcion||'';
           const vinMatch=tipoTxt.match(/VIN[.# :-]*([A-HJ-NPR-Z0-9]{5,17})/i);
           const vinFinal=v?v.vin:(g.vin||'')|| (vinMatch?vinMatch[1]:'');
-          // Nombre: del objeto vehiculo enlazado, o del campo vehiculo, o extraer del texto tipo
           let nombreVeh='';
           if(v) nombreVeh=v.marca+' '+v.modelo+(v.anio?' '+v.anio:'');
           else if(g.vehiculo&&g.vehiculo!=='MANUAL') nombreVeh=g.vehiculo;
           else if(g._origen!=='manual'&&tipoTxt&&tipoTxt!=='MANUAL'){
-            // Solo extraer nombre del texto tipo si no es un registro manual puro
             const txtLimpio=tipoTxt.replace(/VIN[.# :-]*[A-HJ-NPR-Z0-9]{5,17}/gi,'').replace(/\s+/g,' ').trim();
             if(txtLimpio&&txtLimpio.length>3&&txtLimpio!=='MANUAL') nombreVeh=txtLimpio;
           }
