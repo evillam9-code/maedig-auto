@@ -615,6 +615,9 @@ function canAccess(modId){
 function canDo(action){
   if(!currentUser)return false;
   if(currentUser.role==='admin')return true;
+  // Roles con acceso total (dueño, gerente, etc.)
+  const rolesAdmin=['admin','dueño','dueno','gerente','owner'];
+  if(rolesAdmin.some(r=>currentUser.role?.toLowerCase()===r.toLowerCase()))return true;
   return (currentUser.permisos||{})[action]===true;
 }
 function aplicarPermisosNav(){
@@ -5436,7 +5439,7 @@ function renderCXP(){
           <th>Pendiente</th>
           <th>F. Pago</th>
           <th>Estado</th>
-          <th style="width:90px">Acción</th>
+          <th style="width:130px">Acción</th>
         </tr></thead>
         <tbody>${gastosPend.length?gastosPend.slice().reverse().map(g=>{
           // Buscar vehículo por id, o por vin/codigo si el id no coincide (datos de otro dispositivo)
@@ -5472,7 +5475,8 @@ function renderCXP(){
             <td>
               <div style="display:flex;gap:4px;flex-wrap:wrap">
                 ${parseFloat(g.montoPendiente||0)>0?`<button class="btn btn-sm btn-green" onclick="event.stopPropagation();${g._origen==='manual'?`abonarCXPManual('${g.id}')`:`abonarDesdeCXP('${g.id}')`}" title="Registrar pago">💵 Pagar</button>`:''}
-                ${(g.pagos||[]).length>0?`<button class="btn btn-sm" style="background:var(--blue3);color:var(--blue)" onclick="event.stopPropagation();verHistorialCXP('${g.id}')" title="Historial de pagos">📋</button>`:''}
+                ${(currentUser?.role==='admin'||currentUser?.permisos?.editar||canDo('editar'))?`<button class="btn btn-sm" style="background:var(--blue3);color:var(--blue);padding:4px 8px" onclick="event.stopPropagation();editarCXP('${g.id}','${g._origen}')" title="Editar">✏️</button>`:''}
+                ${(g.pagos||[]).length>0?`<button class="btn btn-sm" style="background:#f1f5f9;color:var(--gray)" onclick="event.stopPropagation();verHistorialCXP('${g.id}')" title="Historial de pagos">📋</button>`:''}
               </div>
             </td>
           </tr>`;
@@ -5493,6 +5497,89 @@ function actualizarCuentasCXPP(){
   const b=bcs.find(x=>x.banco===bancoEl.value);
   cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
 }
+function editarCXP(gid, origen){
+  const arr = origen==='manual' ? (DB.cxp||[]) : (DB.gastosVehiculos||[]);
+  const i = arr.findIndex(g=>g.id===gid);
+  if(i<0)return;
+  const g = arr[i];
+  const vActual = DB.vehiculos.find(x=>x.id===g.vehiculoId);
+  const tiposGasto=(DB.config.tiposGastoVeh&&DB.config.tiposGastoVeh.length)?DB.config.tiposGastoVeh:['Compra Vehículo','Aduana','Flete','Otros'];
+  openModal('✏️ Editar CxP — '+escHtml(g.suplidor||'Sin suplidor'),`
+    <div class="form-row c2">
+      <div class="form-field"><label>Vehículo</label>
+        <select id="ecxp-veh">
+          <option value="">Sin vehículo enlazado</option>
+          ${DB.vehiculos.filter(v=>v.status!=='VENDIDO').map(v=>`<option value="${v.id}" ${v.id===g.vehiculoId?'selected':''}>${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+' '+v.anio)}</option>`).join('')}
+          ${DB.vehiculos.filter(v=>v.status==='VENDIDO').length?`<option disabled>── Vendidos ──</option>${DB.vehiculos.filter(v=>v.status==='VENDIDO').map(v=>`<option value="${v.id}" ${v.id===g.vehiculoId?'selected':''}>${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+' '+v.anio)} (VENDIDO)</option>`).join('')}`:''}
+        </select>
+        ${vActual?`<div style="font-size:11px;color:var(--blue);margin-top:3px">✓ Actual: ${escHtml(vActual.codigo+' — '+vActual.marca+' '+vActual.modelo)}</div>`:(g.vehiculo?`<div style="font-size:11px;color:var(--amber);margin-top:3px">⚠️ Sin enlazar: ${escHtml(g.vehiculo)}</div>`:'')}
+      </div>
+      <div class="form-field"><label>Suplidor</label>
+        <select id="ecxp-sup">
+          <option value="">Sin suplidor</option>
+          ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===g.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Tipo de Gasto / Descripción</label>
+        <input type="text" id="ecxp-tipo" value="${escHtml(g.descripcion||g.tipo||'')}">
+      </div>
+      <div class="form-field"><label>Moneda</label>
+        <select id="ecxp-moneda">
+          <option value="RD$" ${(g.moneda||'RD$')==='RD$'?'selected':''}>RD$ — Pesos</option>
+          <option value="USD" ${g.moneda==='USD'?'selected':''}>USD — Dólares</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row c3">
+      <div class="form-field"><label>Monto Factura</label>
+        <input type="number" id="ecxp-factura" value="${g.montoFactura||0}" step="0.01">
+      </div>
+      <div class="form-field"><label>Monto Pagado</label>
+        <input type="number" id="ecxp-pagado" value="${g.montoPagado||0}" step="0.01">
+      </div>
+      <div class="form-field"><label>Fecha</label>
+        <input type="date" id="ecxp-fecha" value="${g.fecha||today()}">
+      </div>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarEditCXP('${gid}','${origen}')">💾 Actualizar</button>`);
+}
+
+function guardarEditCXP(gid, origen){
+  const arr = origen==='manual' ? (DB.cxp||[]) : (DB.gastosVehiculos||[]);
+  const i = arr.findIndex(g=>g.id===gid);
+  if(i<0)return;
+  const vid = document.getElementById('ecxp-veh')?.value||'';
+  const factura = parseFloat(document.getElementById('ecxp-factura').value||0);
+  const pagado = parseFloat(document.getElementById('ecxp-pagado').value||0);
+  const pendiente = Math.max(0, factura-pagado);
+  if(vid){
+    const vRef = DB.vehiculos.find(x=>x.id===vid);
+    arr[i].vehiculoId = vid;
+    if(vRef){
+      arr[i].codigo = vRef.codigo||'';
+      arr[i].vin = vRef.vin||'';
+      arr[i].vehiculo = vRef.marca+' '+vRef.modelo+(vRef.anio?' '+vRef.anio:'');
+    }
+  }
+  arr[i].suplidor = document.getElementById('ecxp-sup').value;
+  const tipoVal = document.getElementById('ecxp-tipo').value.trim();
+  if(origen==='manual') arr[i].descripcion = tipoVal;
+  else arr[i].tipo = tipoVal;
+  arr[i].moneda = document.getElementById('ecxp-moneda').value;
+  arr[i].montoFactura = factura;
+  arr[i].montoPagado = pagado;
+  arr[i].montoPendiente = pendiente;
+  arr[i].fecha = document.getElementById('ecxp-fecha').value;
+  arr[i].statusGasto = pendiente<=0?'PAGADO':pagado>0?'ABONADO':'PENDIENTE';
+  if(origen==='manual') sDB('cxp'); else sDB('gastosVehiculos');
+  closeModal();
+  toast('CxP actualizada ✓','success');
+  renderCXP();
+}
+
 function nuevaCXPManual(){
   const sups=(DB.suplidores||[]).map(s=>`<option value="${escHtml(s.empresa||s.nombre)}">${escHtml(s.empresa||s.nombre)}</option>`).join('');
   const bcs=DB.config.bancoCuentas||[];
