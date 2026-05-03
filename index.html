@@ -176,6 +176,29 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
   .lft{display:none!important}
   .rgt{width:100%!important}
 }
+.chat-wrap{display:grid;grid-template-columns:220px 1fr;height:calc(100vh - 160px);gap:0;border:1.5px solid var(--gray3);border-radius:var(--radius);overflow:hidden;background:#fff}
+.chat-list{border-right:1.5px solid var(--gray3);overflow-y:auto;background:var(--gray2)}
+.chat-list-header{padding:12px 14px;font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--gray3);background:#fff}
+.chat-user-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--gray3);transition:.15s;background:#fff}
+.chat-user-item:hover{background:var(--blue3)}
+.chat-user-item.active{background:var(--blue3);border-left:3px solid var(--blue)}
+.chat-presence{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.chat-presence.online{background:#16a34a}
+.chat-presence.offline{background:#94a3b8}
+.chat-user-name{font-size:13px;font-weight:600;color:var(--navy);flex:1}
+.chat-unread{background:var(--red);color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center}
+.chat-main{display:flex;flex-direction:column;height:100%}
+.chat-header{padding:12px 16px;border-bottom:1.5px solid var(--gray3);display:flex;align-items:center;gap:10px;background:#fff}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#f8fafc}
+.chat-bubble{max-width:70%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.chat-bubble.mine{background:var(--blue);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.chat-bubble.theirs{background:#fff;color:var(--navy);align-self:flex-start;border:1px solid var(--gray3);border-bottom-left-radius:3px}
+.chat-time{font-size:10px;opacity:.65;margin-top:3px;text-align:right}
+.chat-input-area{padding:12px 14px;border-top:1.5px solid var(--gray3);display:flex;gap:8px;background:#fff}
+.chat-input-area input{flex:1;padding:9px 13px;border:1.5px solid var(--gray3);border-radius:8px;font-size:13px;outline:none}
+.chat-input-area input:focus{border-color:var(--blue)}
+.chat-empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--gray);font-size:14px}
+
 </style>
 <script>
 (function(){
@@ -268,6 +291,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
     <div class="nav-item" onclick="showPage('autorizaciones')" id="nav-autorizaciones"><span class="ico">📝</span>Autorización Compra</div>
     <div class="nav-item" onclick="showPage('seguros')" id="nav-seguros"><span class="ico">🛡️</span>Seguros</div>
     <div class="nav-item" onclick="showPage('facturaExterna')" id="nav-facturaExterna"><span class="ico">🧾</span>Facturas Externas</div>
+    <div class="nav-item" onclick="showPage('chat')" id="nav-chat"><span class="ico">💬</span>Chat Interno <span id="chat-badge" style="display:none;background:#dc2626;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto">0</span></div>
     <div class="sb-sec">SISTEMA</div>
     <div class="nav-item" onclick="showPage('usuarios')" id="nav-usuarios"><span class="ico">👥</span>Usuarios</div>
     <div class="nav-item" onclick="showPage('alertas')" id="nav-alertas"><span class="ico">🔔</span>Alertas del Sistema</div>
@@ -310,6 +334,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
       <div class="page" id="page-cxp"></div>
       <div class="page" id="page-cxc"></div>
       <div class="page" id="page-autorizaciones"></div>
+      <div class="page" id="page-chat"></div>
       <div class="page" id="page-seguros"></div>
       <div class="page" id="page-facturaExterna"></div>
     </div>
@@ -371,7 +396,9 @@ let DB={
   cxc:ls('cxc')||[],
   autorizaciones:ls('autorizaciones')||[],
   seguros:ls('seguros')||[],
-  facturasExternas:ls('facturasExternas')||[]
+  facturasExternas:ls('facturasExternas')||[],
+  chat:ls('chat')||{},
+  presencia:ls('presencia')||{}
 };
 function sDB(k){ss(k,DB[k]);}
 
@@ -624,7 +651,7 @@ function aplicarPermisosNav(){
   if(!currentUser)return;
   // Ocultar nav-items de módulos sin acceso
   const MODS_NAV=['dashboard','informes','suplidores','inventario','gastosVeh','cxp',
-    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','usuarios','config'];
+    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config'];
   MODS_NAV.forEach(id=>{
     const nav=document.getElementById('nav-'+id);
     if(!nav)return;
@@ -646,7 +673,7 @@ function showPage(id){
   if(id!=='dashboard'&&currentUser?.role!=='admin'&&!canAccess(id)){toast('No tienes acceso a este módulo','error');return;}
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
-  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas};
+  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat};
   if(r[id])r[id]();
 }
 
@@ -865,6 +892,30 @@ function renderDashboard(){
           return`<tr><td style="font-size:11px">${fmtDate(v.fecha)}</td><td style="font-size:12px;font-weight:600">${escHtml(v.vehiculo||'—')}</td><td style="font-size:12px">${escHtml(v.cliente||'—')}</td><td><span class="badge ${esUSD?'badge-blue':'badge-green'}" style="font-size:10px">${v.moneda||'RD$'}</span></td><td style="font-weight:700;color:var(--green);font-size:12px">${esUSD?'$'+parseFloat(v.precioVenta||0).toLocaleString('en-US',{minimumFractionDigits:2}):fmt(v.precioVenta)}</td></tr>`;
         }).join('')}</tbody></table></div>`:'<div style="text-align:center;padding:24px;color:var(--gray)">Sin ventas aún</div>'}
       </div>
+    ${currentUser?.role==='admin'?`
+    <div class="card" style="margin-top:16px;border-top:4px solid var(--green)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin:0">🟢 Usuarios Conectados Ahora</div>
+        <button class="btn btn-secondary btn-sm" onclick="renderDashboard()">↻ Actualizar</button>
+      </div>
+      ${(()=>{
+        const ahora=Date.now();
+        const conectados=(DB.users||[]).filter(u=>u.activo&&u.id!==currentUser.id&&(DB.presencia||{})[u.id]&&(ahora-(DB.presencia||{})[u.id])<30000);
+        if(!conectados.length)return '<div style="text-align:center;padding:16px;color:var(--gray);font-size:13px">No hay otros usuarios conectados en este momento</div>';
+        return '<div style="display:flex;flex-wrap:wrap;gap:10px">'+conectados.map(u=>{
+          const hace=Math.floor((ahora-(DB.presencia||{})[u.id])/1000);
+          const tiempoStr=hace<60?hace+'s':Math.floor(hace/60)+'min';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--green2);border:1.5px solid var(--green);border-radius:10px">'+
+            '<div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div>'+
+            '<div>'+
+              '<div style="font-size:13px;font-weight:700;color:var(--navy)">'+escHtml(u.nombre)+'</div>'+
+              '<div style="font-size:10px;color:var(--gray)">'+escHtml(u.role||'')+' · activo hace '+tiempoStr+'</div>'+
+            '</div>'+
+          '</div>';
+        }).join('')+'</div>';
+      })()}
+    </div>`:''}
+
     </div>`;
 }
 
@@ -1198,7 +1249,7 @@ function gastosVehiculo(vid){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;background:var(--gray2);padding:12px;border-radius:8px">
       <div class="form-field" style="margin:0"><label style="font-size:10px">Costo del Vehículo (RD$)</label>
         <input type="number" id="gv-costo-veh" value="${costo||0}" step="0.01" onchange="actualizarCostoVeh('${vid}',this.value)">
-        <div style="font-size:11px;color:var(--gray);margin-top:2px">USD: $${(costo/tasa).toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:2px">USD: ${fmtUSD(costo/tasa)}</div>
       </div>
       <div class="form-field" style="margin:0"><label style="font-size:10px">Suplidor</label>
         <div style="display:flex;gap:6px">
@@ -1211,9 +1262,9 @@ function gastosVehiculo(vid){
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
-      <div style="text-align:center;padding:12px;background:var(--blue3);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Costo Vehículo</div><div style="font-size:16px;font-weight:800;color:var(--blue)">${fmt(costo)}</div><div style="font-size:11px;color:var(--gray)">$${(costo/tasa).toFixed(2)} USD</div></div>
-      <div style="text-align:center;padding:12px;background:var(--red2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--red)">Total Gastos</div><div style="font-size:16px;font-weight:800;color:var(--red)">${fmt(totalGastos)}</div><div style="font-size:11px;color:var(--gray)">$${(totalGastos/tasa).toFixed(2)} USD</div></div>
-      <div style="text-align:center;padding:12px;background:var(--amber2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--amber)">Total Inversión</div><div style="font-size:16px;font-weight:800;color:var(--amber)">${fmt(totalInversion)}</div><div style="font-size:11px;color:var(--gray)">$${(totalInversion/tasa).toFixed(2)} USD</div></div>
+      <div style="text-align:center;padding:12px;background:var(--blue3);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Costo Vehículo</div><div style="font-size:16px;font-weight:800;color:var(--blue)">${fmt(costo)}</div><div style="font-size:11px;color:var(--gray)">${fmtUSD(costo/tasa)}</div></div>
+      <div style="text-align:center;padding:12px;background:var(--red2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--red)">Total Gastos</div><div style="font-size:16px;font-weight:800;color:var(--red)">${fmt(totalGastos)}</div><div style="font-size:11px;color:var(--gray)">${fmtUSD(totalGastos/tasa)}</div></div>
+      <div style="text-align:center;padding:12px;background:var(--amber2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--amber)">Total Inversión</div><div style="font-size:16px;font-weight:800;color:var(--amber)">${fmt(totalInversion)}</div><div style="font-size:11px;color:var(--gray)">${fmtUSD(totalInversion/tasa)}</div></div>
     </div>
     <div style="background:var(--gray2);border-radius:8px;padding:12px;margin-bottom:14px">
       <div style="font-size:13px;font-weight:700;margin-bottom:10px">➕ Agregar Gasto</div>
@@ -1379,6 +1430,7 @@ function renderCaja(){
     </div>
 
     <!-- BARRA ACUMULADA TOTAL -->
+    ${(currentUser?.role==='admin'||(currentUser?.modulos||[]).includes('verSaldoCaja'))?`
     <div style="background:var(--navy);border-radius:14px;padding:20px 24px;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:.8px;margin-bottom:14px">
         💰 SALDO ACUMULADO — TODAS LAS CUENTAS
@@ -1496,7 +1548,7 @@ function nuevoCajaMov(tipo){
       <div class="form-field"><label class="required">Fecha</label><input type="date" id="cj-fecha" value="${today()}"></div>
       <div class="form-field"><label class="required">Monto</label>
         <div style="display:flex;gap:6px">
-          <input type="text" id="cj-monto" placeholder="0.00" oninput="fmtMoneyInput(this)" style="flex:1">
+          <input type="text" id="cj-monto" placeholder="0.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" style="flex:1">
           <select id="cj-moneda" style="width:80px"><option value="RD$">RD$</option><option value="USD">USD</option></select>
         </div>
       </div>
@@ -1736,7 +1788,7 @@ function calcPendienteGasto(){
   const factura=parseFloat(document.getElementById('g-monto-factura')?.value||0);
   const abonado=parseFloat(document.getElementById('g-monto-abonado')?.value||0);
   const pend=document.getElementById('g-monto-pendiente');
-  if(pend)pend.value=Math.max(0,factura-abonado).toFixed(2);
+  if(pend)pend.value=fmtMoneyDisplay(Math.max(0,factura-abonado));
   // Actualizar estado automático
   const status=document.getElementById('g-status');
   if(status){
@@ -1933,7 +1985,7 @@ function calcMontoNomina(salario){
   const tipo=document.getElementById('np-tipo')?.value;
   const m={MEN:salario,'1Q':salario/2,'2Q':salario/2,SEM:salario/4,COM:0}[tipo]||salario;
   const inp=document.getElementById('np-monto');
-  if(inp)inp.value=m.toFixed(2);
+  if(inp)inp.value=fmtMoneyDisplay(m);
 }
 function guardarPagoNomina(i){
   const monto=parseFloat(document.getElementById('np-monto').value||0);
@@ -2189,7 +2241,7 @@ function crearUsuarioNuevo(){
   const role=document.getElementById('nu-role')?.value;
   if(!nombre||!user||!pass){toast('Complete nombre, usuario y contraseña','error');return;}
   if(DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
-  const MODS_IDS=['dashboard','informes','inventario','gastosVeh','cxp','clientes','ventas','cxc','suplidores','gastos','nomina','caja','cotizaciones','autorizaciones','usuarios','config'];
+  const MODS_IDS=['dashboard','informes','inventario','gastosVeh','cxp','clientes','ventas','cxc','suplidores','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config'];
   const DEL_IDS=['ventas','clientes','suplidores','gastos','nomina','gastosVeh','cxc','inventario'];
   const modulos=role==='admin'?MODS_IDS:MODS_IDS.filter(id=>document.getElementById('nu-mod-'+id)?.checked);
   const puedeEliminar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-del-'+id)?.checked);
@@ -2369,7 +2421,7 @@ function guardarUsuario(idx){
   const pass=document.getElementById('u-pass').value;
   if(!nombre||!user||(!pass&&idx===undefined)){toast('Complete todos los campos','error');return;}
   if(idx===undefined&&DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
-  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones'];
+  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat'];
   const nuevosMods=MODS_IDS.filter(m=>{const el=document.getElementById('u-mod-'+m);return el&&el.checked;});
   const permKeys=['editar','eliminar','imprimir','pdf','editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina','editarGastosVeh','editarCobros','editarVehiculos','borrarVentas','borrarClientes','borrarSuplidores','borrarGastos','borrarNomina','borrarGastosVeh','borrarCobros','borrarVehiculos'];
   const nuevosPerms={};permKeys.forEach(k=>{const el=document.getElementById('u-perm-'+k);if(el)nuevosPerms[k]=el.checked;});
@@ -2397,6 +2449,13 @@ function guardarUsuario(idx){
 // ══ MÓDULO DE ALERTAS ══
 let alertasSeleccionadas=new Set();
 function renderAlertas(){
+  // Verificar si el usuario tiene acceso al módulo de alertas
+  const esAdmin=currentUser?.role==='admin';
+  const tieneAccesoAlertas=esAdmin||(currentUser?.modulos||[]).includes('alertas');
+  if(!tieneAccesoAlertas){
+    document.getElementById('page-alertas').innerHTML='<div style="text-align:center;padding:48px"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:700;color:var(--navy)">Acceso restringido</div><p style="color:var(--gray);margin-top:8px">No tienes permiso para ver las alertas del sistema.<br>Contacta al administrador para solicitar acceso.</p></div>';
+    return;
+  }
   const hoy=today();
   const hoyDate=new Date();
   const alertas=[];
@@ -2487,7 +2546,7 @@ function guardarPermisosUsuarioConfig(i){
   if(currentUser?.role!=='admin'){toast('Solo el administrador puede editar usuarios','error');return;}
   const u=DB.users[i];
   if(!u)return;
-  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones'];
+  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat'];
   const ALERT_IDS=['SIN_VIN','SIN_COSTO','CXP','CXC_VENCIDA','CXC','SIN_VENDER_6M','SIN_VENDER_1A','DOCS'];
   if(u.role!=='admin'){
     const mods=MODS_IDS.filter(id=>document.getElementById(`cfg-mod-${i}-${id}`)?.checked);
@@ -2884,6 +2943,139 @@ function cargarLogoConfig(input){
     toast('Logo cargado ✓','success');
   };
   reader.readAsDataURL(file);
+}
+
+let _chatWith=null;
+let _presenceInterval=null;
+
+function renderChat(){
+  const esAdmin=currentUser?.role==='admin';
+  const tieneChat=esAdmin||(currentUser?.modulos||[]).includes('chat');
+  if(!tieneChat){
+    document.getElementById('page-chat').innerHTML='<div style="text-align:center;padding:48px"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:700;color:var(--navy)">Acceso restringido</div><p style="color:var(--gray);margin-top:8px">No tienes acceso al chat interno.<br>Contacta al administrador.</p></div>';
+    return;
+  }
+  const otros=DB.users.filter(u=>u.activo&&u.id!==currentUser.id);
+  function unreadCount(uid){
+    const key=[currentUser.id,uid].sort().join('_');
+    return ((DB.chat||{})[key]||[]).filter(m=>m.to===currentUser.id&&!m.leido).length;
+  }
+  function isOnline(uid){
+    const p=(DB.presencia||{})[uid];
+    return p&&(Date.now()-p)<30000;
+  }
+  const listaHTML=otros.map(u=>{
+    const unread=unreadCount(u.id);
+    const online=isOnline(u.id);
+    const ac=_chatWith===u.id?' active':'';
+    const pr=esAdmin?'<div class="chat-presence '+(online?'online':'offline')+'"></div>':'';
+    const ur=unread>0?'<div class="chat-unread">'+unread+'</div>':'';
+    return '<div class="chat-user-item'+ac+'" data-uid="'+u.id+'" onclick="_chatAbrirCon(this.dataset.uid)">'+pr+'<div class="chat-user-name">'+escHtml(u.nombre)+'</div>'+ur+'</div>';
+  }).join('');
+
+  const mainHTML=_chatWith?
+    '<div class="chat-header">'+
+      (esAdmin?'<div class="chat-presence '+(isOnline(_chatWith)?'online':'offline')+'"></div>':'')+
+      '<div style="font-weight:700;font-size:14px;color:var(--navy)">'+escHtml(_chatNombre(_chatWith))+'</div>'+
+      (esAdmin&&isOnline(_chatWith)?'<div style="font-size:11px;color:var(--green);margin-left:4px">● En línea</div>':'')+
+    '</div>'+
+    '<div class="chat-messages" id="chat-messages">'+_renderMensajes()+'</div>'+
+    '<div class="chat-input-area">'+
+      '<input type="text" id="chat-input" placeholder="Escribe un mensaje..." onkeydown="if(event.keyCode===13)_chatEnviar()">'+
+      '<button class="btn btn-primary" onclick="_chatEnviar()">Enviar ➤</button>'+
+    '</div>'
+    :'<div class="chat-empty"><div style="font-size:36px">💬</div><div>Selecciona un usuario para chatear</div></div>';
+
+  document.getElementById('page-chat').innerHTML=
+    '<h1 style="margin-bottom:12px">💬 Chat Interno</h1>'+
+    '<div class="chat-wrap">'+
+      '<div class="chat-list">'+
+        '<div class="chat-list-header">👥 Usuarios ('+otros.length+')</div>'+
+        (listaHTML||'<div style="padding:16px;font-size:12px;color:var(--gray);text-align:center">Sin usuarios disponibles</div>')+
+      '</div>'+
+      '<div class="chat-main" id="chat-main">'+mainHTML+'</div>'+
+    '</div>';
+
+  _chatScrollBottom();
+  _chatMarcarLeidos();
+  _chatIniciarPresencia();
+}
+
+function _chatNombre(uid){return DB.users.find(u=>u.id===uid)?.nombre||uid;}
+
+function _renderMensajes(){
+  const key=[currentUser.id,_chatWith].sort().join('_');
+  const msgs=((DB.chat||{})[key]||[]);
+  if(!msgs.length)return '<div style="text-align:center;color:var(--gray);font-size:13px;padding:24px">No hay mensajes aún. ¡Escribe el primero!</div>';
+  return msgs.map(m=>{
+    const mio=m.from===currentUser.id;
+    const hora=m.ts?new Date(m.ts).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'}):'';
+    return '<div class="chat-bubble '+(mio?'mine':'theirs')+'">'+escHtml(m.texto)+'<div class="chat-time">'+hora+(mio&&m.leido?' ✓✓':mio?' ✓':'')+'</div></div>';
+  }).join('');
+}
+
+function _chatAbrirCon(uid){
+  _chatWith=uid;
+  renderChat();
+  setTimeout(()=>{document.getElementById('chat-input')?.focus();},100);
+}
+
+function _chatEnviar(){
+  const inp=document.getElementById('chat-input');
+  if(!inp)return;
+  const texto=inp.value.trim();
+  if(!texto)return;
+  if(!DB.chat)DB.chat={};
+  const key=[currentUser.id,_chatWith].sort().join('_');
+  if(!DB.chat[key])DB.chat[key]=[];
+  DB.chat[key].push({from:currentUser.id,to:_chatWith,texto,ts:Date.now(),leido:false});
+  sDB('chat');
+  if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('chat').catch(()=>{});
+  inp.value='';
+  const msgsDiv=document.getElementById('chat-messages');
+  if(msgsDiv){msgsDiv.innerHTML=_renderMensajes();_chatScrollBottom();}
+  _chatActualizarBadge();
+}
+
+function _chatMarcarLeidos(){
+  if(!_chatWith||!DB.chat)return;
+  const key=[currentUser.id,_chatWith].sort().join('_');
+  if(!DB.chat[key])return;
+  let changed=false;
+  DB.chat[key].forEach(m=>{if(m.to===currentUser.id&&!m.leido){m.leido=true;changed=true;}});
+  if(changed){sDB('chat');if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('chat').catch(()=>{});}
+  _chatActualizarBadge();
+}
+
+function _chatActualizarBadge(){
+  if(!currentUser)return;
+  let total=0;
+  (DB.users||[]).filter(u=>u.id!==currentUser.id).forEach(u=>{
+    const key=[currentUser.id,u.id].sort().join('_');
+    total+=((DB.chat||{})[key]||[]).filter(m=>m.to===currentUser.id&&!m.leido).length;
+  });
+  const badge=document.getElementById('chat-badge');
+  if(badge){badge.style.display=total>0?'inline':'none';badge.textContent=total;}
+}
+
+function _chatScrollBottom(){
+  setTimeout(()=>{const d=document.getElementById('chat-messages');if(d)d.scrollTop=d.scrollHeight;},50);
+}
+
+function _chatIniciarPresencia(){
+  if(!DB.presencia)DB.presencia={};
+  DB.presencia[currentUser.id]=Date.now();
+  sDB('presencia');
+  if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('presencia').catch(()=>{});
+  if(_presenceInterval)clearInterval(_presenceInterval);
+  _presenceInterval=setInterval(()=>{
+    if(!currentUser)return;
+    if(!DB.presencia)DB.presencia={};
+    DB.presencia[currentUser.id]=Date.now();
+    sDB('presencia');
+    if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('presencia').catch(()=>{});
+    _chatActualizarBadge();
+  },20000);
 }
 
 // ══ GUARDAR POR SECCIÓN ══
@@ -3332,7 +3524,7 @@ function calcPendienteGVeh(){
   const f=parseFloat((document.getElementById('ngv-factura')?.value||'0').replace(/,/g,''));
   const a=parseFloat((document.getElementById('ngv-abono')?.value||'0').replace(/,/g,''));
   const p=document.getElementById('ngv-pendiente');
-  if(p)p.value=(f-a).toFixed(2);
+  if(p)p.value=fmtMoneyDisplay(f-a);
 }
 
 function guardarNuevoGastoVeh(){
@@ -3967,7 +4159,7 @@ function nuevaVenta(){
       <div id="sv-endoso-wrap">
         <div class="form-row c2" style="margin-bottom:0">
           <div class="form-field" style="margin:0"><label style="font-size:10px">💰 Costo del Endoso (lo paga la empresa)</label>
-            <input type="text" id="sv-endoso-monto" value="0" oninput="fmtMoneyInput(this)" placeholder="0.00">
+            <input type="text" id="sv-endoso-monto" value="0" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" placeholder="0.00">
           </div>
           <div style="font-size:11px;color:var(--blue);padding:8px;background:#fff;border-radius:6px;align-self:flex-end">
             ℹ️ Se creará CXP automática al gestor. Se suma al costo del vehículo.
@@ -3978,7 +4170,7 @@ function nuevaVenta(){
       <div id="sv-traspaso-wrap" style="display:none">
         <div class="form-row c2" style="margin-bottom:8px">
           <div class="form-field" style="margin:0"><label style="font-size:10px">💰 Costo del Traspaso / Matrícula</label>
-            <input type="text" id="sv-traspaso-monto" value="0" oninput="fmtMoneyInput(this)" placeholder="0.00">
+            <input type="text" id="sv-traspaso-monto" value="0" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" placeholder="0.00">
           </div>
           <div class="form-field" style="margin:0"><label style="font-size:10px">¿El cliente pagó el traspaso?</label>
             <select id="sv-traspaso-pagado" onchange="toggleTraspasoFields()">
@@ -4007,7 +4199,7 @@ function nuevaVenta(){
         <div class="form-row c3" style="margin-bottom:8px">
           <div class="form-field" style="margin:0"><label style="font-size:10px">Marca / Modelo</label><input type="text" id="sv-rec-vehiculo" placeholder="Ej: Toyota Corolla 2018"></div>
           <div class="form-field" style="margin:0"><label style="font-size:10px">Chasis / VIN</label><input type="text" id="sv-rec-vin" placeholder="Número de chasis o VIN" maxlength="17" style="text-transform:uppercase;font-family:monospace" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"></div>
-          <div class="form-field" style="margin:0"><label style="font-size:10px">Kilometraje</label><input type="text" id="sv-rec-km" placeholder="0" oninput="fmtMoneyInput(this)"></div>
+          <div class="form-field" style="margin:0"><label style="font-size:10px">Kilometraje</label><input type="text" id="sv-rec-km" placeholder="0" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)"></div>
         </div>
         <div class="form-row c2" style="margin-bottom:0">
           <div class="form-field" style="margin:0"><label style="font-size:10px">Monto Recibido</label><input type="text" id="sv-rec-monto" placeholder="0.00" oninput="fmtMoneyInput(this);calcPend()"></div>
@@ -4196,7 +4388,7 @@ function calcPend(){
   const i=parseFloat((document.getElementById('sv-inicial')?.value||'0').replace(/,/g,''));
   const rec=parseFloat((document.getElementById('sv-rec-monto')?.value||'0').replace(/,/g,''));
   const pd=document.getElementById('sv-pendiente');
-  if(pd)pd.value=Math.max(0,p-i-rec).toFixed(2);
+  if(pd)pd.value=fmtMoneyDisplay(Math.max(0,p-i-rec));
   // Mostrar equivalente si es USD
   const moneda=document.getElementById('sv-moneda')?.value||'RD$';
   const tasa=parseFloat(document.getElementById('sv-tasa')?.value||DB.config.tasaCambio||60);
@@ -4417,7 +4609,7 @@ function abonarVenta(vid){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto a Cobrar</label>
-        <input type="text" id="ab-monto" value="${v.pendiente}" placeholder="0.00" oninput="fmtMoneyInput(this)">
+        <input type="text" id="ab-monto" value="${v.pendiente}" placeholder="0.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)">
       </div>
       <div class="form-field"><label>Cuenta</label>
         <select id="ab-cuenta">${cuentas.map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
@@ -4469,10 +4661,10 @@ function editarVenta(vid){
   openModal('✏️ Editar Venta — '+escHtml(v.factura),`
     <div class="form-row c2">
       <div class="form-field"><label>Precio de Venta</label>
-        <input type="text" id="ev-precio" value="${v.precioVenta||0}" oninput="fmtMoneyInput(this);document.getElementById('ev-pendiente').value=Math.max(0,parseFloat(this.value.replace(/,/g,'')||0)-parseFloat(document.getElementById('ev-inicial').value.replace(/,/g,'')||0)).toFixed(2)">
+        <input type="text" id="ev-precio" value="${v.precioVenta||0}" oninput="fmtMoneyInput(this);document.getElementById('ev-pendiente').value=fmtMoneyDisplay(Math.max(0,parseFloat(this.value.replace(/,/g,'')||0)-parseFloat(document.getElementById('ev-inicial').value.replace(/,/g,'')||0)))">
       </div>
       <div class="form-field"><label>Inicial Recibido</label>
-        <input type="text" id="ev-inicial" value="${v.inicial||0}" oninput="fmtMoneyInput(this);document.getElementById('ev-pendiente').value=Math.max(0,parseFloat(document.getElementById('ev-precio').value.replace(/,/g,'')||0)-parseFloat(this.value.replace(/,/g,'')||0)).toFixed(2)">
+        <input type="text" id="ev-inicial" value="${v.inicial||0}" oninput="fmtMoneyInput(this);document.getElementById('ev-pendiente').value=fmtMoneyDisplay(Math.max(0,parseFloat(document.getElementById('ev-precio').value.replace(/,/g,'')||0)-parseFloat(this.value.replace(/,/g,'')||0)))">
       </div>
     </div>
     <div class="form-row c3">
@@ -4856,7 +5048,7 @@ function nuevaCotizacion(){
     <div id="cot-veh-info" style="display:none;background:var(--blue3);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px"></div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto a Cotizar</label>
-        <input type="text" id="cot-precio" placeholder="0.00" oninput="fmtMoneyInput(this)">
+        <input type="text" id="cot-precio" placeholder="0.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)">
       </div>
       <div class="form-field"><label>Moneda</label>
         <select id="cot-moneda"><option value="RD$">RD$ — Pesos</option><option value="USD">USD — Dólares</option></select>
@@ -4921,7 +5113,7 @@ function editarCotizacion(i){
       <div class="form-field"><label>Fecha</label><input type="date" id="cot-fecha" value="${c.fecha||today()}"></div>
     </div>
     <div class="form-row c3">
-      <div class="form-field"><label>Monto</label><input type="text" id="cot-precio" value="${c.precio||''}" oninput="fmtMoneyInput(this)"></div>
+      <div class="form-field"><label>Monto</label><input type="text" id="cot-precio" value="${c.precio||''}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)"></div>
       <div class="form-field"><label>Moneda</label><select id="cot-moneda"><option value="RD$" ${(c.moneda||'RD$')==='RD$'?'selected':''}>RD$</option><option value="USD" ${c.moneda==='USD'?'selected':''}>USD</option></select></div>
       <div class="form-field"><label>Válida Hasta</label><input type="date" id="cot-vence2" value="${c.fechaVence||''}"></div>
     </div>
@@ -5034,7 +5226,7 @@ function formCliente(c){return`
       <input type="text" id="c-doc" value="${escHtml(c?.documento||'')}" maxlength="13" placeholder="${c?.tipoDoc==='RNC'?'000-00000-0':c?.tipoDoc==='Pasaporte'?'Ej: AB123456':'000-0000000-0'}" oninput="fmtDocInput('c-tipodoc','c-doc')">
     </div>
     <div class="form-field"><label>Ingresos Mensuales</label>
-      <input type="text" id="c-ingresos" value="${c?.ingresos||''}" placeholder="0.00" oninput="fmtMoneyInput(this)">
+      <input type="text" id="c-ingresos" value="${c?.ingresos||''}" placeholder="0.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)">
     </div>
   </div>
   <div class="form-row c2">
@@ -5100,7 +5292,8 @@ function renderSuplidores(tabActivo){
   const ds='background:#e2e8f0;color:#adb5bd;cursor:not-allowed;border:1px solid #dee2e6';
   const supVeh=DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo');
   const supEmp=DB.suplidores.filter(s=>s.tipoSuplidor==='empresa');
-  const lista=tabActivo==='vehiculo'?supVeh:supEmp;
+  const supImp=DB.suplidores.filter(s=>s.tipoSuplidor==='importadora');
+  const lista=tabActivo==='vehiculo'?supVeh:tabActivo==='importadora'?supImp:supEmp;
   function filasSup(arr){
     return arr.map((s,i)=>{
       const realIdx=DB.suplidores.findIndex(x=>(x.id||String(x))===s.id);
@@ -5126,7 +5319,7 @@ function renderSuplidores(tabActivo){
   }
   document.getElementById('page-suplidores').innerHTML=`
     <div class="page-header">
-      <div><h1>🏭 Suplidores</h1><p>${DB.suplidores.length} suplidor(es) — Vehículos: ${supVeh.length} | Empresa: ${supEmp.length}</p></div>
+      <div><h1>🏭 Suplidores</h1><p>${DB.suplidores.length} suplidor(es) — Vehículos: ${supVeh.length} | Empresa: ${supEmp.length} | Importadora: ${supImp.length}</p></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="sup-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('editar')">✏️ Editar</button>
         ${currentUser?.role==='admin'?`<button id="sup-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('eliminar')">🗑 Eliminar</button>`:''}
@@ -5246,11 +5439,17 @@ function fmtTelInput(el){
   el.value=v;
 }
 function fmtMoneyInput(el){
-  // Permite solo números y punto decimal, formatea con comas al salir
   let v=el.value.replace(/[^0-9.]/g,'');
   const parts=v.split('.');
   if(parts.length>2)v=parts[0]+'.'+parts.slice(1).join('');
   el.value=v;
+}
+function fmtMoneyBlur(el){
+  const n=parseFloat(el.value.replace(/,/g,'')||0);
+  if(!isNaN(n))el.value=n.toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtMoneyFocus(el){
+  el.value=el.value.replace(/,/g,'');
 }
 function fmtMoneyDisplay(val){
   const n=parseFloat(val||0);
@@ -5636,7 +5835,7 @@ function calcCXPMPend(){
   const m=parseFloat((document.getElementById('cxpm-monto')?.value||'0').replace(/,/g,''));
   const a=parseFloat((document.getElementById('cxpm-abono')?.value||'0').replace(/,/g,''));
   const p=document.getElementById('cxpm-pend');
-  if(p)p.value=Math.max(0,m-a).toFixed(2);
+  if(p)p.value=fmtMoneyDisplay(Math.max(0,m-a));
 }
 function actualizarCuentasCXPM(){
   const bancoEl=document.getElementById('cxpm-banco');
@@ -5754,7 +5953,7 @@ function abonarDesdeCXP(gid){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto a Pagar (${esUSD?'USD':'RD$'})</label>
-        <input type="text" id="cxpp-monto" value="${g.montoPendiente||0}" oninput="fmtMoneyInput(this)" placeholder="0.00">
+        <input type="text" id="cxpp-monto" value="${g.montoPendiente||0}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" placeholder="0.00">
       </div>
       <div class="form-field"><label>Banco</label>
         <select id="cxpp-banco" onchange="actualizarCuentasCXPP()">
@@ -6073,7 +6272,7 @@ function renderCXC(){
         <div class="stat-ico">🔴</div>
         <div class="stat-label">Saldo Pendiente</div>
         <div class="stat-value" style="color:var(--red)">${fV(totalPend)}</div>
-        ${esUSD?`<div class="stat-sub">${fmt(totalPend*tasa)}</div>`:`<div class="stat-sub">$${(totalPend/tasa).toFixed(2)} USD</div>`}
+        ${esUSD?`<div class="stat-sub">${fmt(totalPend*tasa)}</div>`:`<div class="stat-sub">${fmtUSD(totalPend/tasa)}</div>`}
       </div>
     </div>
 
@@ -6213,7 +6412,7 @@ function calcSaldoCXC(){
   const total=parseFloat(document.getElementById('ncxc-total')?.value||0);
   const abono=parseFloat(document.getElementById('ncxc-abono')?.value||0);
   const saldo=document.getElementById('ncxc-saldo');
-  if(saldo)saldo.value=Math.max(0,total-abono).toFixed(2);
+  if(saldo)saldo.value=fmtMoneyDisplay(Math.max(0,total-abono));
   calcEquivCXC();
 }
 function guardarCXCManual(){
@@ -6278,7 +6477,7 @@ function abonarCXC(id){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto a Cobrar (${esUSD?'USD':'RD$'})</label>
-        <input type="text" id="cxca-monto" value="${x.saldo}" oninput="fmtMoneyInput(this)" placeholder="0.00">
+        <input type="text" id="cxca-monto" value="${x.saldo}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" placeholder="0.00">
       </div>
       <div class="form-field"><label>Fecha</label>
         <input type="date" id="cxca-fecha" value="${today()}">
@@ -7136,7 +7335,7 @@ function _formSeguro(s){
         <input type="text" id="sg-abonado" value="${abon||0}" oninput="fmtMoneyInput(this);calcPendSeguro()" placeholder="0.00">
       </div>
       <div class="form-field"><label>Pendiente</label>
-        <input type="text" id="sg-pendiente" value="${Math.max(0,prim-abon).toFixed(2)}" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
+        <input type="text" id="sg-pendiente" value="${fmtMoneyDisplay(Math.max(0,prim-abon))}" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
       </div>
     </div>
     <div class="form-row c3">
@@ -7154,7 +7353,7 @@ function calcPendSeguro(){
   const p=parseFloat((document.getElementById('sg-prima')?.value||'0').replace(/,/g,''));
   const a=parseFloat((document.getElementById('sg-abonado')?.value||'0').replace(/,/g,''));
   const el=document.getElementById('sg-pendiente');
-  if(el)el.value=Math.max(0,p-a).toFixed(2);
+  if(el)el.value=fmtMoneyDisplay(Math.max(0,p-a));
 }
 function nuevoSeguro(){
   openModal('🛡️ Nuevo Seguro',_formSeguro(null),
@@ -7221,7 +7420,7 @@ function abonarSeguro(id){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto a Pagar</label>
-        <input type="text" id="sgp-monto" value="${pendiente.toFixed(2)}" oninput="fmtMoneyInput(this)" placeholder="0.00">
+        <input type="text" id="sgp-monto" value="${fmtMoneyDisplay(pendiente)}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" placeholder="0.00">
       </div>
       <div class="form-field"><label>Cuenta de Pago</label>
         <select id="sgp-cuenta">${cuentas.map(c=>`<option ${c===s.cuenta?'selected':''}>${escHtml(c)}</option>`).join('')}</select>
@@ -7432,7 +7631,7 @@ function calcPendFE(){
   const m=parseFloat((document.getElementById('fe-monto')?.value||'0').replace(/,/g,''));
   const a=parseFloat((document.getElementById('fe-abono')?.value||'0').replace(/,/g,''));
   const p=document.getElementById('fe-pendiente');
-  if(p)p.value=Math.max(0,m-a).toFixed(2);
+  if(p)p.value=fmtMoneyDisplay(Math.max(0,m-a));
 }
 function guardarFacturaExterna(nFact){
   const vehiculo=document.getElementById('fe-vehiculo').value.trim();
@@ -7831,6 +8030,7 @@ function aplicarColoresSistema(){
 
 // Aplicar colores al cargar
 document.addEventListener('DOMContentLoaded',()=>{
+  setInterval(()=>{if(currentUser)_chatActualizarBadge();},10000);
   if(DB.config?.colores)aplicarColoresSistema();
 });
 
