@@ -651,7 +651,7 @@ function aplicarPermisosNav(){
   if(!currentUser)return;
   // Ocultar nav-items de módulos sin acceso
   const MODS_NAV=['dashboard','informes','suplidores','inventario','gastosVeh','cxp',
-    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config'];
+    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config'];
   MODS_NAV.forEach(id=>{
     const nav=document.getElementById('nav-'+id);
     if(!nav)return;
@@ -6911,10 +6911,9 @@ ${JSON.stringify(ventasData,null,2)}`;
 
 // ══ AUTORIZACIÓN DE COMPRA ══
 function renderAutorizaciones(){
-  if(currentUser?.role!=='admin'){
-    document.getElementById('page-autorizaciones').innerHTML='<div style="text-align:center;padding:48px;color:var(--gray)">🔒 Solo el administrador puede gestionar autorizaciones de compra</div>';
-    return;
-  }
+  const esAdmin=currentUser?.role==='admin'||canDo('admin');
+  const puedeEditar=esAdmin||canDo('editar');
+  const puedeEliminar=esAdmin||canDo('eliminar');
   const auths=DB.autorizaciones||[];
   const ds='background:#e2e8f0;color:#adb5bd;cursor:not-allowed;border:1px solid #dee2e6';
   document.getElementById('page-autorizaciones').innerHTML=`
@@ -6924,7 +6923,7 @@ function renderAutorizaciones(){
         <button id="auth-btn-imprimir" disabled class="btn btn-sm" style="${ds}" onclick="authAccion('imprimir')">🖨️ Imprimir</button>
         <button id="auth-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="authAccion('editar')">✏️ Editar</button>
         <button id="auth-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="authAccion('eliminar')">🗑 Eliminar</button>
-        <button class="btn btn-primary" onclick="nuevaAutorizacion()">➕ Nueva Autorización</button>
+        ${esAdmin||puedeEditar?'<button class="btn btn-primary" onclick="nuevaAutorizacion()">➕ Nueva Autorización</button>':''}
       </div>
     </div>
     <div class="card">
