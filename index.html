@@ -1249,7 +1249,7 @@ function gastosVehiculo(vid){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;background:var(--gray2);padding:12px;border-radius:8px">
       <div class="form-field" style="margin:0"><label style="font-size:10px">Costo del Vehículo (RD$)</label>
         <input type="number" id="gv-costo-veh" value="${costo||0}" step="0.01" onchange="actualizarCostoVeh('${vid}',this.value)">
-        <div style="font-size:11px;color:var(--gray);margin-top:2px">USD: ${fmtUSD(costo/tasa)}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:2px">USD: $${(costo/tasa).toFixed(2)}</div>
       </div>
       <div class="form-field" style="margin:0"><label style="font-size:10px">Suplidor</label>
         <div style="display:flex;gap:6px">
@@ -1262,9 +1262,9 @@ function gastosVehiculo(vid){
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
-      <div style="text-align:center;padding:12px;background:var(--blue3);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Costo Vehículo</div><div style="font-size:16px;font-weight:800;color:var(--blue)">${fmt(costo)}</div><div style="font-size:11px;color:var(--gray)">${fmtUSD(costo/tasa)}</div></div>
-      <div style="text-align:center;padding:12px;background:var(--red2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--red)">Total Gastos</div><div style="font-size:16px;font-weight:800;color:var(--red)">${fmt(totalGastos)}</div><div style="font-size:11px;color:var(--gray)">${fmtUSD(totalGastos/tasa)}</div></div>
-      <div style="text-align:center;padding:12px;background:var(--amber2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--amber)">Total Inversión</div><div style="font-size:16px;font-weight:800;color:var(--amber)">${fmt(totalInversion)}</div><div style="font-size:11px;color:var(--gray)">${fmtUSD(totalInversion/tasa)}</div></div>
+      <div style="text-align:center;padding:12px;background:var(--blue3);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue)">Costo Vehículo</div><div style="font-size:16px;font-weight:800;color:var(--blue)">${fmt(costo)}</div><div style="font-size:11px;color:var(--gray)">$${(costo/tasa).toFixed(2)} USD</div></div>
+      <div style="text-align:center;padding:12px;background:var(--red2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--red)">Total Gastos</div><div style="font-size:16px;font-weight:800;color:var(--red)">${fmt(totalGastos)}</div><div style="font-size:11px;color:var(--gray)">$${(totalGastos/tasa).toFixed(2)} USD</div></div>
+      <div style="text-align:center;padding:12px;background:var(--amber2);border-radius:8px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--amber)">Total Inversión</div><div style="font-size:16px;font-weight:800;color:var(--amber)">${fmt(totalInversion)}</div><div style="font-size:11px;color:var(--gray)">$${(totalInversion/tasa).toFixed(2)} USD</div></div>
     </div>
     <div style="background:var(--gray2);border-radius:8px;padding:12px;margin-bottom:14px">
       <div style="font-size:13px;font-weight:700;margin-bottom:10px">➕ Agregar Gasto</div>
@@ -1500,8 +1500,8 @@ function renderCaja(){
 
     <!-- Tarjetas por banco/cuenta -->
     ${Object.keys(bancoGroups).length>0?bancoCards:'<div class="card" style="text-align:center;padding:24px;color:var(--gray)">Sin movimientos registrados en este período</div>'}
-
-    <!-- Balance del mes -->
+    `:''}<!-- fin verSaldoCaja -->
+    ${(currentUser?.role==='admin'||(currentUser?.modulos||[]).includes('verSaldoCaja'))?`
     <div class="card" style="background:var(--navy);margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;text-align:center">📅 Resumen del mes seleccionado</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center">
@@ -1510,7 +1510,7 @@ function renderCaja(){
         <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Balance RD$</div><div style="font-size:18px;font-weight:800;color:${balRD>=0?'#4ade80':'#f87171'}">${fmt(balRD)}</div></div>
         <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:4px">Balance USD</div><div style="font-size:18px;font-weight:800;color:${balUSD>=0?'#4ade80':'#f87171'}">${fmtUSD(balUSD)}</div></div>
       </div>
-    </div>
+    </div>`:''}
     <div class="card">
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
         <select id="caja-tab" onchange="renderCaja()" style="padding:7px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
@@ -6272,7 +6272,7 @@ function renderCXC(){
         <div class="stat-ico">🔴</div>
         <div class="stat-label">Saldo Pendiente</div>
         <div class="stat-value" style="color:var(--red)">${fV(totalPend)}</div>
-        ${esUSD?`<div class="stat-sub">${fmt(totalPend*tasa)}</div>`:`<div class="stat-sub">${fmtUSD(totalPend/tasa)}</div>`}
+        ${esUSD?`<div class="stat-sub">${fmt(totalPend*tasa)}</div>`:`<div class="stat-sub">$${(totalPend/tasa).toFixed(2)} USD</div>`}
       </div>
     </div>
 
