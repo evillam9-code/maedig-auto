@@ -599,6 +599,7 @@ function doLogin(){
     actualizarLogoSidebar();
     showPage('dashboard');
     setTimeout(checkAlerts,1500);
+    _iniciarPresenciaGlobal();
   };
   // Mostrar bienvenida con datos del localStorage primero
   _actualizarWelcome();
@@ -660,7 +661,18 @@ function aplicarPermisosNav(){
     nav.style.display=tiene?'':'none';
   });
 }
-function doLogout(){currentUser=null;document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('li-user').value='';document.getElementById('li-pass').value='';}
+function doLogout(){
+  if(currentUser){
+    try{const p=JSON.parse(localStorage.getItem('fayre_presencia')||'{}');delete p[currentUser.id];localStorage.setItem('fayre_presencia',JSON.stringify(p));}catch{}
+    if(window._presenciaBC)try{window._presenciaBC.postMessage({uid:currentUser.id,ts:0});}catch{}
+    if(window._presenciaGlobalInterval)clearInterval(window._presenciaGlobalInterval);
+  }
+  currentUser=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('li-user').value='';
+  document.getElementById('li-pass').value='';
+}
 
 // Modal NO cierra con click fuera ni Escape — solo con botón explícito
 
@@ -2203,17 +2215,25 @@ function renderUsuarios(){
       <div class="card-title">👥 Usuarios del sistema</div>
       <div class="table-wrap"><table>
         <thead><tr>
-          <th>Nombre</th><th>Usuario</th><th>Rol</th>
+          <th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th>
           <th>Módulos</th><th>Acciones</th>
         </tr></thead>
         <tbody>${DB.users.map((u,i)=>{
           const rolLabel=_getRolLabel(u.role);
           const mods=u.role==='admin'?['Dashboard','Nueva Venta','Ventas','Inventario','Clientes','Suplidores','Gastos','Nómina','Informes','Caja','CxC','CxP','Usuarios','Configuración']:(u.modulos||[]);
           const modsLabel=mods.map(id=>{const m=MODS.find(x=>x.id===id);return m?m.label:id;});
+          const ahora=Date.now();
+          let presGlobal={};try{presGlobal=JSON.parse(localStorage.getItem('fayre_presencia')||'{}');}catch{}
+          const ult=presGlobal[u.id]||(DB.presencia||{})[u.id]||0;
+          const enLinea=ult>0&&(ahora-ult)<30000;
+          const estadoHTML=enLinea
+            ?'<span style="display:inline-flex;align-items:center;gap:5px;background:#dcfce7;color:#16a34a;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700"><span style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block"></span>En línea</span>'
+            :'<span style="display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;color:#64748b;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:#94a3b8;display:inline-block"></span>Desconectado</span>';
           return `<tr>
             <td style="font-weight:600">${escHtml(u.nombre)}</td>
             <td class="mono" style="font-size:12px">${escHtml(u.username)}</td>
             <td><span class="badge ${u.role==='admin'?'badge-purple':'badge-blue'}">${escHtml(rolLabel)}</span></td>
+            <td>${estadoHTML}</td>
             <td style="max-width:320px">
               <div style="display:flex;flex-wrap:wrap;gap:3px">
                 ${modsLabel.map(m=>`<span class="badge badge-green" style="font-size:10px">${escHtml(m)}</span>`).join('')}
@@ -3063,20 +3083,59 @@ function _chatScrollBottom(){
   setTimeout(()=>{const d=document.getElementById('chat-messages');if(d)d.scrollTop=d.scrollHeight;},50);
 }
 
-function _chatIniciarPresencia(){
+// ══ PRESENCIA GLOBAL (funciona sin servidor, entre pestañas locales) ══
+let _presenciaGlobalInterval=null;
+let _presenciaBC=null;
+function _leerPresenciaGlobal(){try{return JSON.parse(localStorage.getItem('fayre_presencia')||'{}');}catch{return {};}}
+function _escribirPresenciaGlobal(uid,ts){const p=_leerPresenciaGlobal();p[uid]=ts;localStorage.setItem('fayre_presencia',JSON.stringify(p));}
+function _sincPresencia(){const g=_leerPresenciaGlobal();DB.presencia=Object.assign(DB.presencia||{},g);}
+function _pingPresencia(){
+  if(!currentUser)return;
+  const ts=Date.now();
+  _escribirPresenciaGlobal(currentUser.id,ts);
   if(!DB.presencia)DB.presencia={};
-  DB.presencia[currentUser.id]=Date.now();
-  sDB('presencia');
-  if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('presencia').catch(()=>{});
+  DB.presencia[currentUser.id]=ts;
+  if(_presenciaBC){try{_presenciaBC.postMessage({uid:currentUser.id,ts});}catch{}}
+}
+function _iniciarPresenciaGlobal(){
+  if(!currentUser)return;
+  try{
+    if(_presenciaBC)_presenciaBC.close();
+    _presenciaBC=new BroadcastChannel('fayre_presencia');
+    _presenciaBC.onmessage=function(e){
+      if(e.data&&e.data.uid){
+        if(!DB.presencia)DB.presencia={};
+        if(e.data.ts===0){
+          delete DB.presencia[e.data.uid];
+          const p=_leerPresenciaGlobal();delete p[e.data.uid];localStorage.setItem('fayre_presencia',JSON.stringify(p));
+        }else{
+          DB.presencia[e.data.uid]=e.data.ts;
+          _escribirPresenciaGlobal(e.data.uid,e.data.ts);
+        }
+        const pU=document.getElementById('page-usuarios');
+        if(pU&&pU.classList.contains('active')){clearTimeout(window._presenciaRefreshTimer);window._presenciaRefreshTimer=setTimeout(renderUsuarios,400);}
+      }
+    };
+  }catch(e){console.warn('BroadcastChannel no disponible:',e.message);}
+  _sincPresencia();
+  _pingPresencia();
+  if(_presenciaGlobalInterval)clearInterval(_presenciaGlobalInterval);
+  _presenciaGlobalInterval=setInterval(()=>{
+    if(!currentUser){clearInterval(_presenciaGlobalInterval);return;}
+    _sincPresencia();
+    _pingPresencia();
+  },10000);
+  window.addEventListener('beforeunload',()=>{
+    if(currentUser){
+      const p=_leerPresenciaGlobal();delete p[currentUser.id];localStorage.setItem('fayre_presencia',JSON.stringify(p));
+      if(_presenciaBC)try{_presenciaBC.postMessage({uid:currentUser.id,ts:0});}catch{}
+    }
+  },{once:true});
+}
+function _chatIniciarPresencia(){
+  if(!currentUser)return;
   if(_presenceInterval)clearInterval(_presenceInterval);
-  _presenceInterval=setInterval(()=>{
-    if(!currentUser)return;
-    if(!DB.presencia)DB.presencia={};
-    DB.presencia[currentUser.id]=Date.now();
-    sDB('presencia');
-    if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('presencia').catch(()=>{});
-    _chatActualizarBadge();
-  },20000);
+  _presenceInterval=setInterval(()=>{if(!currentUser)return;_chatActualizarBadge();},20000);
 }
 
 // ══ GUARDAR POR SECCIÓN ══
