@@ -2147,10 +2147,13 @@ function renderUsuarios(){
     {id:'usuarios',label:'Usuarios'},{id:'config',label:'Configuración'},
   ];
   const BORRAR=[
-    {id:'ventas',label:'Borrar Ventas'},{id:'clientes',label:'Borrar Clientes'},
-    {id:'suplidores',label:'Borrar Suplidores'},{id:'gastos',label:'Borrar Gastos'},
-    {id:'nomina',label:'Borrar Nómina'},{id:'gastosVeh',label:'Borrar Gastos Vehículo'},
-    {id:'cxc',label:'Borrar Cobros'},{id:'inventario',label:'Borrar Vehículos'},
+    {id:'ventas',label:'Ventas'},{id:'clientes',label:'Clientes'},
+    {id:'suplidores',label:'Suplidores'},{id:'gastos',label:'Gastos Empresa'},
+    {id:'nomina',label:'Nómina'},{id:'gastosVeh',label:'Gastos Vehículo'},
+    {id:'cxc',label:'CxC — Cobros'},{id:'cxp',label:'CxP — Pagos'},
+    {id:'inventario',label:'Vehículos'},{id:'caja',label:'Caja'},
+    {id:'cotizaciones',label:'Cotizaciones'},{id:'autorizaciones',label:'Autorizaciones'},
+    {id:'seguros',label:'Seguros'},{id:'facturaExterna',label:'Facturas Externas'},
   ];
   document.getElementById('page-usuarios').innerHTML=`
     <div class="page-header"><div><h1>👥 Usuarios</h1></div></div>
@@ -2262,7 +2265,7 @@ function crearUsuarioNuevo(){
   if(!nombre||!user||!pass){toast('Complete nombre, usuario y contraseña','error');return;}
   if(DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
   const MODS_IDS=['dashboard','informes','inventario','gastosVeh','cxp','clientes','ventas','cxc','suplidores','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config'];
-  const DEL_IDS=['ventas','clientes','suplidores','gastos','nomina','gastosVeh','cxc','inventario'];
+  const DEL_IDS=['ventas','clientes','suplidores','gastos','nomina','gastosVeh','cxc','cxp','inventario','caja','cotizaciones','autorizaciones','seguros','facturaExterna'];
   const modulos=role==='admin'?MODS_IDS:MODS_IDS.filter(id=>document.getElementById('nu-mod-'+id)?.checked);
   const puedeEliminar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-del-'+id)?.checked);
   const puedeEditar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-edit-'+id)?.checked);
@@ -2390,11 +2393,11 @@ function editarUsuario(i){
       </div>
       <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--gray);text-transform:uppercase">✏️ Permisos de Editar por módulo:</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px">
-        ${[{k:'editarVentas',l:'Ventas'},{k:'editarClientes',l:'Clientes'},{k:'editarSuplidores',l:'Suplidores'},{k:'editarGastos',l:'Gastos'},{k:'editarNomina',l:'Nómina'},{k:'editarGastosVeh',l:'Gastos Vehículo'},{k:'editarCobros',l:'Cobros'},{k:'editarVehiculos',l:'Vehículos'}].map(p=>`<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#eff6ff;border-radius:5px;border:1px solid #bfdbfe"><input type="checkbox" id="u-perm-${p.k}" ${(perms[p.k]||u.role==='admin')?'checked':''} style="accent-color:var(--blue)"> ${p.l}</label>`).join('')}
+        ${[{k:'editarVentas',l:'Ventas'},{k:'editarClientes',l:'Clientes'},{k:'editarSuplidores',l:'Suplidores'},{k:'editarGastos',l:'Gastos'},{k:'editarNomina',l:'Nómina'},{k:'editarGastosVeh',l:'Gastos Vehículo'},{k:'editarCobros',l:'CxC Cobros'},{k:'editarCxp',l:'CxP Pagos'},{k:'editarVehiculos',l:'Vehículos'},{k:'editarCaja',l:'Caja'},{k:'editarCotizaciones',l:'Cotizaciones'},{k:'editarAutorizaciones',l:'Autorizaciones'},{k:'editarSeguros',l:'Seguros'},{k:'editarFacturas',l:'Facturas Ext.'}].map(p=>`<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#eff6ff;border-radius:5px;border:1px solid #bfdbfe"><input type="checkbox" id="u-perm-${p.k}" ${(perms[p.k]||u.role==='admin')?'checked':''} style="accent-color:var(--blue)"> ${p.l}</label>`).join('')}
       </div>
       <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--gray);text-transform:uppercase">🗑 Permisos de Borrar por módulo:</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
-        ${[{k:'borrarVentas',l:'Ventas'},{k:'borrarClientes',l:'Clientes'},{k:'borrarSuplidores',l:'Suplidores'},{k:'borrarGastos',l:'Gastos'},{k:'borrarNomina',l:'Nómina'},{k:'borrarGastosVeh',l:'Gastos Vehículo'},{k:'borrarCobros',l:'Cobros'},{k:'borrarVehiculos',l:'Vehículos'}].map(p=>`<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#fff1f2;border-radius:5px;border:1px solid #fecdd3"><input type="checkbox" id="u-perm-${p.k}" ${(perms[p.k]||u.role==='admin')?'checked':''} style="accent-color:var(--red)"> ${p.l}</label>`).join('')}
+        ${[{k:'borrarVentas',l:'Ventas'},{k:'borrarClientes',l:'Clientes'},{k:'borrarSuplidores',l:'Suplidores'},{k:'borrarGastos',l:'Gastos'},{k:'borrarNomina',l:'Nómina'},{k:'borrarGastosVeh',l:'Gastos Vehículo'},{k:'borrarCobros',l:'CxC Cobros'},{k:'borrarCxp',l:'CxP Pagos'},{k:'borrarVehiculos',l:'Vehículos'},{k:'borrarCaja',l:'Caja'},{k:'borrarCotizaciones',l:'Cotizaciones'},{k:'borrarAutorizaciones',l:'Autorizaciones'},{k:'borrarSeguros',l:'Seguros'},{k:'borrarFacturas',l:'Facturas Ext.'}].map(p=>`<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#fff1f2;border-radius:5px;border:1px solid #fecdd3"><input type="checkbox" id="u-perm-${p.k}" ${(perms[p.k]||u.role==='admin')?'checked':''} style="accent-color:var(--red)"> ${p.l}</label>`).join('')}
       </div>
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario(${i})">💾 Actualizar</button>`);
@@ -2444,7 +2447,7 @@ function guardarUsuario(idx){
   if(idx===undefined&&DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
   const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat'];
   const nuevosMods=MODS_IDS.filter(m=>{const el=document.getElementById('u-mod-'+m);return el&&el.checked;});
-  const permKeys=['editar','eliminar','imprimir','pdf','editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina','editarGastosVeh','editarCobros','editarVehiculos','borrarVentas','borrarClientes','borrarSuplidores','borrarGastos','borrarNomina','borrarGastosVeh','borrarCobros','borrarVehiculos'];
+  const permKeys=['editar','eliminar','imprimir','pdf','editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina','editarGastosVeh','editarCobros','editarCxp','editarVehiculos','editarCaja','editarCotizaciones','editarAutorizaciones','editarSeguros','editarFacturas','borrarVentas','borrarClientes','borrarSuplidores','borrarGastos','borrarNomina','borrarGastosVeh','borrarCobros','borrarCxp','borrarVehiculos','borrarCaja','borrarCotizaciones','borrarAutorizaciones','borrarSeguros','borrarFacturas'];
   const nuevosPerms={};permKeys.forEach(k=>{const el=document.getElementById('u-perm-'+k);if(el)nuevosPerms[k]=el.checked;});
   if(idx!==undefined){DB.users[idx].nombre=nombre;DB.users[idx].username=user;DB.users[idx].role=document.getElementById('u-role').value;if(pass)DB.users[idx].password=pass;DB.users[idx].modulos=nuevosMods;DB.users[idx].permisos=nuevosPerms;if(currentUser.id===DB.users[idx].id){currentUser=DB.users[idx];}}
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
@@ -5606,14 +5609,27 @@ function renderCXP(){
   const filtroSup=document.getElementById('cxp-filtro-sup')?.value||'';
   const filtroVeh=document.getElementById('cxp-filtro-veh')?.value||'';
   const filtroMoneda=document.getElementById('cxp-filtro-moneda')?.value||'';
+  const filtroPeriodo=document.getElementById('cxp-filtro-periodo')?.value||'';
+  const filtroDesde=document.getElementById('cxp-filtro-desde')?.value||'';
+  const filtroHasta=document.getElementById('cxp-filtro-hasta')?.value||'';
 
-  // Combinar gastos de vehículos con pendiente + CXP manuales pendientes
+  const hoy=today();
+  const inicioSemana=(()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return d.toISOString().slice(0,10);})();
+  const inicioMes=hoy.slice(0,7)+'-01';
+
   const gastosVehPend=(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).map(g=>({...g,_origen:'auto'}));
   const cxpManuales=(DB.cxp||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).map(g=>({...g,_origen:'manual'}));
   let gastosPend=[...gastosVehPend,...cxpManuales];
   if(filtroSup)gastosPend=gastosPend.filter(g=>g.suplidor===filtroSup);
   if(filtroVeh)gastosPend=gastosPend.filter(g=>g.vehiculoId===filtroVeh||g.vehiculo===filtroVeh);
   if(filtroMoneda)gastosPend=gastosPend.filter(g=>(g.moneda||'RD$')===filtroMoneda);
+  if(filtroPeriodo==='hoy')gastosPend=gastosPend.filter(g=>g.fecha===hoy);
+  else if(filtroPeriodo==='semana')gastosPend=gastosPend.filter(g=>g.fecha>=inicioSemana&&g.fecha<=hoy);
+  else if(filtroPeriodo==='mes')gastosPend=gastosPend.filter(g=>g.fecha>=inicioMes&&g.fecha<=hoy);
+  else if(filtroPeriodo==='rango'){
+    if(filtroDesde)gastosPend=gastosPend.filter(g=>g.fecha>=filtroDesde);
+    if(filtroHasta)gastosPend=gastosPend.filter(g=>g.fecha<=filtroHasta);
+  }
 
   const gRD=gastosPend.filter(g=>(g.moneda||'RD$')==='RD$');
   const gUSD=gastosPend.filter(g=>g.moneda==='USD');
@@ -5623,10 +5639,8 @@ function renderCXP(){
   const totalPendUSD=gUSD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
   const totalFactUSD=gUSD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
   const totalPagUSD=gUSD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
-  const totalPend=gastosPend.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
-  const totalFactura=gastosPend.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
-  const totalPagado=gastosPend.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
-  const tasa=parseFloat(DB.config.tasaCambio||60);
+
+  const pbtn=(p,lbl)=>`<button onclick="setCXPPeriodo('${p}')" style="padding:6px 14px;border:1.5px solid ${filtroPeriodo===p?'var(--blue)':'var(--gray3)'};border-radius:var(--radius-sm);font-size:12px;font-weight:${filtroPeriodo===p?'700':'500'};background:${filtroPeriodo===p?'var(--blue)':'#fff'};color:${filtroPeriodo===p?'#fff':'var(--navy3)'};cursor:pointer">${lbl}</button>`;
 
   document.getElementById('page-cxp').innerHTML=`
     <div class="page-header">
@@ -5639,52 +5653,72 @@ function renderCXP(){
       </div>
     </div>
 
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:8px">
-      <span>ℹ️</span>
-      <span>Las cuentas por pagar se generan automáticamente al registrar gastos de vehículo con saldo pendiente.</span>
+    <!-- STATS LIMPIAS -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px">
+      <div style="background:var(--gray2);border-radius:var(--radius-sm);padding:12px;grid-column:span 2">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:4px">🇩🇴 Facturado RD$</div>
+        <div style="font-size:17px;font-weight:800">${totalFactRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div>
+      </div>
+      <div style="background:var(--gray2);border-radius:var(--radius-sm);padding:12px;grid-column:span 2">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:4px">✅ Pagado RD$</div>
+        <div style="font-size:17px;font-weight:800;color:var(--green)">${totalPagRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div>
+      </div>
+      <div style="background:var(--gray2);border-radius:var(--radius-sm);padding:12px;grid-column:span 2">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:4px">🔴 Pendiente RD$</div>
+        <div style="font-size:17px;font-weight:800;color:var(--red)">${totalPendRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div>
+      </div>
+      ${totalFactUSD>0||totalPendUSD>0?`
+      <div style="background:#eff6ff;border-radius:var(--radius-sm);padding:12px;grid-column:span 2">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue);margin-bottom:4px">🇺🇸 Facturado USD</div>
+        <div style="font-size:17px;font-weight:800;color:var(--navy)">$${totalFactUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div>
+      </div>
+      <div style="background:#eff6ff;border-radius:var(--radius-sm);padding:12px;grid-column:span 2">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue);margin-bottom:4px">✅ Pagado USD</div>
+        <div style="font-size:17px;font-weight:800;color:var(--green)">$${totalPagUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div>
+      </div>
+      <div style="background:#eff6ff;border-radius:var(--radius-sm);padding:12px;grid-column:span 2">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--blue);margin-bottom:4px">🔴 Pendiente USD</div>
+        <div style="font-size:17px;font-weight:800;color:var(--red)">$${totalPendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div>
+      </div>`:''}
     </div>
-    <div class="card" style="margin-bottom:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Suplidor</label>
-          <select id="cxp-filtro-sup" onchange="renderCXP()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+
+    <!-- FILTROS -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:5px">Suplidor</label>
+          <select id="cxp-filtro-sup" onchange="renderCXP()" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
             <option value="">Todos los suplidores</option>
             ${[...new Set([...(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).map(g=>g.suplidor),...(DB.cxp||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).map(g=>g.suplidor)].filter(Boolean))].map(s=>`<option value="${escHtml(s)}" ${s===filtroSup?'selected':''}>${escHtml(s)}</option>`).join('')}
           </select>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Vehículo</label>
-          <select id="cxp-filtro-veh" onchange="renderCXP()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+        <div>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:5px">Vehículo</label>
+          <select id="cxp-filtro-veh" onchange="renderCXP()" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
             <option value="">Todos los vehículos</option>
             ${DB.vehiculos.filter(v=>(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id&&parseFloat(g.montoPendiente||0)>0)).map(v=>`<option value="${v.id}" ${v.id===filtroVeh?'selected':''}>${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)}</option>`).join('')}
           </select>
         </div>
-        <div><input type="hidden" id="cxp-filtro-moneda" value="${filtroMoneda}">
-          <button class="btn btn-secondary" onclick="document.getElementById('cxp-filtro-sup').value='';document.getElementById('cxp-filtro-veh').value='';renderCXP()">🔄 Limpiar</button>
+      </div>
+      <div style="border-top:1px solid var(--gray3);padding-top:12px">
+        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:8px">Período</label>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${pbtn('hoy','Hoy')}${pbtn('semana','Semana')}${pbtn('mes','Mes')}${pbtn('rango','Rango')}
+          <input type="hidden" id="cxp-filtro-moneda" value="${filtroMoneda}">
+          <input type="hidden" id="cxp-filtro-periodo" value="${filtroPeriodo}">
+          ${filtroPeriodo==='rango'?`
+          <input type="date" id="cxp-filtro-desde" value="${filtroDesde}" onchange="renderCXP()" style="padding:6px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:12px">
+          <span style="font-size:12px;color:var(--gray)">hasta</span>
+          <input type="date" id="cxp-filtro-hasta" value="${filtroHasta}" onchange="renderCXP()" style="padding:6px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:12px">`:''}
+          <button class="btn btn-secondary btn-sm" onclick="limpiarFiltrosCXP()" style="margin-left:auto">🔄 Limpiar</button>
         </div>
       </div>
     </div>
 
-    <!-- RESUMEN POR MONEDA -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-      <div class="card" style="margin-bottom:0;border-top:3px solid var(--green)">
-        <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:8px">🇩🇴 Pesos (RD$)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
-          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Facturado</div><div style="font-size:14px;font-weight:800">${totalFactRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
-          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pagado</div><div style="font-size:14px;font-weight:800;color:var(--green)">${totalPagRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
-          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pendiente</div><div style="font-size:14px;font-weight:800;color:var(--red)">${totalPendRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:0;border-top:3px solid var(--blue)">
-        <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:8px">🇺🇸 Dólares (USD)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
-          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Facturado</div><div style="font-size:14px;font-weight:800">$${totalFactUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
-          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pagado</div><div style="font-size:14px;font-weight:800;color:var(--green)">$${totalPagUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
-          <div><div style="font-size:10px;color:var(--gray);font-weight:600">Pendiente</div><div style="font-size:14px;font-weight:800;color:var(--red)">$${totalPendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
-        </div>
-      </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1e40af;display:flex;align-items:center;gap:8px">
+      <span>ℹ️</span>
+      <span>Las cuentas por pagar se generan automáticamente al registrar gastos de vehículo con saldo pendiente.</span>
     </div>
-
     <div class="card">
       <div class="search-wrap"><input class="search-input" placeholder="Buscar por suplidor, vehículo, tipo de gasto..." oninput="filterTable('cxp-tbl',this.value)"></div>
       <div class="table-wrap"><table id="cxp-tbl">
@@ -5701,12 +5735,9 @@ function renderCXP(){
           <th style="width:130px">Acción</th>
         </tr></thead>
         <tbody>${gastosPend.length?gastosPend.slice().reverse().map(g=>{
-          // Buscar vehículo por id, o por vin/codigo si el id no coincide (datos de otro dispositivo)
           let v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
           if(!v&&g.vehiculoId){
-            // Intentar por código de vehículo guardado
             if(g.codigo) v=DB.vehiculos.find(x=>x.codigo===g.codigo);
-            // Intentar por VIN guardado en el gasto
             if(!v&&g.vin) v=DB.vehiculos.find(x=>x.vin===g.vin);
           }
           const esUSD=(g.moneda||'RD$')==='USD';
@@ -5735,6 +5766,7 @@ function renderCXP(){
               <div style="display:flex;gap:4px;flex-wrap:wrap">
                 ${parseFloat(g.montoPendiente||0)>0?`<button class="btn btn-sm btn-green" onclick="event.stopPropagation();${g._origen==='manual'?`abonarCXPManual('${g.id}')`:`abonarDesdeCXP('${g.id}')`}" title="Registrar pago">💵 Pagar</button>`:''}
                 ${(currentUser?.role==='admin'||currentUser?.permisos?.editar||canDo('editar'))?`<button class="btn btn-sm" style="background:var(--blue3);color:var(--blue);padding:4px 8px" onclick="event.stopPropagation();editarCXP('${g.id}','${g._origen}')" title="Editar">✏️</button>`:''}
+                ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-sm btn-red" style="padding:4px 8px" onclick="event.stopPropagation();eliminarCXP('${g.id}','${g._origen}')" title="Eliminar">🗑</button>`:''}
                 ${(g.pagos||[]).length>0?`<button class="btn btn-sm" style="background:#f1f5f9;color:var(--gray)" onclick="event.stopPropagation();verHistorialCXP('${g.id}')" title="Historial de pagos">📋</button>`:''}
               </div>
             </td>
@@ -5746,6 +5778,16 @@ function renderCXP(){
   const fs=document.getElementById('cxp-filtro-sup');if(fs)fs.value=filtroSup;
   const fv=document.getElementById('cxp-filtro-veh');if(fv)fv.value=filtroVeh;
   const fm=document.getElementById('cxp-filtro-moneda');if(fm)fm.value=filtroMoneda;
+}
+function setCXPPeriodo(p){
+  const el=document.getElementById('cxp-filtro-periodo');
+  if(el){el.value=(el.value===p?'':p);}
+  renderCXP();
+}
+function limpiarFiltrosCXP(){
+  const ids=['cxp-filtro-sup','cxp-filtro-veh','cxp-filtro-moneda','cxp-filtro-periodo','cxp-filtro-desde','cxp-filtro-hasta'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderCXP();
 }
 
 function actualizarCuentasCXPP(){
@@ -6089,6 +6131,31 @@ function verHistorialCXP(gid){
     <tbody>${rows||'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--gray)">Sin pagos registrados</td></tr>'}</tbody></table>`);
 }
 
+function eliminarCXP(gid, origen){
+  if(!currentUser?.role==='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
+  const arr=origen==='manual'?(DB.cxp||[]):(DB.gastosVehiculos||[]);
+  const g=arr.find(x=>x.id===gid);
+  if(!g){toast('Registro no encontrado','error');return;}
+  const desc=origen==='manual'?(g.descripcion||g.tipo||'CxP Manual'):(g.tipo||g.descripcion||'Gasto Vehículo');
+  openModal('🗑 Eliminar CxP',`
+    <div style="background:var(--red2);border-radius:8px;padding:12px;margin-bottom:14px;color:var(--red);font-size:13px">
+      ⚠️ Esta acción no se puede deshacer.
+    </div>
+    <p style="font-size:14px">¿Eliminar <strong>${escHtml(desc)}</strong> de <strong>${escHtml(g.suplidor||'—')}</strong>?</p>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-red" onclick="confirmarEliminarCXP('${gid}','${origen}')">🗑 Eliminar</button>`);
+}
+function confirmarEliminarCXP(gid, origen){
+  if(origen==='manual'){
+    DB.cxp=(DB.cxp||[]).filter(x=>x.id!==gid);
+    sDB('cxp');
+  } else {
+    DB.gastosVehiculos=(DB.gastosVehiculos||[]).filter(x=>x.id!==gid);
+    sDB('gastosVehiculos');
+  }
+  closeModal();toast('Eliminado ✓','success');renderCXP();
+}
+
 function imprimirReciboPagoCXP(g, pago){
   if(!g||!pago)return;
   const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
@@ -6278,12 +6345,29 @@ function renderCXC(){
 
   const filtroMoneda=document.getElementById('cxc-filtro-moneda')?.value||'RD$';
   const filtroStatus=document.getElementById('cxc-filtro-status')?.value||'PENDIENTE';
-  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const filtroCli=document.getElementById('cxc-filtro-cli')?.value||'';
+  const filtroVeh=document.getElementById('cxc-filtro-veh')?.value||'';
+  const filtroPeriodo=document.getElementById('cxc-filtro-periodo')?.value||'';
+  const filtroDesde=document.getElementById('cxc-filtro-desde')?.value||'';
+  const filtroHasta=document.getElementById('cxc-filtro-hasta')?.value||'';
   const ds='background:#e2e8f0;color:#adb5bd;cursor:not-allowed;border:1px solid #dee2e6';
+
+  const hoy=today();
+  const inicioSemana=(()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return d.toISOString().slice(0,10);})();
+  const inicioMes=hoy.slice(0,7)+'-01';
 
   let items=(DB.cxc||[]).filter(x=>(x.moneda||'RD$')===filtroMoneda);
   if(filtroStatus==='PENDIENTE')items=items.filter(x=>x.status==='PENDIENTE'||x.status==='PARCIAL');
   else if(filtroStatus!=='TODOS')items=items.filter(x=>x.status===filtroStatus);
+  if(filtroCli)items=items.filter(x=>x.clienteId===filtroCli||x.cliente===filtroCli);
+  if(filtroVeh)items=items.filter(x=>x.vehiculoId===filtroVeh);
+  if(filtroPeriodo==='hoy')items=items.filter(x=>x.fecha===hoy);
+  else if(filtroPeriodo==='semana')items=items.filter(x=>x.fecha>=inicioSemana&&x.fecha<=hoy);
+  else if(filtroPeriodo==='mes')items=items.filter(x=>x.fecha>=inicioMes&&x.fecha<=hoy);
+  else if(filtroPeriodo==='rango'){
+    if(filtroDesde)items=items.filter(x=>x.fecha>=filtroDesde);
+    if(filtroHasta)items=items.filter(x=>x.fecha<=filtroHasta);
+  }
 
   const esUSD=filtroMoneda==='USD';
   const fV=(n)=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(n);
@@ -6291,6 +6375,11 @@ function renderCXC(){
   const totalGeneral=items.filter(x=>x.status!=='SALDADO').reduce((a,x)=>a+parseFloat(x.total||0),0);
   const totalCobrado=items.filter(x=>x.status!=='SALDADO').reduce((a,x)=>a+parseFloat(x.abonado||0),0);
   const totalPend=items.filter(x=>x.status!=='SALDADO').reduce((a,x)=>a+parseFloat(x.saldo||0),0);
+
+  const pbtn=(p,lbl)=>`<button onclick="setCXCPeriodo('${p}')" style="padding:6px 14px;border:1.5px solid ${filtroPeriodo===p?'var(--blue)':'var(--gray3)'};border-radius:var(--radius-sm);font-size:12px;font-weight:${filtroPeriodo===p?'700':'500'};background:${filtroPeriodo===p?'var(--blue)':'#fff'};color:${filtroPeriodo===p?'#fff':'var(--navy3)'};cursor:pointer">${lbl}</button>`;
+
+  const clientesEnCXC=[...new Set((DB.cxc||[]).map(x=>x.clienteId||x.cliente).filter(Boolean))];
+  const vehsEnCXC=[...new Set((DB.cxc||[]).map(x=>x.vehiculoId).filter(Boolean))];
 
   document.getElementById('page-cxc').innerHTML=`
     <div class="page-header">
@@ -6302,7 +6391,7 @@ function renderCXC(){
           <option value="RD$" ${filtroMoneda==='RD$'?'selected':''}>💰 RD$ — Pesos</option>
           <option value="USD" ${filtroMoneda==='USD'?'selected':''}>💵 USD — Dólares</option>
         </select>
-        <select id="cxc-filtro-status" onchange="renderCXC()" style="width:130px;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+        <select id="cxc-filtro-status" onchange="renderCXC()" style="width:140px;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
           <option value="PENDIENTE" ${filtroStatus==='PENDIENTE'?'selected':''}>Pendiente / Parcial</option>
           <option value="SALDADO" ${filtroStatus==='SALDADO'?'selected':''}>Saldado</option>
           <option value="TODOS" ${filtroStatus==='TODOS'?'selected':''}>Todos</option>
@@ -6310,29 +6399,58 @@ function renderCXC(){
         <div style="width:1px;height:28px;background:var(--gray3);margin:0 2px"></div>
         <button id="cxc-btn-cobrar" disabled class="btn btn-sm" style="${ds}" onclick="cxcAccion('cobrar')">💵 Registrar Cobro</button>
         <button id="cxc-btn-historial" disabled class="btn btn-sm" style="${ds}" onclick="cxcAccion('historial')">👁 Historial</button>
-        ${currentUser?.role==='admin'?`<button id="cxc-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="cxcAccion('eliminar')">🗑 Eliminar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="cxc-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="cxcAccion('eliminar')">🗑 Eliminar</button>`:''}
         <div style="width:1px;height:28px;background:var(--gray3);margin:0 2px"></div>
         <button class="btn btn-secondary btn-sm" onclick="imprimirCXC()">📄 PDF</button>
         ${(currentUser?.role==='admin'||canDo('editar'))?`<button class="btn btn-primary" onclick="nuevaCXCManual()">➕ Nueva CxC</button>`:''}
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
-      <div class="stat-card blue">
-        <div class="stat-ico">${esUSD?'💵':'💰'}</div>
-        <div class="stat-label">Total por Cobrar (${filtroMoneda})</div>
-        <div class="stat-value">${fV(totalGeneral)}</div>
+    <!-- STATS LIMPIAS -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div style="background:var(--gray2);border-radius:var(--radius-sm);padding:14px 16px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:5px">${esUSD?'💵':'💰'} Total por Cobrar (${filtroMoneda})</div>
+        <div style="font-size:20px;font-weight:800;color:var(--blue)">${fV(totalGeneral)}</div>
       </div>
-      <div class="stat-card green">
-        <div class="stat-ico">✅</div>
-        <div class="stat-label">Total Cobrado</div>
-        <div class="stat-value">${fV(totalCobrado)}</div>
+      <div style="background:var(--gray2);border-radius:var(--radius-sm);padding:14px 16px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:5px">✅ Total Cobrado</div>
+        <div style="font-size:20px;font-weight:800;color:var(--green)">${fV(totalCobrado)}</div>
       </div>
-      <div class="stat-card red">
-        <div class="stat-ico">🔴</div>
-        <div class="stat-label">Saldo Pendiente</div>
-        <div class="stat-value" style="color:var(--red)">${fV(totalPend)}</div>
-        ${esUSD?`<div class="stat-sub">${fmt(totalPend*tasa)}</div>`:`<div class="stat-sub">$${(totalPend/tasa).toFixed(2)} USD</div>`}
+      <div style="background:var(--gray2);border-radius:var(--radius-sm);padding:14px 16px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:5px">🔴 Saldo Pendiente</div>
+        <div style="font-size:20px;font-weight:800;color:var(--red)">${fV(totalPend)}</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:5px">Cliente</label>
+          <select id="cxc-filtro-cli" onchange="renderCXC()" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+            <option value="">Todos los clientes</option>
+            ${DB.clientes.filter(c=>clientesEnCXC.includes(c.id)||clientesEnCXC.includes(c.nombre)).map(c=>`<option value="${c.id}" ${(c.id===filtroCli||c.nombre===filtroCli)?'selected':''}>${escHtml(c.nombre)}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:5px">Vehículo</label>
+          <select id="cxc-filtro-veh" onchange="renderCXC()" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+            <option value="">Todos los vehículos</option>
+            ${DB.vehiculos.filter(v=>vehsEnCXC.includes(v.id)).map(v=>`<option value="${v.id}" ${v.id===filtroVeh?'selected':''}>${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--gray3);padding-top:12px">
+        <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:8px">Período</label>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${pbtn('hoy','Hoy')}${pbtn('semana','Semana')}${pbtn('mes','Mes')}${pbtn('rango','Rango')}
+          <input type="hidden" id="cxc-filtro-periodo" value="${filtroPeriodo}">
+          ${filtroPeriodo==='rango'?`
+          <input type="date" id="cxc-filtro-desde" value="${filtroDesde}" onchange="renderCXC()" style="padding:6px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:12px">
+          <span style="font-size:12px;color:var(--gray)">hasta</span>
+          <input type="date" id="cxc-filtro-hasta" value="${filtroHasta}" onchange="renderCXC()" style="padding:6px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:12px">`:''}
+          <button class="btn btn-secondary btn-sm" onclick="limpiarFiltrosCXC()" style="margin-left:auto">🔄 Limpiar</button>
+        </div>
       </div>
     </div>
 
@@ -6348,10 +6466,11 @@ function renderCXC(){
           <th>Factura</th><th>Cliente</th><th>Vehículo</th>
           <th>Concepto</th>
           <th>Total</th><th>Cobrado</th><th>Saldo</th>
-          <th>Vence</th><th>Estado</th>
+          <th>Vence</th><th>Estado</th><th style="width:110px">Acción</th>
         </tr></thead>
         <tbody>${items.length?items.slice().reverse().map(x=>{
           const tipoBadge=x.esTraspaso?'<span style="background:#fef3c7;color:#d97706;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700">🔄 TRASPASO</span>':x.esEndoso?'<span style="background:#ede9fe;color:#7c3aed;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700">📋 ENDOSO</span>':'<span style="background:#dbeafe;color:#2563eb;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700">💰 VENTA</span>';
+          const saldoPend=parseFloat(x.saldo||0)>0;
           return`<tr onclick="selCXC('${x.id}',this)" style="cursor:pointer">
           <td style="text-align:center"><input type="radio" name="cxc-sel" onclick="event.stopPropagation();selCXC('${x.id}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
           <td><div style="font-family:monospace;font-size:11px;font-weight:700;color:var(--blue)">${escHtml(x.factura||'—')}</div></td>
@@ -6360,15 +6479,30 @@ function renderCXC(){
           <td>${tipoBadge}<div style="font-size:11px;color:var(--gray);margin-top:2px">${escHtml(x.concepto||'—')}</div></td>
           <td style="font-weight:600">${fV(x.total)}</td>
           <td style="color:var(--green);font-weight:600">${fV(x.abonado||0)}</td>
-          <td style="font-weight:800;color:${parseFloat(x.saldo||0)>0?'var(--red)':'var(--green)'}">${fV(x.saldo||0)}</td>
+          <td style="font-weight:800;color:${saldoPend?'var(--red)':'var(--green)'}">${fV(x.saldo||0)}</td>
           <td style="font-size:12px;color:${x.fechaVence&&x.fechaVence<=today()?'var(--red)':'var(--gray)'}">${fmtDate(x.fechaVence)||'—'}</td>
           <td><span class="badge ${x.status==='SALDADO'?'badge-green':x.status==='PARCIAL'?'badge-amber':'badge-red'}">${x.status||'—'}</span></td>
-        </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gray)">Sin cuentas por cobrar en ${filtroMoneda}</td></tr>`}
+          <td>
+            <div style="display:flex;gap:4px">
+              ${saldoPend?`<button class="btn btn-sm btn-green" style="font-size:11px;padding:4px 8px" onclick="event.stopPropagation();abonarCXC('${x.id}')">💵 Cobrar</button>`:`<button class="btn btn-sm" style="background:#f1f5f9;color:var(--gray);font-size:11px;padding:4px 8px" onclick="event.stopPropagation();verAbonosCXC('${x.id}')">👁 Ver</button>`}
+            </div>
+          </td>
+        </tr>`;}).join(''):`<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--gray)">Sin cuentas por cobrar en ${filtroMoneda}</td></tr>`}
         </tbody>
       </table></div>
     </div>`;
   const sm=document.getElementById('cxc-filtro-moneda');if(sm)sm.value=filtroMoneda;
   const ss=document.getElementById('cxc-filtro-status');if(ss)ss.value=filtroStatus;
+}
+function setCXCPeriodo(p){
+  const el=document.getElementById('cxc-filtro-periodo');
+  if(el){el.value=(el.value===p?'':p);}
+  renderCXC();
+}
+function limpiarFiltrosCXC(){
+  const ids=['cxc-filtro-cli','cxc-filtro-veh','cxc-filtro-periodo','cxc-filtro-desde','cxc-filtro-hasta'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderCXC();
 }
 
 function selCXC(id,tr){
@@ -6379,7 +6513,7 @@ function selCXC(id,tr){
   const actB=(bid,bg,c)=>{const b=document.getElementById(bid);if(b){b.disabled=false;b.style.cssText='background:'+bg+';color:'+c+';cursor:pointer;border:none;';}};
   if(x?.status!=='SALDADO')actB('cxc-btn-cobrar','#16a34a','#fff');
   actB('cxc-btn-historial','#475569','#fff');
-  if(currentUser?.role==='admin')actB('cxc-btn-eliminar','#dc2626','#fff');
+  if(currentUser?.role==='admin'||canDo('eliminar'))actB('cxc-btn-eliminar','#dc2626','#fff');
 }
 
 function nuevaCXCManual(){
@@ -6406,30 +6540,22 @@ function nuevaCXCManual(){
     </div>
     <div class="form-row c3">
       <div class="form-field"><label class="required">Monto Total</label>
-        <input type="number" id="ncxc-total" step="0.01" placeholder="0.00" oninput="calcSaldoCXC();calcEquivCXC()">
+        <input type="text" id="ncxc-total" step="0.01" placeholder="0.00" oninput="fmtMoneyInput(this);calcSaldoCXC()">
       </div>
       <div class="form-field"><label>Monto Inicial / Abono</label>
-        <input type="number" id="ncxc-abono" step="0.01" value="0" placeholder="0.00" oninput="calcSaldoCXC()">
+        <input type="text" id="ncxc-abono" value="0" placeholder="0.00" oninput="fmtMoneyInput(this);calcSaldoCXC()">
       </div>
       <div class="form-field"><label>Saldo Pendiente</label>
-        <input type="number" id="ncxc-saldo" step="0.01" readonly style="background:#f1f5f9;font-weight:700">
+        <input type="text" id="ncxc-saldo" readonly style="background:#f1f5f9;font-weight:700;color:var(--red)">
       </div>
     </div>
-    <div class="form-row c3">
+    <div class="form-row c2">
       <div class="form-field"><label>Moneda</label>
-        <select id="ncxc-moneda" onchange="toggleTasaCXC()">
+        <select id="ncxc-moneda">
           <option value="RD$">RD$ — Pesos</option>
           <option value="USD">USD — Dólares</option>
         </select>
       </div>
-      <div class="form-field" id="ncxc-tasa-wrap" style="display:none"><label>💱 Tasa del Día (RD$ x USD)</label>
-        <input type="number" id="ncxc-tasa" value="${DB.config.tasaCambio||60}" step="0.01" placeholder="Ej: 60.50">
-      </div>
-      <div class="form-field" id="ncxc-tasa-eq" style="display:none"><label>Equivalente en RD$</label>
-        <input type="text" id="ncxc-equiv" readonly style="background:#f8fafc;font-weight:700;color:var(--blue)" placeholder="—">
-      </div>
-    </div>
-    <div class="form-row c2">
       <div class="form-field"><label>Banco</label>
         <select id="ncxc-banco" onchange="actualizarCuentasCXCManual()">
           ${(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>'}
@@ -6469,26 +6595,25 @@ function actualizarCuentasCXCManual(){
   cuentaEl.innerHTML=(b&&b.cuentas&&b.cuentas.length)?b.cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';
 }
 function calcSaldoCXC(){
-  const total=parseFloat(document.getElementById('ncxc-total')?.value||0);
-  const abono=parseFloat(document.getElementById('ncxc-abono')?.value||0);
-  const saldo=document.getElementById('ncxc-saldo');
+  const total=parseFloat((document.getElementById("ncxc-total")?.value||"0").replace(/,/g,""))||0;
+  const abono=parseFloat((document.getElementById("ncxc-abono")?.value||"0").replace(/,/g,""))||0;
+  const saldo=document.getElementById("ncxc-saldo");
   if(saldo)saldo.value=fmtMoneyDisplay(Math.max(0,total-abono));
-  calcEquivCXC();
 }
 function guardarCXCManual(){
   const cliId=document.getElementById('ncxc-cli').value;
   const concepto=document.getElementById('ncxc-concepto').value.trim();
-  const total=parseFloat(document.getElementById('ncxc-total').value||0);
+  const total=parseFloat((document.getElementById('ncxc-total').value||'0').replace(/,/g,''))||0;
   if(!cliId){toast('Selecciona un cliente','error');return;}
   if(!concepto){toast('Ingresa el concepto','error');return;}
   if(!total){toast('Ingresa el monto total','error');return;}
   const cli=DB.clientes.find(x=>x.id===cliId);
-  const abono=parseFloat(document.getElementById('ncxc-abono').value||0);
+  const abono=parseFloat((document.getElementById('ncxc-abono').value||'0').replace(/,/g,''))||0;
   const saldo=Math.max(0,total-abono);
   const cuenta=document.getElementById('ncxc-cuenta').value;
   const banco=document.getElementById('ncxc-banco')?.value||'';
   const moneda=document.getElementById('ncxc-moneda').value;
-  const tasaCXC=moneda==='USD'?parseFloat(document.getElementById('ncxc-tasa')?.value||DB.config.tasaCambio||60):parseFloat(DB.config.tasaCambio||60);
+  const tasaCXC=parseFloat(DB.config.tasaCambio||60);
   const fecha=document.getElementById('ncxc-fecha').value;
   const vence=document.getElementById('ncxc-vence').value;
   if(!DB.cxc)DB.cxc=[];
