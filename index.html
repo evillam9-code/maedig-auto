@@ -293,6 +293,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
     <div class="nav-item" onclick="showPage('facturaExterna')" id="nav-facturaExterna"><span class="ico">🧾</span>Facturas Externas</div>
     <div class="nav-item" onclick="showPage('chat')" id="nav-chat"><span class="ico">💬</span>Chat Interno <span id="chat-badge" style="display:none;background:#dc2626;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto">0</span></div>
     <div class="sb-sec">SISTEMA</div>
+    <div class="nav-item" onclick="showPage('cuentas')" id="nav-cuentas"><span class="ico">🏦</span>Cuentas</div>
+    <div class="nav-item" onclick="showPage('cumpleanos')" id="nav-cumpleanos"><span class="ico">🎂</span>Cumpleaños</div>
     <div class="nav-item" onclick="showPage('usuarios')" id="nav-usuarios"><span class="ico">👥</span>Usuarios</div>
     <div class="nav-item" onclick="showPage('alertas')" id="nav-alertas"><span class="ico">🔔</span>Alertas del Sistema</div>
     <div class="nav-item" onclick="showPage('config')" id="nav-config"><span class="ico">⚙️</span>Configuración</div>
@@ -302,6 +304,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
         <div style="font-weight:800;color:#60a5fa">Edward Villa</div>
         <div><a href="tel:8498579190" style="color:#94a3b8;text-decoration:none">849-857-9190</a></div>
       </div>
+      <div class="nav-item" onclick="cambiarMiContrasena()" style="color:var(--blue)"><span class="ico">🔑</span>Cambiar contraseña</div>
+      <div class="nav-item" id="nav-backup-btn" style="display:none;color:var(--green)" onclick="showPage('backup')"><span class="ico">💾</span>Backup</div>
       <div class="nav-item" onclick="doLogout()" style="color:var(--red)"><span class="ico">🚪</span>Cerrar sesión</div>
     </div>
   </div>
@@ -337,6 +341,9 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
       <div class="page" id="page-chat"></div>
       <div class="page" id="page-seguros"></div>
       <div class="page" id="page-facturaExterna"></div>
+      <div class="page" id="page-cuentas"></div>
+      <div class="page" id="page-cumpleanos"></div>
+      <div class="page" id="page-backup"></div>
     </div>
   </div>
 </div>
@@ -398,7 +405,8 @@ let DB={
   seguros:ls('seguros')||[],
   facturasExternas:ls('facturasExternas')||[],
   chat:ls('chat')||{},
-  presencia:ls('presencia')||{}
+  presencia:ls('presencia')||{},
+  cumpleanosMensajes:ls('cumpleanosMensajes')||{}
 };
 function sDB(k){ss(k,DB[k]);}
 
@@ -495,9 +503,9 @@ function resetInactTimer(){
       document.getElementById('login-screen').style.display='flex';
       document.getElementById('li-user').value='';
       document.getElementById('li-pass').value='';
-      alert('Sesión cerrada por inactividad (10 min). Inicie sesión nuevamente.');
+      alert('Sesión cerrada por inactividad (30 min). Inicie sesión nuevamente.');
     }
-  },600000);
+  },1800000);
 }
 ['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,resetInactTimer,{passive:true}));
 
@@ -600,20 +608,25 @@ function doLogin(){
     showPage('dashboard');
     setTimeout(checkAlerts,1500);
     _iniciarPresenciaGlobal();
+    setTimeout(_verificarBackupAdmin,2500);
   };
   // Mostrar bienvenida con datos del localStorage primero
   _actualizarWelcome();
   ws.classList.add('show');
-  // Si Firebase ya precargó al arrancar, ir directo al dashboard
+  // Firebase es obligatorio — conectar siempre
   if(window._fbCargado){
     _actualizarWelcome();
+    _verificarBackupAdmin();
     setTimeout(_entrarDashboard, 2000);
   } else if(typeof fbIniciar==='function'){
-    // Firebase aún no cargó, cargar ahora
     let _localFbCargado=false;
+    // Timeout extendido para conexiones lentas
     const _fbTimeout=setTimeout(()=>{
-      if(!_localFbCargado) _entrarDashboard();
-    },2200);
+      if(!_localFbCargado){
+        // Firebase no respondió — bloquear entrada
+        _mostrarErrorFirebase();
+      }
+    },6000);
     fbIniciar().then(()=>{
       _localFbCargado=true;
       clearTimeout(_fbTimeout);
@@ -622,10 +635,10 @@ function doLogin(){
     }).catch(()=>{
       _localFbCargado=true;
       clearTimeout(_fbTimeout);
-      setTimeout(_entrarDashboard, 1000);
+      _mostrarErrorFirebase();
     });
   } else {
-    setTimeout(_entrarDashboard, 2200);
+    _mostrarErrorFirebase();
   }
 }
 function _getRolLabel(role){
@@ -652,7 +665,7 @@ function aplicarPermisosNav(){
   if(!currentUser)return;
   // Ocultar nav-items de módulos sin acceso
   const MODS_NAV=['dashboard','informes','suplidores','inventario','gastosVeh','cxp',
-    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config'];
+    'clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config','cuentas','cumpleanos','backup'];
   MODS_NAV.forEach(id=>{
     const nav=document.getElementById('nav-'+id);
     if(!nav)return;
@@ -660,6 +673,32 @@ function aplicarPermisosNav(){
     const tiene=currentUser.role==='admin'||canAccess(id);
     nav.style.display=tiene?'':'none';
   });
+  // Backup solo para admin
+  const backupBtn=document.getElementById('nav-backup-btn');
+  if(backupBtn)backupBtn.style.display=currentUser?.role==='admin'?'flex':'none';
+}
+function cambiarMiContrasena(){
+  openModal('🔑 Cambiar Mi Contraseña',`
+    <div class="form-field"><label>Contraseña actual</label><input type="password" id="cp-actual" placeholder="Contraseña actual"></div>
+    <div class="form-field"><label>Nueva contraseña</label><input type="password" id="cp-nueva" placeholder="Nueva contraseña (mínimo 6 caracteres)"></div>
+    <div class="form-field"><label>Confirmar nueva contraseña</label><input type="password" id="cp-confirmar" placeholder="Repite la nueva contraseña"></div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarCambioContrasena()">💾 Guardar</button>`);
+}
+function guardarCambioContrasena(){
+  const actual=document.getElementById('cp-actual').value;
+  const nueva=document.getElementById('cp-nueva').value;
+  const confirmar=document.getElementById('cp-confirmar').value;
+  const i=DB.users.findIndex(u=>u.id===currentUser.id);
+  if(i<0){toast('Usuario no encontrado','error');return;}
+  if(DB.users[i].password!==actual){toast('La contraseña actual es incorrecta','error');return;}
+  if(!nueva||nueva.length<6){toast('La nueva contraseña debe tener al menos 6 caracteres','error');return;}
+  if(nueva!==confirmar){toast('Las contraseñas no coinciden','error');return;}
+  DB.users[i].password=nueva;
+  currentUser.password=nueva;
+  sDB('users');
+  closeModal();
+  toast('Contraseña actualizada correctamente ✓','success');
 }
 function doLogout(){
   if(currentUser){
@@ -685,7 +724,7 @@ function showPage(id){
   if(id!=='dashboard'&&currentUser?.role!=='admin'&&!canAccess(id)){toast('No tienes acceso a este módulo','error');return;}
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
-  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat};
+  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup};
   if(r[id])r[id]();
 }
 
@@ -1123,7 +1162,8 @@ function formVehiculo(v){
       <div class="form-field"><label>Compañía Importadora</label>
         <select id="v-suplidor">
           <option value="">-- Sin compañía --</option>
-          ${DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo').map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===v?.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre||'')}${s.propietario?' — '+s.propietario:''}</option>`).join('')}
+          ${DB.suplidores.filter(s=>s.tipoSuplidor==='importadora').map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===v?.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre||'')}${s.propietario?' — '+s.propietario:''}</option>`).join('')}
+          ${DB.suplidores.filter(s=>s.tipoSuplidor==='importadora').length===0?'<option disabled style="color:#94a3b8">— Agrega suplidores tipo Importadora primero —</option>':''}
         </select>
       </div>
       <div class="form-field"><label>Notas</label><textarea id="v-notas" rows="1" placeholder="Notas adicionales...">${escHtml(v?.notas||'')}</textarea></div>
@@ -1255,7 +1295,10 @@ function gastosVehiculo(vid){
     <td style="font-weight:700;color:var(--red)">${fV(g.montoFactura||g.monto||0)}</td>
     <td style="color:var(--green);font-weight:600">${fV(g.montoPagado||0)}</td>
     <td style="font-weight:700;color:${parseFloat(g.montoPendiente||0)>0?'var(--red)':'var(--green)'}">${fV(g.montoPendiente||0)}</td>
-    <td>${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-red btn-sm" onclick="eliminarGastoVeh('${g.id}','${vid}')">🗑</button>`:''}</td>
+    <td style="display:flex;gap:4px">
+      ${(currentUser?.role==='admin'||canDo('editar'))?`<button class="btn btn-sm" style="background:var(--blue3);color:var(--blue)" onclick="editarGastoVehModal('${g.id}','${vid}')">✏️</button>`:''}
+      ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-red btn-sm" onclick="eliminarGastoVeh('${g.id}','${vid}')">🗑</button>`:''}
+    </td>
   </tr>`;}).join('');
   openModal(`💸 Gastos — ${v.codigo} ${v.marca} ${v.modelo} ${v.anio}`,`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;background:var(--gray2);padding:12px;border-radius:8px">
@@ -1438,6 +1481,7 @@ function renderCaja(){
         <input type="month" id="caja-mes" value="${mes}" onchange="renderCaja()" style="padding:7px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
         <button class="btn btn-green btn-sm" onclick="nuevoCajaMov('ENTRADA')">📥 Nueva Entrada</button>
         <button class="btn btn-red btn-sm" onclick="nuevoCajaMov('SALIDA')">📤 Nueva Salida</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportarCajaPDF()">📄 Exportar PDF</button>
       </div>
     </div>
 
@@ -2145,6 +2189,7 @@ function renderUsuarios(){
     {id:'nomina',label:'Nómina'},{id:'caja',label:'Caja'},
     {id:'cotizaciones',label:'Cotizaciones'},{id:'autorizaciones',label:'Autorización Compra'},{id:'seguros',label:'Seguros'},{id:'facturaExterna',label:'Facturas Externas'},{id:'alertas',label:'Alertas'},{id:'verSaldoCaja',label:'💰 Saldo Caja'},{id:'chat',label:'💬 Chat'},
     {id:'usuarios',label:'Usuarios'},{id:'config',label:'Configuración'},
+    {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
   ];
   const BORRAR=[
     {id:'ventas',label:'Ventas'},{id:'clientes',label:'Clientes'},
@@ -2264,7 +2309,7 @@ function crearUsuarioNuevo(){
   const role=document.getElementById('nu-role')?.value;
   if(!nombre||!user||!pass){toast('Complete nombre, usuario y contraseña','error');return;}
   if(DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
-  const MODS_IDS=['dashboard','informes','inventario','gastosVeh','cxp','clientes','ventas','cxc','suplidores','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config'];
+  const MODS_IDS=['dashboard','informes','inventario','gastosVeh','cxp','clientes','ventas','cxc','suplidores','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config','cuentas','cumpleanos'];
   const DEL_IDS=['ventas','clientes','suplidores','gastos','nomina','gastosVeh','cxc','cxp','inventario','caja','cotizaciones','autorizaciones','seguros','facturaExterna'];
   const modulos=role==='admin'?MODS_IDS:MODS_IDS.filter(id=>document.getElementById('nu-mod-'+id)?.checked);
   const puedeEliminar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-del-'+id)?.checked);
@@ -2357,6 +2402,7 @@ function editarUsuario(i){
     {id:'nomina',label:'👷 Nómina'},{id:'caja',label:'💳 Caja'},
     {id:'cotizaciones',label:'📋 Cotizaciones'},{id:'autorizaciones',label:'📝 Autorización Compra'},
     {id:'seguros',label:'🛡️ Seguros'},{id:'facturaExterna',label:'🧾 Facturas Externas'},{id:'alertas',label:'🔔 Alertas'},{id:'verSaldoCaja',label:'💰 Ver Saldo Caja'},{id:'chat',label:'💬 Chat Interno'},
+    {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
   ];
   const mods=u.modulos||[];
   const perms=u.permisos||{};
@@ -2445,7 +2491,7 @@ function guardarUsuario(idx){
   const pass=document.getElementById('u-pass').value;
   if(!nombre||!user||(!pass&&idx===undefined)){toast('Complete todos los campos','error');return;}
   if(idx===undefined&&DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
-  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat'];
+  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','cuentas','cumpleanos'];
   const nuevosMods=MODS_IDS.filter(m=>{const el=document.getElementById('u-mod-'+m);return el&&el.checked;});
   const permKeys=['editar','eliminar','imprimir','pdf','editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina','editarGastosVeh','editarCobros','editarCxp','editarVehiculos','editarCaja','editarCotizaciones','editarAutorizaciones','editarSeguros','editarFacturas','borrarVentas','borrarClientes','borrarSuplidores','borrarGastos','borrarNomina','borrarGastosVeh','borrarCobros','borrarCxp','borrarVehiculos','borrarCaja','borrarCotizaciones','borrarAutorizaciones','borrarSeguros','borrarFacturas'];
   const nuevosPerms={};permKeys.forEach(k=>{const el=document.getElementById('u-perm-'+k);if(el)nuevosPerms[k]=el.checked;});
@@ -2472,6 +2518,459 @@ function guardarUsuario(idx){
 
 // ══ MÓDULO DE ALERTAS ══
 let alertasSeleccionadas=new Set();
+// ══ EXPORTAR PDF — SUPLIDORES ══
+function exportarSuplidoresPDF(tabActivo){
+  tabActivo=tabActivo||'vehiculo';
+  const labels={'vehiculo':'Suplidores de Vehículos','importadora':'Suplidores Importadora','empresa':'Suplidores de Empresa'};
+  const lista=DB.suplidores.filter(s=>{
+    if(tabActivo==='vehiculo')return (s.tipoSuplidor||'vehiculo')==='vehiculo';
+    if(tabActivo==='importadora')return s.tipoSuplidor==='importadora';
+    return s.tipoSuplidor==='empresa';
+  });
+  const win=window.open('','_blank','width=900,height=650');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Suplidores</title>
+  <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}
+  h2{font-size:17px;margin:0}p{margin:4px 0 16px;color:#6b7280;font-size:11px}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th{background:#0f172a;color:#fff;padding:8px 10px;font-size:10px;text-align:left;text-transform:uppercase}
+  td{padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:11px}
+  tr:nth-child(even) td{background:#f8fafc}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+  .veh{background:#dbeafe;color:#1d4ed8}.imp{background:#ede9fe;color:#7c3aed}.emp{background:#dcfce7;color:#16a34a}
+  @media print{button{display:none}}</style></head><body>
+  ${DB.config.logoData?`<img src="${DB.config.logoData}" style="max-height:50px;margin-bottom:8px;display:block">`:''}
+  <h2>${escHtml(DB.config.empresa||'DealerSystem')} — ${labels[tabActivo]||'Suplidores'}</h2>
+  <p>Total: ${lista.length} suplidor(es) | Fecha: ${fmtDate(today())}</p>
+  <table><thead><tr><th>#</th><th>Empresa</th><th>Propietario</th><th>Tipo</th><th>RNC/Doc</th><th>Teléfono</th><th>WhatsApp</th><th>Correo</th><th>Dirección</th></tr></thead>
+  <tbody>${lista.map((s,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="font-weight:700">${escHtml(s.empresa||s.nombre||'—')}</td>
+    <td>${escHtml(s.propietario||'—')}</td>
+    <td><span class="badge ${s.tipoSuplidor==='importadora'?'imp':s.tipoSuplidor==='empresa'?'emp':'veh'}">${s.tipoSuplidor==='importadora'?'Importadora':s.tipoSuplidor==='empresa'?'Empresa':'Vehículo'}</span></td>
+    <td>${escHtml(s.rnc||'—')}</td>
+    <td>${escHtml(s.telefono||'—')}</td>
+    <td>${escHtml(s.whatsapp||'—')}</td>
+    <td>${escHtml(s.correo||'—')}</td>
+    <td>${escHtml(s.direccion||'—')}</td>
+  </tr>`).join('')}</tbody></table>
+  <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Guardar PDF</button></div>
+  </body></html>`);
+  win.document.close();
+}
+
+// ══ EXPORTAR PDF — CAJA ══
+function exportarCajaPDF(){
+  const mesEl=document.getElementById('caja-mes');
+  const mes=mesEl?mesEl.value:(new Date().toISOString().slice(0,7));
+  const [anio,m]=mes.split('-');
+  const cajaFilt=DB.caja.filter(c=>c.fecha&&c.fecha.startsWith(mes));
+  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const entRD=cajaFilt.filter(c=>c.tipo==='ENTRADA'&&(c.moneda||'RD$')==='RD$').reduce((a,c)=>a+parseFloat(c.monto||0),0);
+  const salRD=cajaFilt.filter(c=>c.tipo==='SALIDA'&&(c.moneda||'RD$')==='RD$').reduce((a,c)=>a+parseFloat(c.monto||0),0);
+  const entUSD=cajaFilt.filter(c=>c.tipo==='ENTRADA'&&c.moneda==='USD').reduce((a,c)=>a+parseFloat(c.monto||0),0);
+  const salUSD=cajaFilt.filter(c=>c.tipo==='SALIDA'&&c.moneda==='USD').reduce((a,c)=>a+parseFloat(c.monto||0),0);
+  const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const periodo=meses[parseInt(m)-1]+' '+anio;
+  const win=window.open('','_blank','width=900,height=650');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Caja</title>
+  <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}
+  h2{font-size:17px;margin:0}p{margin:4px 0 16px;color:#6b7280;font-size:11px}
+  .resumen{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+  .res-box{flex:1;min-width:140px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}
+  .res-label{font-size:10px;text-transform:uppercase;color:#6b7280;font-weight:700;margin-bottom:4px}
+  .res-val{font-size:18px;font-weight:800}
+  table{width:100%;border-collapse:collapse}
+  th{background:#0f172a;color:#fff;padding:8px 10px;font-size:10px;text-align:left;text-transform:uppercase}
+  td{padding:7px 10px;border-bottom:1px solid #e2e8f0;font-size:11px}
+  tr:nth-child(even) td{background:#f8fafc}
+  .ent{color:#16a34a;font-weight:700}.sal{color:#dc2626;font-weight:700}
+  @media print{button{display:none}}</style></head><body>
+  ${DB.config.logoData?`<img src="${DB.config.logoData}" style="max-height:50px;margin-bottom:8px;display:block">`:''}
+  <h2>${escHtml(DB.config.empresa||'DealerSystem')} — REPORTE DE CAJA</h2>
+  <p>Período: ${periodo} | Total registros: ${cajaFilt.length} | Fecha impresión: ${fmtDate(today())}</p>
+  <div class="resumen">
+    <div class="res-box"><div class="res-label">Entradas RD$</div><div class="res-val" style="color:#16a34a">RD$ ${entRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+    <div class="res-box"><div class="res-label">Salidas RD$</div><div class="res-val" style="color:#dc2626">RD$ ${salRD.toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+    <div class="res-box"><div class="res-label">Saldo RD$</div><div class="res-val" style="color:${entRD-salRD>=0?'#16a34a':'#dc2626'}">RD$ ${(entRD-salRD).toLocaleString('es-DO',{minimumFractionDigits:2})}</div></div>
+    <div class="res-box"><div class="res-label">Entradas USD</div><div class="res-val" style="color:#16a34a">$ ${entUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+    <div class="res-box"><div class="res-label">Salidas USD</div><div class="res-val" style="color:#dc2626">$ ${salUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+    <div class="res-box"><div class="res-label">Saldo USD</div><div class="res-val" style="color:${entUSD-salUSD>=0?'#16a34a':'#dc2626'}">$ ${(entUSD-salUSD).toLocaleString('en-US',{minimumFractionDigits:2})}</div></div>
+  </div>
+  <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Referencia</th><th>Responsable</th><th>Moneda</th><th>Monto</th></tr></thead>
+  <tbody>${cajaFilt.slice().reverse().map(c=>`<tr>
+    <td>${fmtDate(c.fecha)}</td>
+    <td class="${c.tipo==='ENTRADA'?'ent':'sal'}">${c.tipo}</td>
+    <td>${escHtml(c.categoria||'—')}</td>
+    <td>${escHtml(c.descripcion||'—')}</td>
+    <td style="font-size:10px">${escHtml(c.referencia||'—')}</td>
+    <td>${escHtml(c.responsable||'—')}</td>
+    <td>${escHtml(c.moneda||'RD$')}</td>
+    <td class="${c.tipo==='ENTRADA'?'ent':'sal'}">${c.moneda==='USD'?'$ '+parseFloat(c.monto||0).toLocaleString('en-US',{minimumFractionDigits:2}):'RD$ '+parseFloat(c.monto||0).toLocaleString('es-DO',{minimumFractionDigits:2})}</td>
+  </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:16px;color:#6b7280">Sin movimientos en este período</td></tr>'}</tbody></table>
+  <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Guardar PDF</button></div>
+  </body></html>`);
+  win.document.close();
+}
+
+// ══ EXPORTAR PDF — CUMPLEAÑOS ══
+function exportarCumplePDF(){
+  const hoy=new Date();
+  const proximos=[];
+  (DB.clientes||[]).forEach(c=>{
+    if(!c.fechaCumpleanos)return;
+    const parts=c.fechaCumpleanos.split('-');
+    if(parts.length<3)return;
+    const mesC=parseInt(parts[1]),diaC=parseInt(parts[2]);
+    const esteAnio=new Date(hoy.getFullYear(),mesC-1,diaC);
+    if(esteAnio<new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()))esteAnio.setFullYear(hoy.getFullYear()+1);
+    const diff=Math.floor((esteAnio-new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()))/(1000*60*60*24));
+    if(diff<=7){
+      const keyEnvio=c.id+'_'+hoy.getFullYear();
+      const estado=(DB.cumpleanosMensajes||{})[keyEnvio]||'pendiente';
+      proximos.push({...c,diasRestantes:diff,estado});
+    }
+  });
+  proximos.sort((a,b)=>a.diasRestantes-b.diasRestantes);
+  const win=window.open('','_blank','width=800,height=600');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cumpleaños</title>
+  <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px}
+  h2{font-size:17px;margin:0}p{margin:4px 0 16px;color:#6b7280;font-size:11px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#0f172a;color:#fff;padding:8px 10px;font-size:10px;text-align:left;text-transform:uppercase}
+  td{padding:8px 10px;border-bottom:1px solid #e2e8f0;font-size:11px}
+  tr:nth-child(even) td{background:#f8fafc}
+  .hoy{background:#fef9c3!important}.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+  .env{background:#dcfce7;color:#16a34a}.pen{background:#fef3c7;color:#92400e}
+  @media print{button{display:none}}</style></head><body>
+  ${DB.config.logoData?`<img src="${DB.config.logoData}" style="max-height:50px;margin-bottom:8px;display:block">`:''}
+  <h2>${escHtml(DB.config.empresa||'DealerSystem')} — CUMPLEAÑOS PRÓXIMOS (7 DÍAS)</h2>
+  <p>Fecha: ${fmtDate(today())} | Total: ${proximos.length} cliente(s)</p>
+  <table><thead><tr><th>#</th><th>Cliente</th><th>Fecha Cumpleaños</th><th>Días Restantes</th><th>Teléfono</th><th>WhatsApp</th><th>Estado Mensaje</th></tr></thead>
+  <tbody>${proximos.length===0?'<tr><td colspan="7" style="text-align:center;padding:20px;color:#6b7280">Sin cumpleaños en los próximos 7 días</td></tr>':
+  proximos.map((c,i)=>`<tr class="${c.diasRestantes===0?'hoy':''}">
+    <td>${i+1}</td>
+    <td style="font-weight:700">${escHtml(c.nombre)}</td>
+    <td>${escHtml(c.fechaCumpleanos||'—')}</td>
+    <td style="font-weight:700;color:${c.diasRestantes===0?'#d97706':'#0f172a'}">${c.diasRestantes===0?'🎂 HOY':c.diasRestantes+' día(s)'}</td>
+    <td>${escHtml(c.telefono||'—')}</td>
+    <td>${escHtml(c.whatsapp||'—')}</td>
+    <td><span class="badge ${c.estado==='enviado'?'env':'pen'}">${c.estado==='enviado'?'✅ Enviado':'⏳ Pendiente'}</span></td>
+  </tr>`).join('')}</tbody></table>
+  <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Guardar PDF</button></div>
+  </body></html>`);
+  win.document.close();
+}
+
+// ══ MÓDULO BACKUP ══
+function renderBackup(){
+  if(currentUser?.role!=='admin'){
+    document.getElementById('page-backup').innerHTML='<div style="text-align:center;padding:48px"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:700;color:var(--navy)">Acceso restringido</div><p style="color:var(--gray);margin-top:8px">Solo el administrador puede acceder al backup.</p></div>';
+    return;
+  }
+  const lastStr=DB.config._lastBackup||null;
+  const hoy=new Date();
+  let diasSinBackup=null;
+  let lastFmt='Nunca realizado';
+  let statusColor='var(--red)';
+  let statusIcon='🔴';
+  if(lastStr){
+    const last=new Date(lastStr);
+    diasSinBackup=Math.floor((hoy-last)/(1000*60*60*24));
+    const pad=n=>String(n).padStart(2,'0');
+    const d=last;
+    lastFmt=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if(diasSinBackup<5){statusColor='var(--green)';statusIcon='✅';}
+    else if(diasSinBackup<10){statusColor='var(--amber)';statusIcon='🟡';}
+    else{statusColor='var(--red)';statusIcon='🔴';}
+  }
+  const diasMsg=diasSinBackup===null?'Nunca se ha realizado un backup':
+    diasSinBackup===0?'Backup realizado hoy':
+    diasSinBackup===1?'Hace 1 día':
+    `Hace ${diasSinBackup} días`;
+
+  // Conteo de datos actuales en memoria
+  const resumen=[
+    {label:'Vehículos',val:(DB.vehiculos||[]).length,ico:'🚗'},
+    {label:'Clientes',val:(DB.clientes||[]).length,ico:'👤'},
+    {label:'Ventas',val:(DB.ventas||[]).length,ico:'💰'},
+    {label:'Gastos Vehículo',val:(DB.gastosVehiculos||[]).length,ico:'💸'},
+    {label:'CxC',val:(DB.cxc||[]).length,ico:'📬'},
+    {label:'CxP',val:(DB.cxp||[]).length,ico:'📑'},
+    {label:'Gastos Empresa',val:(DB.gastos||[]).length,ico:'🏢'},
+    {label:'Nómina',val:(DB.nomina||[]).length,ico:'👷'},
+    {label:'Caja',val:(DB.caja||[]).length,ico:'💳'},
+    {label:'Suplidores',val:(DB.suplidores||[]).length,ico:'🏭'},
+    {label:'Cotizaciones',val:(DB.cotizaciones||[]).length,ico:'📋'},
+    {label:'Seguros',val:(DB.seguros||[]).length,ico:'🛡️'},
+  ];
+
+  document.getElementById('page-backup').innerHTML=`
+    <div class="page-header">
+      <div><h1>💾 Backup del Sistema</h1><p>Respaldo de todos los datos del sistema</p></div>
+    </div>
+
+    <!-- Estado del backup -->
+    <div class="card" style="border-top:4px solid ${statusColor}">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:48px">${statusIcon}</div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:800;color:${statusColor}">${diasMsg}</div>
+          <div style="font-size:13px;color:var(--gray);margin-top:4px">Último backup: <strong>${lastFmt}</strong></div>
+          <div style="font-size:12px;color:var(--gray);margin-top:2px">Se recomienda hacer backup cada 5 días</div>
+        </div>
+        <button class="btn btn-primary" onclick="_hacerBackup()" style="font-size:15px;padding:12px 24px">
+          💾 Hacer Backup Ahora
+        </button>
+      </div>
+    </div>
+
+    <!-- Datos que se incluirán en el backup -->
+    <div class="card">
+      <div class="card-title">📊 Datos que incluye el backup</div>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:16px">
+        Estos son los registros actuales en el sistema que serán guardados en el archivo de backup.
+        ${!window._fbCargado?'<span style="color:var(--red);font-weight:700">⚠️ Firebase aún cargando — espera antes de hacer backup.</span>':'<span style="color:var(--green);font-weight:600">✅ Firebase conectado — datos listos.</span>'}
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+        ${resumen.map(r=>`
+          <div style="background:var(--gray2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--gray3)">
+            <div style="font-size:24px;margin-bottom:6px">${r.ico}</div>
+            <div style="font-size:22px;font-weight:800;color:var(--navy)">${r.val}</div>
+            <div style="font-size:11px;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.3px">${r.label}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Instrucciones -->
+    <div class="card">
+      <div class="card-title">ℹ️ ¿Qué es el backup y para qué sirve?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--navy)">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px;flex-shrink:0">📥</span>
+          <div><strong>¿Qué descarga?</strong> Un archivo <code style="background:var(--gray2);padding:2px 6px;border-radius:4px">.json</code> con todos tus datos — vehículos, clientes, ventas, gastos, nómina y más.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px;flex-shrink:0">💻</span>
+          <div><strong>¿Dónde se guarda?</strong> En tu computadora, en la carpeta de Descargas. Guárdalo en un lugar seguro.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px;flex-shrink:0">🔒</span>
+          <div><strong>¿Para qué sirve?</strong> Si algo se pierde en Firebase o se borra accidentalmente, el administrador del sistema puede recuperar los datos desde ese archivo.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px;flex-shrink:0">📅</span>
+          <div><strong>¿Cada cuánto hacerlo?</strong> Se recomienda cada 5 días. El sistema te avisará automáticamente cuando sea necesario.</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══ MÓDULO CUMPLEAÑOS ══
+function renderCumpleanos(){
+  const esAdmin=currentUser?.role==='admin';
+  const tieneAcceso=esAdmin||(currentUser?.modulos||[]).includes('cumpleanos');
+  if(!tieneAcceso){
+    document.getElementById('page-cumpleanos').innerHTML='<div style="text-align:center;padding:48px"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:700;color:var(--navy)">Acceso restringido</div></div>';
+    return;
+  }
+  const hoy=new Date();
+  const msgGuardado=DB.config.mensajeCumpleanos||'Hola {nombre}, en nombre de todo el equipo de {empresa} te deseamos un muy feliz cumpleaños 🎉🎂. ¡Que tengas un excelente día!';
+  // Encontrar clientes con cumpleaños en los próximos 7 días
+  const proximos=[];
+  (DB.clientes||[]).forEach(c=>{
+    if(!c.fechaCumpleanos)return;
+    const parts=c.fechaCumpleanos.split('-');
+    if(parts.length<3)return;
+    const mesC=parseInt(parts[1]);
+    const diaC=parseInt(parts[2]);
+    // Calcular diferencia en días (sin importar el año)
+    const esteAnio=new Date(hoy.getFullYear(),mesC-1,diaC);
+    if(esteAnio<new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()))
+      esteAnio.setFullYear(hoy.getFullYear()+1);
+    const diff=Math.floor((esteAnio-new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()))/(1000*60*60*24));
+    if(diff<=7){
+      const keyEnvio=c.id+'_'+hoy.getFullYear();
+      const estadoEnvio=(DB.cumpleanosMensajes||{})[keyEnvio]||'pendiente';
+      proximos.push({...c,diasRestantes:diff,esFechaExacta:diff===0,keyEnvio,estadoEnvio});
+    }
+  });
+  proximos.sort((a,b)=>a.diasRestantes-b.diasRestantes);
+
+  document.getElementById('page-cumpleanos').innerHTML=`
+    <div class="page-header">
+      <div><h1>🎂 Cumpleaños</h1><p>${proximos.length} cliente(s) cumplen años en los próximos 7 días</p></div>
+      <button class="btn btn-secondary btn-sm" onclick="exportarCumplePDF()">📄 Exportar PDF</button>
+    </div>
+    <!-- Mensaje estándar configurable -->
+    <div class="card">
+      <div class="card-title">💬 Mensaje Estándar de Felicitación</div>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:10px">Usa <strong>{nombre}</strong> para el nombre del cliente y <strong>{empresa}</strong> para el nombre de tu empresa.</p>
+      <textarea id="cumple-msg-txt" rows="3" style="width:100%;padding:10px;border:1.5px solid var(--gray3);border-radius:8px;font-size:13px;font-family:'Outfit',sans-serif;resize:vertical">${escHtml(msgGuardado)}</textarea>
+      <div class="btn-row"><button class="btn btn-primary" onclick="guardarMensajeCumpleanos()">💾 Guardar Mensaje</button></div>
+    </div>
+    <!-- Lista de próximos cumpleaños -->
+    <div class="card">
+      <div class="card-title">📋 Próximos Cumpleaños (7 días)</div>
+      ${proximos.length===0?`<div style="text-align:center;padding:32px;color:var(--gray)"><div style="font-size:40px;margin-bottom:8px">🎉</div><div>No hay cumpleaños en los próximos 7 días</div></div>`:`
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${proximos.map(c=>{
+          const tel=(c.whatsapp||c.telefono||'').replace(/\D/g,'');
+          const msgPersonalizado=msgGuardado.replace(/{nombre}/g,c.nombre).replace(/{empresa}/g,DB.config.empresa||'nosotros');
+          const waLink=tel?`https://wa.me/1${tel}?text=${encodeURIComponent(msgPersonalizado)}`:'';
+          const yaEnviado=c.estadoEnvio==='enviado';
+          return `<div style="display:flex;align-items:center;gap:14px;padding:14px;background:${c.esFechaExacta?'#fef9c3':'#f8fafc'};border-radius:10px;border:1.5px solid ${c.esFechaExacta?'#fde047':'var(--gray3)'}">
+            <div style="font-size:32px">${c.esFechaExacta?'🎂':'🎁'}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px">${escHtml(c.nombre)}</div>
+              <div style="font-size:12px;color:var(--gray)">${c.esFechaExacta?'🎉 ¡Hoy es su cumpleaños!':'En '+c.diasRestantes+' día'+(c.diasRestantes===1?'':'s')} — ${c.fechaCumpleanos}</div>
+              ${tel?`<div style="font-size:12px;color:var(--gray)">📱 ${c.whatsapp||c.telefono}</div>`:'<div style="font-size:11px;color:#ef4444">Sin WhatsApp registrado</div>'}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="badge ${yaEnviado?'badge-green':'badge-amber'}" style="font-size:11px">${yaEnviado?'✅ Enviado':'⏳ Pendiente'}</span>
+              ${tel&&waLink?`<a href="${waLink}" target="_blank" onclick="marcarCumpleMensaje('${c.keyEnvio}')" style="padding:7px 14px;background:#25D366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">📱 WhatsApp</a>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`}
+    </div>`;
+}
+function guardarMensajeCumpleanos(){
+  const msg=document.getElementById('cumple-msg-txt')?.value||'';
+  if(!msg.trim()){toast('El mensaje no puede estar vacío','error');return;}
+  DB.config.mensajeCumpleanos=msg;
+  sDB('config');
+  toast('Mensaje guardado ✓','success');
+}
+function marcarCumpleMensaje(key){
+  if(!DB.cumpleanosMensajes)DB.cumpleanosMensajes={};
+  DB.cumpleanosMensajes[key]='enviado';
+  sDB('cumpleanosMensajes');
+  setTimeout(renderCumpleanos,400);
+}
+
+// ══ MÓDULO CUENTAS ══
+function renderCuentas(){
+  const esAdmin=currentUser?.role==='admin';
+  const bcs=DB.config.bancoCuentas||[];
+  const total=bcs.reduce((a,b)=>(a+(b.cuentas||[]).length),0);
+  document.getElementById('page-cuentas').innerHTML=`
+    <div class="page-header">
+      <div><h1>🏦 Cuentas Bancarias</h1><p>${bcs.length} banco(s) — ${total} cuenta(s) registradas</p></div>
+      ${esAdmin?`<button class="btn btn-primary" onclick="nuevoBancoCuenta()">➕ Agregar Banco</button>`:''}
+    </div>
+    ${bcs.length===0?`<div class="card" style="text-align:center;padding:48px"><div style="font-size:48px;margin-bottom:12px">🏦</div><div style="font-size:16px;font-weight:700;color:var(--navy)">Sin cuentas bancarias</div><p style="color:var(--gray);margin-top:8px">Agrega un banco para empezar</p>${esAdmin?`<div style="margin-top:16px"><button class="btn btn-primary" onclick="nuevoBancoCuenta()">➕ Agregar Banco</button></div>`:''}</div>`:`
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${bcs.map((b,bi)=>`
+        <div class="card" style="margin-bottom:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--gray3)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:28px">🏦</div>
+              <div><div style="font-size:16px;font-weight:800">${escHtml(b.banco)}</div><div style="font-size:12px;color:var(--gray)">${(b.cuentas||[]).length} cuenta(s)</div></div>
+            </div>
+            ${esAdmin?`<div style="display:flex;gap:6px">
+              <button class="btn btn-secondary btn-sm" onclick="agregarCuentaABanco(${bi})">➕ Cuenta</button>
+              <button class="btn btn-sm" style="background:var(--red2);color:var(--red)" onclick="eliminarBancoCuentas(${bi})">🗑</button>
+            </div>`:''}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+            ${(b.cuentas||[]).map((c,ci)=>`
+              <div style="background:var(--gray2);border-radius:8px;padding:12px;border:1px solid var(--gray3)">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                  <div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:2px">${escHtml(c.tipo||'Corriente')} — <span style="color:${(c.tipo||'').includes('USD')?'#1d4ed8':'#16a34a'}">${(c.tipo||'').includes('USD')?'USD':'RD$'}</span></div>
+                    <div style="font-size:15px;font-weight:800;font-family:monospace;letter-spacing:1px">${escHtml(c.numero||'—')}</div>
+                    <div style="font-size:11px;color:var(--gray);margin-top:4px">${(c.tipo||'').includes('Corriente')?'🔄 Cuenta Corriente':'💰 Cuenta de Ahorro'}</div>
+                  </div>
+                  ${esAdmin?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="eliminarCuentaBancoCuentas(${bi},${ci})">✕</button>`:''}
+                </div>
+              </div>`).join('')||`<div style="color:var(--gray);font-size:13px;padding:8px">Sin cuentas agregadas</div>`}
+          </div>
+        </div>`).join('')}
+    </div>`}`;
+}
+function nuevoBancoCuenta(){
+  openModal('🏦 Nuevo Banco',`
+    <div class="form-field"><label class="required">Nombre del Banco</label>
+      <input type="text" id="nb-nombre" placeholder="Ej: Banco Popular Dominicano">
+    </div>
+    <div id="nb-cuentas-list"></div>
+    <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="agregarFilaCuentaNuevoBanco()">➕ Agregar Cuenta</button>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarNuevoBancoCuenta()">💾 Guardar</button>`);
+  agregarFilaCuentaNuevoBanco();
+}
+function agregarFilaCuentaNuevoBanco(){
+  const list=document.getElementById('nb-cuentas-list');if(!list)return;
+  const i=list.children.length;
+  const div=document.createElement('div');
+  div.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:8px;align-items:end';
+  div.innerHTML=`
+    <div class="form-field" style="margin:0"><label style="font-size:10px">Número de Cuenta</label><input type="text" id="nb-num-${i}" placeholder="0000-0000-0000"></div>
+    <div class="form-field" style="margin:0"><label style="font-size:10px">Tipo</label>
+      <select id="nb-tipo-${i}">
+        <option value="Corriente RD$">Corriente RD$</option>
+        <option value="Corriente USD">Corriente USD</option>
+        <option value="Ahorro RD$">Ahorro RD$</option>
+        <option value="Ahorro USD">Ahorro USD</option>
+      </select>
+    </div>
+    <button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">✕</button>`;
+  list.appendChild(div);
+}
+function guardarNuevoBancoCuenta(){
+  const nombre=document.getElementById('nb-nombre')?.value.trim();
+  if(!nombre){toast('El nombre del banco es requerido','error');return;}
+  if(DB.config.bancoCuentas&&DB.config.bancoCuentas.find(b=>b.banco.toLowerCase()===nombre.toLowerCase())){
+    toast('Ya existe un banco con ese nombre','error');return;
+  }
+  const list=document.getElementById('nb-cuentas-list');
+  const cuentas=[];
+  if(list){
+    list.querySelectorAll('div').forEach(row=>{
+      const num=row.querySelector('[id^="nb-num-"]')?.value.trim();
+      const tipo=row.querySelector('[id^="nb-tipo-"]')?.value;
+      if(num)cuentas.push({numero:num,tipo:tipo||'Corriente RD$',banco:nombre});
+    });
+  }
+  if(!DB.config.bancoCuentas)DB.config.bancoCuentas=[];
+  DB.config.bancoCuentas.push({banco:nombre,cuentas});
+  DB.config.bancos=(DB.config.bancoCuentas||[]).map(b=>b.banco);
+  sDB('config');closeModal();toast('Banco guardado ✓','success');renderCuentas();
+}
+function agregarCuentaABanco(bi){
+  openModal(`➕ Nueva Cuenta — ${escHtml(DB.config.bancoCuentas[bi]?.banco||'')}`,`
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Número de Cuenta</label><input type="text" id="ac-numero" placeholder="0000-0000-0000"></div>
+      <div class="form-field"><label>Tipo de Cuenta</label>
+        <select id="ac-tipo">
+          <option value="Corriente RD$">Corriente RD$</option>
+          <option value="Corriente USD">Corriente USD</option>
+          <option value="Ahorro RD$">Ahorro RD$</option>
+          <option value="Ahorro USD">Ahorro USD</option>
+        </select>
+      </div>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarCuentaEnBanco(${bi})">💾 Guardar</button>`);
+}
+function guardarCuentaEnBanco(bi){
+  const num=document.getElementById('ac-numero')?.value.trim();
+  const tipo=document.getElementById('ac-tipo')?.value||'Corriente RD$';
+  if(!num){toast('El número de cuenta es requerido','error');return;}
+  if(!DB.config.bancoCuentas[bi].cuentas)DB.config.bancoCuentas[bi].cuentas=[];
+  DB.config.bancoCuentas[bi].cuentas.push({numero:num,tipo,banco:DB.config.bancoCuentas[bi].banco});
+  sDB('config');closeModal();toast('Cuenta agregada ✓','success');renderCuentas();
+}
+function eliminarBancoCuentas(bi){
+  openModal('⚠️ Eliminar Banco',`<p style="padding:16px 0;text-align:center">¿Eliminar el banco <strong>${escHtml(DB.config.bancoCuentas[bi]?.banco||'')}</strong> y todas sus cuentas?</p>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-red" onclick="DB.config.bancoCuentas.splice(${bi},1);DB.config.bancos=DB.config.bancoCuentas.map(b=>b.banco);sDB('config');closeModal();toast('Banco eliminado','success');renderCuentas()">🗑 Eliminar</button>`);
+}
+function eliminarCuentaBancoCuentas(bi,ci){
+  DB.config.bancoCuentas[bi].cuentas.splice(ci,1);
+  sDB('config');toast('Cuenta eliminada','success');renderCuentas();
+}
+
 function renderAlertas(){
   // Verificar si el usuario tiene acceso al módulo de alertas
   const esAdmin=currentUser?.role==='admin';
@@ -2570,7 +3069,7 @@ function guardarPermisosUsuarioConfig(i){
   if(currentUser?.role!=='admin'){toast('Solo el administrador puede editar usuarios','error');return;}
   const u=DB.users[i];
   if(!u)return;
-  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat'];
+  const MODS_IDS=['dashboard','informes','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','cuentas','cumpleanos'];
   const ALERT_IDS=['SIN_VIN','SIN_COSTO','CXP','CXC_VENCIDA','CXC','SIN_VENDER_6M','SIN_VENDER_1A','DOCS'];
   if(u.role!=='admin'){
     const mods=MODS_IDS.filter(id=>document.getElementById(`cfg-mod-${i}-${id}`)?.checked);
@@ -2861,7 +3360,7 @@ function renderConfig(){
       <p style="font-size:13px;color:var(--gray);margin-bottom:12px">El administrador puede editar módulos, permisos y alertas de cada usuario. Los cambios se guardan de inmediato.</p>
       <div style="display:flex;flex-direction:column;gap:12px">
         ${DB.users.map((u,ui)=>{
-          const MODS_LIST=[{id:'dashboard',label:'Inicio'},{id:'informes',label:'Informe'},{id:'suplidores',label:'Suplidores'},{id:'inventario',label:'Reg. Vehículo'},{id:'gastosVeh',label:'Gastos Veh.'},{id:'cxp',label:'CxP'},{id:'clientes',label:'Clientes'},{id:'ventas',label:'Ventas'},{id:'cxc',label:'CxC'},{id:'gastos',label:'Gastos Emp.'},{id:'nomina',label:'Nómina'},{id:'caja',label:'Caja'},{id:'cotizaciones',label:'Cotizaciones'},{id:'autorizaciones',label:'Autorizaciones'}];
+          const MODS_LIST=[{id:'dashboard',label:'Inicio'},{id:'informes',label:'Informe'},{id:'suplidores',label:'Suplidores'},{id:'inventario',label:'Reg. Vehículo'},{id:'gastosVeh',label:'Gastos Veh.'},{id:'cxp',label:'CxP'},{id:'clientes',label:'Clientes'},{id:'ventas',label:'Ventas'},{id:'cxc',label:'CxC'},{id:'gastos',label:'Gastos Emp.'},{id:'nomina',label:'Nómina'},{id:'caja',label:'Caja'},{id:'cotizaciones',label:'Cotizaciones'},{id:'autorizaciones',label:'Autorizaciones'},{id:'cuentas',label:'Cuentas'},{id:'cumpleanos',label:'Cumpleaños'}];
           const ALERT_TYPES=[{id:'SIN_VIN',label:'Sin VIN'},{id:'SIN_COSTO',label:'Sin costos'},{id:'CXP',label:'CxP pendientes'},{id:'CXC_VENCIDA',label:'CxC vencidas'},{id:'CXC',label:'CxC pendientes'},{id:'SIN_VENDER_6M',label:'6m sin vender'},{id:'SIN_VENDER_1A',label:'1 año sin vender'},{id:'DOCS',label:'Docs pendientes'}];
           const mods=u.modulos||[];
           const alertas=u.alertasPermitidas||ALERT_TYPES.map(a=>a.id);
@@ -3524,9 +4023,7 @@ function nuevoGastoVeh(){
           <option value="USD">USD — Dólares</option>
         </select>
       </div>
-      <div class="form-field" id="ngv-tasa-wrap" style="display:none"><label>Tasa de Cambio (RD$ x USD)</label>
-        <input type="number" id="ngv-tasa" value="${DB.config.tasaCambio||60}" step="0.01" oninput="calcPendienteGVeh()">
-      </div>
+      <!-- Tasa interna: se usa DB.config.tasaCambio, no se muestra al usuario -->
     </div>
     <div class="form-row c2" id="ngv-banco-wrap">
       <div class="form-field"><label class="required">Banco</label>
@@ -3564,9 +4061,7 @@ function nuevoGastoVeh(){
 }
 
 function toggleGVehMoneda(){
-  const moneda=document.getElementById('ngv-moneda')?.value;
-  const tasaWrap=document.getElementById('ngv-tasa-wrap');
-  if(tasaWrap)tasaWrap.style.display=moneda==='USD'?'block':'none';
+  // Tasa interna, no se muestra al usuario
 }
 function actualizarCuentasNGV(){
   const bancoEl=document.getElementById('ngv-banco');
@@ -3606,7 +4101,7 @@ function guardarNuevoGastoVeh(){
   const abono=parseFloat((document.getElementById('ngv-abono').value||'0').replace(/,/g,''));
   const pendiente=factura-abono;
   const moneda=document.getElementById('ngv-moneda').value;
-  const tasaUsada=moneda==='USD'?parseFloat(document.getElementById('ngv-tasa')?.value||DB.config.tasaCambio||60):parseFloat(DB.config.tasaCambio||60);
+  const tasaUsada=parseFloat(DB.config.tasaCambio||60);
   const bancoVal=document.getElementById('ngv-banco')?.value||'';
   const cuentaVal=document.getElementById('ngv-cuenta')?.value||'';
   const _vRef=DB.vehiculos.find(x=>x.id===vid);
@@ -3696,8 +4191,9 @@ function confirmarAbonoGastoVeh(i){
   renderGastosVeh();
 }
 
+function editarGastoVehModal(gid,vid){editarGastoVeh(gid);}
 function editarGastoVeh(gid){
-  if(currentUser?.role!=='admin'){toast('Solo el administrador puede editar','error');return;}
+  if(currentUser?.role!=='admin'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}
   const gastos=DB.gastosVehiculos||[];
   const i=gastos.findIndex(g=>g.id===gid);
   if(i<0)return;
@@ -5309,6 +5805,14 @@ function formCliente(c){return`
     </div>
   </div>
   <div class="form-row c2">
+    <div class="form-field"><label>🎂 Fecha de Cumpleaños</label>
+      <input type="date" id="c-cumpleanos" value="${escHtml(c?.fechaCumpleanos||'')}">
+    </div>
+    <div class="form-field"><label>📱 WhatsApp</label>
+      <input type="text" id="c-whatsapp" value="${escHtml(c?.whatsapp||'')}" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)">
+    </div>
+  </div>
+  <div class="form-row c2">
     <div class="form-field"><label>📷 Documento Frente</label>
       <input type="file" id="c-doc-frente" accept="image/*" onchange="previewFoto('c-doc-frente','c-doc-frente-prev')">
       <img id="c-doc-frente-prev" src="${c?.docFrente||''}" style="display:${c?.docFrente?'block':'none'};width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:6px">
@@ -5344,7 +5848,7 @@ function guardarCliente(idx){
     if(docDup){toast('Ya existe un cliente con ese número de documento','error');return;}
   }
   const fEl=document.getElementById('c-doc-frente-prev');const dEl=document.getElementById('c-doc-dorso-prev');
-  const c={id:idx!==undefined?DB.clientes[idx].id:uid(),nombre,tipoDoc:document.getElementById('c-tipodoc').value,documento:document.getElementById('c-doc').value.trim(),ingresos:parseFloat((document.getElementById('c-ingresos')?.value||'0').replace(/,/g,''))||0,ciudad:document.getElementById('c-ciudad').value,provincia:document.getElementById('c-prov').value,telefono:document.getElementById('c-tel').value,telefono2:document.getElementById('c-tel2').value,direccion:document.getElementById('c-dir').value,refNombre:document.getElementById('c-ref-nombre')?.value||'',refTel:document.getElementById('c-ref-tel')?.value||'',docFrente:fEl?.style.display!=='none'&&fEl?.src?fEl.src:(idx!==undefined?DB.clientes[idx]?.docFrente||'':''),docDorso:dEl?.style.display!=='none'&&dEl?.src?dEl.src:(idx!==undefined?DB.clientes[idx]?.docDorso||'':'')};
+  const c={id:idx!==undefined?DB.clientes[idx].id:uid(),nombre,tipoDoc:document.getElementById('c-tipodoc').value,documento:document.getElementById('c-doc').value.trim(),ingresos:parseFloat((document.getElementById('c-ingresos')?.value||'0').replace(/,/g,''))||0,ciudad:document.getElementById('c-ciudad').value,provincia:document.getElementById('c-prov').value,telefono:document.getElementById('c-tel').value,telefono2:document.getElementById('c-tel2').value,whatsapp:document.getElementById('c-whatsapp')?.value||'',direccion:document.getElementById('c-dir').value,fechaCumpleanos:document.getElementById('c-cumpleanos')?.value||'',refNombre:document.getElementById('c-ref-nombre')?.value||'',refTel:document.getElementById('c-ref-tel')?.value||'',docFrente:fEl?.style.display!=='none'&&fEl?.src?fEl.src:(idx!==undefined?DB.clientes[idx]?.docFrente||'':''),docDorso:dEl?.style.display!=='none'&&dEl?.src?dEl.src:(idx!==undefined?DB.clientes[idx]?.docDorso||'':'')};
   if(idx!==undefined)DB.clientes[idx]=c;else DB.clientes.push(c);
   sDB('clientes');closeModal();toast('Cliente guardado ✓','success');renderClientes();
 }
@@ -5363,7 +5867,7 @@ function renderSuplidores(tabActivo){
       return `<tr onclick="selSupl('${s.id}',this)" style="cursor:pointer">
         <td style="text-align:center"><input type="radio" name="sup-sel" onclick="event.stopPropagation();selSupl('${s.id}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
         <td style="font-size:11px;color:var(--gray);font-weight:600">${escHtml(s.supId||'—')}</td>
-        <td><span class="badge ${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'badge-blue':'badge-green'}" style="font-size:10px">${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'🚗 Vehículo':'🏢 Empresa'}</span></td>
+        <td><span class="badge ${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'badge-blue':(s.tipoSuplidor==='importadora'?'badge-purple':'badge-green')}" style="font-size:10px">${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'🚗 Vehículo':(s.tipoSuplidor==='importadora'?'🚢 Importadora':'🏢 Empresa')}</span></td>
         <td style="font-weight:700">${escHtml(s.empresa||s.nombre||'—')}</td>
         <td style="font-size:13px">${escHtml(s.propietario||'—')}</td>
         <td style="font-size:12px;color:var(--gray)"><span style="font-size:10px;background:var(--blue3);color:var(--blue);border-radius:4px;padding:1px 5px;font-weight:700;margin-right:4px">${escHtml(s.tipoDoc||'RNC')}</span>${escHtml(s.rnc||'—')}</td>
@@ -5386,12 +5890,14 @@ function renderSuplidores(tabActivo){
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="sup-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('editar')">✏️ Editar</button>
         ${currentUser?.role==='admin'?`<button id="sup-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('eliminar')">🗑 Eliminar</button>`:''}
+        <button class="btn btn-secondary btn-sm" onclick="exportarSuplidoresPDF('${tabActivo}')">📄 Exportar PDF</button>
         <button class="btn btn-primary" onclick="nuevoSuplidor('${tabActivo}')">➕ Nuevo Suplidor</button>
       </div>
     </div>
     <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--gray3)">
-      <button onclick="renderSuplidores('vehiculo')" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;${tabActivo==='vehiculo'?'background:var(--blue);color:#fff;':'background:var(--gray2);color:var(--navy);'}">🚗 Suplidores de Vehículos (${supVeh.length})</button>
-      <button onclick="renderSuplidores('empresa')" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;margin-left:4px;${tabActivo==='empresa'?'background:var(--blue);color:#fff;':'background:var(--gray2);color:var(--navy);'}">🏢 Suplidores de Empresa (${supEmp.length})</button>
+      <button onclick="renderSuplidores('vehiculo')" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;${tabActivo==='vehiculo'?'background:var(--blue);color:#fff;':'background:var(--gray2);color:var(--navy);'}">🚗 Vehículos (${supVeh.length})</button>
+      <button onclick="renderSuplidores('importadora')" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;margin-left:4px;${tabActivo==='importadora'?'background:var(--blue);color:#fff;':'background:var(--gray2);color:var(--navy);'}">🚢 Importadora (${supImp.length})</button>
+      <button onclick="renderSuplidores('empresa')" class="btn" style="border-radius:8px 8px 0 0;border-bottom:none;margin-left:4px;${tabActivo==='empresa'?'background:var(--blue);color:#fff;':'background:var(--gray2);color:var(--navy);'}">🏢 Empresa (${supEmp.length})</button>
     </div>
     <div class="card"><div class="search-wrap"><input class="search-input" placeholder="Buscar por nombre, RNC, teléfono..." oninput="filterTable('sup-tbl',this.value)"></div>
       <div class="table-wrap"><table id="sup-tbl"><thead><tr>
@@ -5412,7 +5918,11 @@ function nuevoSuplidor(tipoCtx){
       <div style="font-weight:800;font-size:14px;color:${tipoColor}">${tipoLabel}</div>
       <div style="font-size:12px;color:${tipoColor};opacity:.8">ID: ${nextId}</div>
       <input type="hidden" id="s-supid" value="${nextId}">
-      <input type="hidden" id="s-tipo-suplidor" value="${tipoCtx}">
+      <select id="s-tipo-suplidor" style="border:2px solid ${tipoColor};font-weight:700;font-size:13px;margin-top:4px">
+        <option value="vehiculo" ${tipoCtx==='vehiculo'?'selected':''}>🚗 Suplidor de Vehículos</option>
+        <option value="importadora" ${tipoCtx==='importadora'?'selected':''}>🚢 Suplidor Importadora</option>
+        <option value="empresa" ${tipoCtx==='empresa'?'selected':''}>🏢 Suplidor de Empresa</option>
+      </select>
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Nombre Empresa</label><input type="text" id="s-empresa" placeholder="Ej: Motors del Norte SRL"></div>
@@ -5472,6 +5982,7 @@ function editarSuplidor(i){
       <div class="form-field"><label class="required">Tipo de Suplidor</label>
         <select id="s-tipo-suplidor" style="border:2px solid var(--blue);font-weight:700">
           <option value="vehiculo" ${(s.tipoSuplidor||'vehiculo')==='vehiculo'?'selected':''}>🚗 Suplidor de Vehículos</option>
+          <option value="importadora" ${s.tipoSuplidor==='importadora'?'selected':''}>🚢 Suplidor Importadora</option>
           <option value="empresa" ${s.tipoSuplidor==='empresa'?'selected':''}>🏢 Suplidor de Empresa</option>
         </select>
       </div>
@@ -5502,10 +6013,19 @@ function fmtTelInput(el){
   el.value=v;
 }
 function fmtMoneyInput(el){
+  // Guardar posición del cursor
+  const sel=el.selectionStart;
+  const prevLen=el.value.length;
+  // Limpiar todo excepto dígitos y punto
   let v=el.value.replace(/[^0-9.]/g,'');
   const parts=v.split('.');
   if(parts.length>2)v=parts[0]+'.'+parts.slice(1).join('');
-  el.value=v;
+  // Formatear parte entera con comas
+  const intPart=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  el.value=parts.length>1?intPart+'.'+parts[1]:intPart;
+  // Restaurar cursor
+  const diff=el.value.length-prevLen;
+  try{el.setSelectionRange(sel+diff,sel+diff);}catch{}
 }
 function fmtMoneyBlur(el){
   const n=parseFloat(el.value.replace(/,/g,'')||0);
@@ -8276,7 +8796,7 @@ async function fbGuardar(key){
 
 async function fbCargar(){
   const keys=['config','config_logo','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
-    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log'];
+    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log','cumpleanosMensajes'];
   let loaded=false;
   for(const key of keys){
     try {
@@ -8315,31 +8835,166 @@ async function fbCargar(){
   return loaded;
 }
 
+// ══ GUARDADO FIREBASE OBLIGATORIO ══
+// Modal de error si Firebase no está disponible
+function _mostrarErrorFirebase(){
+  const tel='849-857-9190';
+  // Evitar mostrar múltiples modales
+  if(window._fbErrorVisible)return;
+  window._fbErrorVisible=true;
+  const ov=document.createElement('div');
+  ov.id='fb-error-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML=`<div style="background:#fff;border-radius:16px;padding:32px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3)">
+    <div style="font-size:56px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:18px;font-weight:800;color:#dc2626;margin-bottom:8px">Sin conexión a Firebase</div>
+    <p style="font-size:14px;color:#64748b;margin-bottom:20px">No se pudo guardar la información. Por favor comuníquese con el administrador del sistema.</p>
+    <div style="background:#fef2f2;border:2px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:20px">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Llamar al administrador:</div>
+      <a href="tel:8498579190" style="font-size:24px;font-weight:900;color:#dc2626;text-decoration:none">📞 ${tel}</a>
+    </div>
+    <button onclick="document.getElementById('fb-error-modal').remove();window._fbErrorVisible=false;" style="padding:10px 28px;background:#0f172a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif">Entendido</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+
 const _sDB_orig = sDB;
 window._fbActivo = false;
 window._fbCargado = false;
+// sDB: guarda en localStorage como caché Y en Firebase (obligatorio)
 window.sDB = function(key){
-  try { _sDB_orig(key); } catch(e){}
-  if(window._fbActivo){
-    const dot=document.getElementById('fb-dot');
-    const txt=document.getElementById('fb-text');
-    if(dot) dot.style.background='#f59e0b';
-    if(txt) txt.textContent='Guardando...';
-    fbGuardar(key).then(()=>{
-      if(dot) dot.style.background='#22c55e';
-      if(txt) txt.textContent='✓ Guardado';
-    }).catch(()=>{
-      if(dot) dot.style.background='#ef4444';
-      if(txt) txt.textContent='Error al guardar';
-    });
+  try { _sDB_orig(key); } catch(e){}  // localStorage como caché de lectura
+  const dot=document.getElementById('fb-dot');
+  const txt=document.getElementById('fb-text');
+  if(!window._fbActivo){
+    // Firebase no conectado — mostrar error prominente
+    if(dot)dot.style.background='#ef4444';
+    if(txt)txt.textContent='Sin Firebase';
+    _mostrarErrorFirebase();
+    return;
   }
+  if(dot)dot.style.background='#f59e0b';
+  if(txt)txt.textContent='Guardando...';
+  fbGuardar(key).then(()=>{
+    if(dot)dot.style.background='#22c55e';
+    if(txt)txt.textContent='✓ Guardado';
+  }).catch(()=>{
+    if(dot)dot.style.background='#ef4444';
+    if(txt)txt.textContent='Error al guardar';
+    _mostrarErrorFirebase();
+  });
 };
+
+// ══ BACKUP DEL SISTEMA (solo admin) ══
+function _hacerBackup(){
+  // Verificar que Firebase esté cargado y haya datos
+  if(!window._fbActivo||!window._fbCargado){
+    toast('⚠️ Espera a que Firebase termine de cargar antes de hacer backup','warning');
+    return;
+  }
+  // Recargar desde Firebase antes de hacer backup para asegurar datos actualizados
+  fbCargar().then(()=>{
+    _ejecutarBackup();
+  }).catch(()=>{
+    // Si falla recarga, usar lo que hay en memoria
+    _ejecutarBackup();
+  });
+}
+function _ejecutarBackup(){
+  const ahora=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const fecha=`${ahora.getFullYear()}-${pad(ahora.getMonth()+1)}-${pad(ahora.getDate())}`;
+  const hora=`${pad(ahora.getHours())}-${pad(ahora.getMinutes())}`;
+  // Nombre limpio: solo letras, números y guion bajo, sin dobles guiones
+  const empresa=(DB.config.empresa||'Sistema')
+    .replace(/[^a-zA-Z0-9\s]/g,'')
+    .trim()
+    .replace(/\s+/g,'_')
+    .replace(/_+/g,'_');
+  const filename=`${empresa}_Backup_${fecha}_${hora}.json`;
+  const totalVeh=(DB.vehiculos||[]).length;
+  const totalCli=(DB.clientes||[]).length;
+  const totalVen=(DB.ventas||[]).length;
+  const datos={
+    _backupInfo:{
+      empresa:DB.config.empresa||'',
+      fecha:ahora.toISOString(),
+      version:'dealer_v14',
+      resumen:{
+        vehiculos:totalVeh,
+        clientes:totalCli,
+        ventas:totalVen,
+        gastosVehiculos:(DB.gastosVehiculos||[]).length,
+        cxc:(DB.cxc||[]).length,
+        cxp:(DB.cxp||[]).length,
+        nomina:(DB.nomina||[]).length,
+        caja:(DB.caja||[]).length
+      }
+    },
+    config:DB.config,
+    users:DB.users,
+    vehiculos:DB.vehiculos||[],
+    clientes:DB.clientes||[],
+    suplidores:DB.suplidores||[],
+    ventas:DB.ventas||[],
+    cotizaciones:DB.cotizaciones||[],
+    caja:DB.caja||[],
+    gastos:DB.gastos||[],
+    nomina:DB.nomina||[],
+    nominaPagos:DB.nominaPagos||[],
+    gastosVehiculos:DB.gastosVehiculos||[],
+    cxp:DB.cxp||[],
+    cxc:DB.cxc||[],
+    autorizaciones:DB.autorizaciones||[],
+    seguros:DB.seguros||[],
+    facturasExternas:DB.facturasExternas||[],
+    cumpleanosMensajes:DB.cumpleanosMensajes||{}
+  };
+  const blob=new Blob([JSON.stringify(datos,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  // Guardar fecha en Firebase
+  DB.config._lastBackup=ahora.toISOString();
+  if(window._fbActivo)fbGuardar('config').catch(()=>{});
+  toast(`✅ Backup descargado: ${filename} (${totalVeh} vehículos, ${totalCli} clientes, ${totalVen} ventas)`,'success');
+  // Ocultar aviso si estaba visible
+  const av=document.getElementById('backup-aviso');if(av)av.remove();
+}
+
+function _verificarBackupAdmin(){
+  if(!currentUser||currentUser.role!=='admin')return;
+  const lastStr=DB.config._lastBackup||null;
+  const hoy=new Date();
+  let diasSinBackup=999;
+  if(lastStr){
+    const last=new Date(lastStr);
+    diasSinBackup=Math.floor((hoy-last)/(1000*60*60*24));
+  }
+  if(diasSinBackup<5)return;
+  // Solo notificar — el admin hace el backup desde el menú lateral
+  setTimeout(()=>{
+    if(document.getElementById('backup-aviso'))return;
+    const av=document.createElement('div');
+    av.id='backup-aviso';
+    const msg=diasSinBackup>=999
+      ?'⚠️ No se ha realizado ningún backup del sistema.'
+      :'⚠️ Han pasado <strong>'+diasSinBackup+' días</strong> sin backup. Recuerda hacerlo desde el menú 💾 Backup.';
+    const isMobile=window.innerWidth<=768;
+    av.style.cssText='position:fixed;top:'+(isMobile?'52':'56')+'px;left:'+(isMobile?'0':'220')+'px;right:0;background:#f59e0b;color:#fff;padding:9px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+    av.innerHTML=`<span>${msg}</span>
+      <button onclick="document.getElementById('backup-aviso').remove()" style="padding:4px 10px;background:rgba(0,0,0,.2);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;flex-shrink:0;margin-left:12px">✕</button>`;
+    document.body.appendChild(av);
+  },3000);
+}
 
 // ══ FIREBASE LISTENERS TIEMPO REAL ══
 function fbActivarListeners(){
   const keys=['config','config_logo','users','vehiculos','clientes','suplidores',
     'ventas','cotizaciones','caja','gastos','nomina','nominaPagos',
-    'gastosVehiculos','cxp','cxc','autorizaciones'];
+    'gastosVehiculos','cxp','cxc','autorizaciones','cumpleanosMensajes'];
   
   keys.forEach(key=>{
     _fbDB.collection(_fbCol).doc(key).onSnapshot(snap=>{
@@ -8347,28 +9002,17 @@ function fbActivarListeners(){
       try{
         const val=JSON.parse(snap.data().valor);
         if(val===null)return;
-        // Aplicar según el tipo de key
         if(key==='users'&&Array.isArray(val)){
-          // Merge para no perder usuario local
           const merged=[...val];
-          (DB.users||[]).forEach(lu=>{
-            if(!merged.find(u=>u.id===lu.id))merged.push(lu);
-          });
+          (DB.users||[]).forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
           DB.users=merged.length>0?merged:DB.users;
         } else if(key==='config_logo'){
           const logoVal=typeof val==='string'?val:(val&&val.logoData?val.logoData:'');
-          if(logoVal&&logoVal.startsWith('data:')){
-            DB.config=DB.config||{};
-            DB.config.logoData=logoVal;
-            if(typeof actualizarLogoSidebar==='function')actualizarLogoSidebar();
-          }
+          if(logoVal&&logoVal.startsWith('data:')){DB.config=DB.config||{};DB.config.logoData=logoVal;if(typeof actualizarLogoSidebar==='function')actualizarLogoSidebar();}
         } else if(key==='config'&&typeof val==='object'&&val!==null){
           const merged=Object.assign({},DB.config);
-          Object.keys(val).forEach(k=>{
-            if(val[k]!==null&&val[k]!==undefined&&val[k]!=='')merged[k]=val[k];
-          });
+          Object.keys(val).forEach(k=>{if(val[k]!==null&&val[k]!==undefined&&val[k]!=='')merged[k]=val[k];});
           DB.config=merged;
-          // Actualizar topbar y sidebar
           const empEl=document.getElementById('topbar-empresa');
           if(empEl&&DB.config.empresa)empEl.textContent=DB.config.empresa;
           if(typeof actualizarLogoSidebar==='function')actualizarLogoSidebar();
@@ -8376,7 +9020,6 @@ function fbActivarListeners(){
         } else {
           DB[key]=val;
         }
-        // Re-renderizar la página activa si corresponde
         const activePage=document.querySelector('.page.active');
         if(!activePage)return;
         const pid=activePage.id.replace('page-','');
@@ -8397,8 +9040,8 @@ function fbActivarListeners(){
           usuarios:()=>typeof renderUsuarios==='function'&&renderUsuarios(),
           config:()=>typeof renderConfig==='function'&&renderConfig(),
           informes:()=>typeof renderInformes==='function'&&renderInformes(),
+          cumpleanos:()=>typeof renderCumpleanos==='function'&&renderCumpleanos(),
         };
-        // Solo re-renderizar si el key afecta la página activa
         const keysParaPagina={
           dashboard:['vehiculos','ventas','cxc','cxp','gastos','config'],
           inventario:['vehiculos'],ventas:['ventas','clientes'],
@@ -8410,10 +9053,10 @@ function fbActivarListeners(){
           autorizaciones:['autorizaciones'],
           usuarios:['users'],config:[],
           informes:['ventas','gastos','cxc','gastosVehiculos','nomina'],
+          cumpleanos:['clientes','config'],
         };
         const afecta=keysParaPagina[pid]||[];
         if(afecta.includes(key)&&renderMap[pid]){
-          // Pequeño delay para evitar re-renders en cascada
           clearTimeout(window._renderTimeout);
           window._renderTimeout=setTimeout(renderMap[pid],300);
         }
@@ -8422,36 +9065,6 @@ function fbActivarListeners(){
   });
   console.log('✅ Firebase listeners activos — tiempo real habilitado');
 }
-
-window.forzarSincronizacion = async function(){
-  if(!window._fbActivo){toast('Firebase no está conectado','error');return;}
-  const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
-    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log'];
-  const dot=document.getElementById('fb-dot');
-  const txt=document.getElementById('fb-text');
-  if(dot)dot.style.background='#f59e0b';
-  if(txt)txt.textContent='Subiendo...';
-  try {
-    let count=0;
-    for(const k of keys){
-      // Solo subir si hay datos en localStorage
-      const localVal=DB[k];
-      const tieneData=Array.isArray(localVal)?localVal.length>0:(localVal&&Object.keys(localVal).length>0);
-      if(tieneData){
-        await fbGuardar(k);
-        count++;
-      }
-    }
-    if(dot)dot.style.background='#22c55e';
-    if(txt)txt.textContent='✓ Firebase';
-    toast('✅ '+count+' colecciones subidas a Firebase correctamente','success');
-    console.log('Sincronización forzada completada: '+count+' keys');
-  } catch(e){
-    if(dot)dot.style.background='#ef4444';
-    if(txt)txt.textContent='Error';
-    toast('Error al sincronizar: '+e.message,'error');
-  }
-};
 
 window.fbIniciar = async function(){
   const dot=document.getElementById('fb-dot');
@@ -8464,16 +9077,11 @@ window.fbIniciar = async function(){
     if(loaded){
       setStatus('#22c55e','✓ Firebase');
       window._fbCargado=true;
-      // Activar listeners de tiempo real
       if(typeof fbActivarListeners==='function') fbActivarListeners();
-      // Actualizar sidebar con logo de Firebase
       if(typeof actualizarLogoSidebar==='function') actualizarLogoSidebar();
-      // Actualizar topbar empresa
       const _empFb=document.getElementById('topbar-empresa');
       if(_empFb&&DB.config.empresa)_empFb.textContent=DB.config.empresa;
-      // Aplicar colores inmediatamente tras cargar Firebase
       if(typeof aplicarColoresSistema==='function'&&DB.config.colores)aplicarColoresSistema();
-      // Re-renderizar CUALQUIER página activa con los datos de Firebase
       const _activePage=document.querySelector('.page.active');
       if(_activePage){
         const _pid=_activePage.id.replace('page-','');
@@ -8487,6 +9095,8 @@ window.fbIniciar = async function(){
         };
         if(_renderMap[_pid])setTimeout(_renderMap[_pid],300);
       }
+      // Verificar backup (solo admin)
+      _verificarBackupAdmin();
     } else {
       const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
         'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log'];
@@ -8494,10 +9104,12 @@ window.fbIniciar = async function(){
       window._fbCargado=true;
       setStatus('#22c55e','✓ Firebase');
       console.log('✅ Firebase: datos iniciales guardados');
+      _verificarBackupAdmin();
     }
   } catch(e) {
     setStatus('#ef4444','Sin conexión');
     console.warn('Firebase error:', e.message);
+    _mostrarErrorFirebase();
   }
 };
 </script>
