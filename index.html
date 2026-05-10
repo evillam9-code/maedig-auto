@@ -611,6 +611,7 @@ function doLogin(){
     setTimeout(checkAlerts,1500);
     _iniciarPresenciaGlobal();
     setTimeout(_verificarBackupAdmin,2500);
+    setTimeout(_verificarCumpleanosHoy,3500);
   };
   // Mostrar bienvenida con datos del localStorage primero
   _actualizarWelcome();
@@ -2883,10 +2884,12 @@ function renderCumpleanos(){
     const diaC=parseInt(parts[2]);
     // Calcular diferencia en días (sin importar el año)
     const esteAnio=new Date(hoy.getFullYear(),mesC-1,diaC);
-    if(esteAnio<new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()))
-      esteAnio.setFullYear(hoy.getFullYear()+1);
-    const diff=Math.floor((esteAnio-new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()))/(1000*60*60*24));
-    if(diff<=7){
+    const hoyInicio=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
+    if(esteAnio<hoyInicio) esteAnio.setFullYear(hoy.getFullYear()+1);
+    const diff=Math.floor((esteAnio-hoyInicio)/(1000*60*60*24));
+    // Solo mostrar: hoy (diff=0) y próximos 7 días (diff 1-7)
+    // Los que ya pasaron (diff<0) desaparecen solos
+    if(diff>=0&&diff<=7){
       const keyEnvio=c.id+'_'+hoy.getFullYear();
       const estadoEnvio=(DB.cumpleanosMensajes||{})[keyEnvio]||'pendiente';
       proximos.push({...c,diasRestantes:diff,esFechaExacta:diff===0,keyEnvio,estadoEnvio});
@@ -2925,7 +2928,7 @@ function renderCumpleanos(){
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <span class="badge ${yaEnviado?'badge-green':'badge-amber'}" style="font-size:11px">${yaEnviado?'✅ Enviado':'⏳ Pendiente'}</span>
-              ${tel&&waLink?`<a href="${waLink}" target="_blank" onclick="marcarCumpleMensaje('${c.keyEnvio}')" style="padding:7px 14px;background:#25D366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">📱 WhatsApp</a>`:''}
+              ${tel?`<button onclick="copiarMsgCumple('${c.keyEnvio}',\`${msgPersonalizado.replace(/`/g,"'")}\`)" style="padding:7px 12px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">${yaEnviado?'📋 Copiar de nuevo':'📋 Copiar Mensaje'}</button>`:''}
               <button onclick="editarClienteCumple('${c.id}')" title="Editar" style="padding:6px 10px;background:#eff6ff;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;cursor:pointer;font-size:12px">✏️</button>
               <button onclick="borrarClienteCumple('${c.id}')" title="Eliminar" style="padding:6px 10px;background:#fef2f2;color:#ef4444;border:1.5px solid #ef4444;border-radius:7px;cursor:pointer;font-size:12px">🗑️</button>
             </div>
@@ -2933,6 +2936,21 @@ function renderCumpleanos(){
         }).join('')}
       </div>`}
     </div>`;
+}
+function copiarMsgCumple(keyEnvio, mensaje){
+  navigator.clipboard.writeText(mensaje).then(()=>{
+    marcarCumpleMensaje(keyEnvio);
+    toast('✅ Mensaje copiado — pégalo en WhatsApp (Ctrl+V)','success');
+  }).catch(()=>{
+    // Fallback si clipboard no está disponible
+    const ta=document.createElement('textarea');
+    ta.value=mensaje;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    marcarCumpleMensaje(keyEnvio);
+    toast('✅ Mensaje copiado — pégalo en WhatsApp (Ctrl+V)','success');
+  });
 }
 function guardarMensajeCumpleanos(){
   const msg=document.getElementById('cumple-msg-txt')?.value||'';
@@ -9120,6 +9138,38 @@ function _ejecutarBackup(){
   const av=document.getElementById('backup-aviso');if(av)av.remove();
 }
 
+function _verificarCumpleanosHoy(){
+  const hoy=new Date();
+  const hoyInicio=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
+  const cumpleHoy=[];
+  (DB.clientes||[]).forEach(c=>{
+    if(!c.fechaCumpleanos)return;
+    const parts=c.fechaCumpleanos.split('-');
+    if(parts.length<3)return;
+    const mesC=parseInt(parts[1]);
+    const diaC=parseInt(parts[2]);
+    const esteAnio=new Date(hoy.getFullYear(),mesC-1,diaC);
+    const diff=Math.floor((esteAnio-hoyInicio)/(1000*60*60*24));
+    if(diff===0){
+      const keyEnvio=c.id+'_'+hoy.getFullYear();
+      const estadoEnvio=(DB.cumpleanosMensajes||{})[keyEnvio]||'pendiente';
+      if(estadoEnvio!=='enviado') cumpleHoy.push(c.nombre);
+    }
+  });
+  if(cumpleHoy.length===0)return;
+  if(document.getElementById('cumple-aviso'))return;
+  const av=document.createElement('div');
+  av.id='cumple-aviso';
+  const nombres=cumpleHoy.slice(0,3).join(', ')+(cumpleHoy.length>3?' y '+(cumpleHoy.length-3)+' más':'');
+  const isMobile=window.innerWidth<=768;
+  av.style.cssText='position:fixed;top:'+(isMobile?'52':'56')+'px;left:'+(isMobile?'0':'220')+'px;right:0;background:#16a34a;color:#fff;padding:9px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;z-index:149;box-shadow:0 2px 8px rgba(0,0,0,.15)';
+  av.innerHTML=`<span>🎂 Hoy cumplen años: <strong>${nombres}</strong> — ¡Recuerda enviarles el mensaje!</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="showPage('cumpleanos');document.getElementById('cumple-aviso').remove()" style="padding:4px 12px;background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:700">Ver →</button>
+      <button onclick="document.getElementById('cumple-aviso').remove()" style="padding:4px 10px;background:rgba(0,0,0,.2);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">✕</button>
+    </div>`;
+  document.body.appendChild(av);
+}
 function _verificarBackupAdmin(){
   if(!currentUser||currentUser.role!=='admin')return;
   const hoy=new Date();
