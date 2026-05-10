@@ -233,8 +233,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
       </div>
       <div class="login-error" id="login-error"></div>
       <div class="login-blocked" id="login-blocked">🔒 Demasiados intentos. Espera <span id="login-countdown">60</span> segundos.</div>
-      <div style="margin-bottom:18px"><label class="lbl">Usuario</label><input type="text" id="li-user" class="inp" placeholder="Nombre de usuario"></div>
-      <div style="margin-bottom:24px"><label class="lbl">Contraseña</label><input type="password" id="li-pass" class="inp" placeholder="••••••••"></div>
+      <div style="margin-bottom:18px"><label class="lbl">Usuario</label><input type="text" id="li-user" class="inp" placeholder="Nombre de usuario" autocomplete="off"></div>
+      <div style="margin-bottom:24px"><label class="lbl">Contraseña</label><input type="password" id="li-pass" class="inp" placeholder="••••••••" autocomplete="new-password"></div>
       <button class="btn-login" onclick="doLogin()">Ingresar al sistema →</button>
       <button type="button" onclick="document.getElementById('li-user').value='';document.getElementById('li-pass').value='';document.getElementById('login-error').style.display='none';document.getElementById('login-blocked').style.display='none';" style="width:100%;padding:10px;background:none;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#94a3b8;cursor:pointer;margin-top:8px;font-family:'Outfit',sans-serif">🗑 Limpiar campos</button>
       <div style="margin-top:28px;text-align:center;font-size:12px;color:#94a3b8">© 2026 DealerSystem — Todos los derechos reservados</div>
@@ -304,7 +304,6 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
         <div style="font-weight:800;color:#60a5fa">Edward Villa</div>
         <div><a href="tel:8498579190" style="color:#94a3b8;text-decoration:none">849-857-9190</a></div>
       </div>
-      <div class="nav-item" onclick="cambiarMiContrasena()" style="color:var(--blue)"><span class="ico">🔑</span>Cambiar contraseña</div>
       <div class="nav-item" id="nav-backup-btn" style="display:none;color:var(--green)" onclick="showPage('backup')"><span class="ico">💾</span>Backup</div>
       <div class="nav-item" onclick="doLogout()" style="color:var(--red)"><span class="ico">🚪</span>Cerrar sesión</div>
     </div>
@@ -318,7 +317,10 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
         <div id="fb-dot" style="width:8px;height:8px;border-radius:50%;background:#64748b;flex-shrink:0"></div>
         <span id="fb-text">Local</span>
       </div>
-      <div style="font-size:13px;font-weight:600;color:#fff" id="topbar-nombre">Admin</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:13px;font-weight:600;color:#fff" id="topbar-nombre">Admin</div>
+        <button onclick="cambiarMiContrasena()" title="Cambiar contraseña" style="background:rgba(255,255,255,0.12);border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">🔑</button>
+      </div>
     </div>
     <div class="main">
       <div class="page active" id="page-dashboard"></div>
@@ -679,9 +681,9 @@ function aplicarPermisosNav(){
 }
 function cambiarMiContrasena(){
   openModal('🔑 Cambiar Mi Contraseña',`
-    <div class="form-field"><label>Contraseña actual</label><input type="password" id="cp-actual" placeholder="Contraseña actual"></div>
-    <div class="form-field"><label>Nueva contraseña</label><input type="password" id="cp-nueva" placeholder="Nueva contraseña (mínimo 6 caracteres)"></div>
-    <div class="form-field"><label>Confirmar nueva contraseña</label><input type="password" id="cp-confirmar" placeholder="Repite la nueva contraseña"></div>`,
+    <div class="form-field"><label>Contraseña actual</label><input type="password" id="cp-actual" placeholder="Contraseña actual" autocomplete="new-password"></div>
+    <div class="form-field"><label>Nueva contraseña</label><input type="password" id="cp-nueva" placeholder="Nueva contraseña (mínimo 6 caracteres)" autocomplete="new-password"></div>
+    <div class="form-field"><label>Confirmar nueva contraseña</label><input type="password" id="cp-confirmar" placeholder="Repite la nueva contraseña" autocomplete="new-password"></div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="guardarCambioContrasena()">💾 Guardar</button>`);
 }
@@ -781,6 +783,44 @@ function checkAlerts(){
 }
 
 // ══ DASHBOARD ══
+function imprimirDashboard(){
+  const mes=document.getElementById('dash-mes')?.value||'';
+  const dia=document.getElementById('dash-dia')?.value||'';
+  let periodo='Todo el período';
+  if(dia)periodo='Día: '+fmtDate(dia);
+  else if(mes){const [y,m]=mes.split('-');const mn=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];periodo=mn[parseInt(m)-1]+' '+y;}
+  const totalVeh=(DB.vehiculos||[]).length;
+  const vendidos=(DB.vehiculos||[]).filter(v=>v.status==='VENDIDO').length;
+  const disponibles=(DB.vehiculos||[]).filter(v=>v.status!=='VENDIDO').length;
+  let ventas=(DB.ventas||[]);
+  let gastos=(DB.gastos||[]);
+  if(dia){ventas=ventas.filter(v=>v.fecha===dia);gastos=gastos.filter(g=>g.fecha===dia);}
+  else if(mes){ventas=ventas.filter(v=>(v.fecha||'').startsWith(mes));gastos=gastos.filter(g=>(g.fecha||'').startsWith(mes));}
+  const totalVentas=ventas.reduce((a,v)=>a+parseFloat(v.precioVenta||0),0);
+  const totalGanancia=ventas.reduce((a,v)=>a+parseFloat(v.ganancia||0),0);
+  const totalGastos=gastos.reduce((a,g)=>a+parseFloat(g.monto||0),0);
+  const cxcPend=(DB.cxc||[]).filter(x=>x.status==='PENDIENTE'||x.status==='PARCIAL').reduce((a,x)=>a+parseFloat(x.saldo||0),0);
+  const cxpPend=(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const win=window.open('','_blank','width=800,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resumen Inicio</title>
+  <style>body{font-family:Arial,sans-serif;padding:28px;font-size:13px;color:#1e293b}h2{margin:0 0 4px}p{margin:0 0 16px;color:#64748b}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#0f172a;color:#fff;padding:9px 12px;text-align:left;font-size:12px}td{padding:9px 12px;border-bottom:1px solid #e2e8f0}.val{font-weight:700;font-size:15px}.green{color:#16a34a}.red{color:#dc2626}.blue{color:#2563eb}@media print{button{display:none}}</style></head><body>
+  ${DB.config.logoData?`<img src="${DB.config.logoData}" style="max-height:54px;margin-bottom:10px;display:block">`:``}
+  <h2>${escHtml(DB.config.empresa||'MAEDIG AUTO SALES')}</h2>
+  <p>Resumen de Inicio — ${periodo}</p>
+  <table><thead><tr><th>Indicador</th><th>Valor</th></tr></thead><tbody>
+  <tr><td>Total Vehículos</td><td class="val">${totalVeh}</td></tr>
+  <tr><td>Disponibles</td><td class="val blue">${disponibles}</td></tr>
+  <tr><td>Vendidos</td><td class="val green">${vendidos}</td></tr>
+  <tr><td>Total Ventas (${ventas.length})</td><td class="val green">${fmt(totalVentas)}</td></tr>
+  <tr><td>Ganancia Neta</td><td class="val green">${fmt(totalGanancia)}</td></tr>
+  <tr><td>Gastos Empresa</td><td class="val red">${fmt(totalGastos)}</td></tr>
+  <tr><td>CxC Pendiente</td><td class="val red">${fmt(cxcPend)}</td></tr>
+  <tr><td>CxP Pendiente</td><td class="val red">${fmt(cxpPend)}</td></tr>
+  </tbody></table>
+  <div style="margin-top:24px;text-align:center"><button onclick="window.print()" style="padding:10px 28px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Imprimir / Guardar PDF</button></div>
+  </body></html>`);
+  win.document.close();
+}
 function renderDashboard(){
   // Datos frescos
   DB.vehiculos=ls('vehiculos')||DB.vehiculos;
@@ -834,6 +874,7 @@ function renderDashboard(){
         <input type="date" id="dash-dia" style="padding:7px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px" onchange="document.getElementById('dash-mes').value='';renderDashboard()" value="${dia}">
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('dash-mes').value='';document.getElementById('dash-dia').value='';renderDashboard()">🔄 Todo</button>
         <button class="btn btn-primary btn-sm" onclick="renderDashboard()">↻ Actualizar</button>
+        <button class="btn btn-secondary btn-sm" onclick="imprimirDashboard()">📄 PDF / Imprimir</button>
       </div>
     </div>
 
@@ -1132,11 +1173,11 @@ function formVehiculo(v){
         </div>
       </div>
       <div class="form-field"><label class="required">Modelo</label><input type="text" id="v-modelo" value="${escHtml(v?.modelo||'')}" placeholder="Modelo"></div>
-      <div class="form-field"><label>Tipo</label><select id="v-tipo">${TIPOS.map(t=>`<option ${t===v?.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Tipo</label><div style="display:flex;gap:6px;align-items:center"><select id="v-tipo" style="flex:1">${[...TIPOS,...(DB.config.tiposExtra||[])].map(t=>`<option ${t===v?.tipo?'selected':''}>${t}</option>`).join('')}</select><button type="button" onclick="agregarTipoVehiculo()" title="Agregar tipo" style="flex-shrink:0;width:32px;height:32px;border-radius:6px;border:1.5px solid var(--blue);background:#eff6ff;color:var(--blue);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">+</button></div></div>
     </div>
     <div class="form-row c3">
       <div class="form-field"><label class="required">Año</label><input type="number" id="v-anio" value="${v?.anio||currentYear()}" min="1990" max="${currentYear()+2}"></div>
-      <div class="form-field"><label>Color</label><select id="v-color"><option value="">Seleccionar...</option>${COLORES.map(c=>`<option ${c===v?.color?'selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Color</label><div style="display:flex;gap:6px;align-items:center"><select id="v-color" style="flex:1"><option value="">Seleccionar...</option>${[...COLORES,...(DB.config.coloresExtra||[])].map(c=>`<option ${c===v?.color?'selected':''}>${c}</option>`).join('')}</select><button type="button" onclick="agregarColorVehiculo()" title="Agregar color" style="flex-shrink:0;width:32px;height:32px;border-radius:6px;border:1.5px solid var(--blue);background:#eff6ff;color:var(--blue);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">+</button></div></div>
       <div class="form-field"><label>Millaje</label><input type="number" id="v-millas" value="${v?.millas||0}"></div>
     </div>
     <div class="form-row c3">
@@ -1236,13 +1277,38 @@ function agregarMarcaRapida(){
     sDB('config');
     toast('Marca "'+n+'" agregada ✓','success');
   }
-  // Actualizar el select actual
   const sel=document.getElementById('v-marca');
   if(sel){
     const opt=document.createElement('option');
     opt.value=n;opt.textContent=n;opt.selected=true;
     sel.appendChild(opt);
   }
+}
+function agregarTipoVehiculo(){
+  const nuevo=prompt('Ingresa el nombre del nuevo tipo de vehículo:');
+  if(!nuevo||!nuevo.trim())return;
+  const n=nuevo.trim();
+  if(!DB.config.tiposExtra)DB.config.tiposExtra=[];
+  const todosTipos=[...TIPOS,...(DB.config.tiposExtra||[])];
+  if(todosTipos.some(t=>t.toLowerCase()===n.toLowerCase())){toast('Este tipo ya existe','warning');return;}
+  DB.config.tiposExtra.push(n);
+  sDB('config');
+  toast('Tipo "'+n+'" agregado ✓','success');
+  const sel=document.getElementById('v-tipo');
+  if(sel){const opt=document.createElement('option');opt.value=n;opt.textContent=n;opt.selected=true;sel.appendChild(opt);}
+}
+function agregarColorVehiculo(){
+  const nuevo=prompt('Ingresa el nombre del nuevo color:');
+  if(!nuevo||!nuevo.trim())return;
+  const n=nuevo.trim();
+  if(!DB.config.coloresExtra)DB.config.coloresExtra=[];
+  const todosColores=[...COLORES,...(DB.config.coloresExtra||[])];
+  if(todosColores.some(c=>c.toLowerCase()===n.toLowerCase())){toast('Este color ya existe','warning');return;}
+  DB.config.coloresExtra.push(n);
+  sDB('config');
+  toast('Color "'+n+'" agregado ✓','success');
+  const sel=document.getElementById('v-color');
+  if(sel){const opt=document.createElement('option');opt.value=n;opt.textContent=n;opt.selected=true;sel.appendChild(opt);}
 }
 function verVehiculo(id){
   const v=DB.vehiculos.find(x=>x.id===id);if(!v)return;
@@ -1903,6 +1969,7 @@ function renderNomina(){
           <button class="btn btn-primary" onclick="nuevoEmpleado()">➕ Nuevo Empleado</button>
         `:`
           <button id="nom-btn-elim-pago" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('eliminar-pago')">🗑 Eliminar Pago</button>
+          <button id="nom-btn-edit-pago" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('editar-pago')">✏️ Editar Pago</button>
           <button class="btn btn-secondary btn-sm" onclick="imprimirPagosNomina()">📄 PDF Pagos</button>
         `}
       </div>
@@ -1990,6 +2057,8 @@ function selNomPago(id,tr){
   if(tr)tr.style.background='#e8f0fe';
   const b=document.getElementById('nom-btn-elim-pago');
   if(b){b.disabled=false;b.style.cssText='';}
+  const be=document.getElementById('nom-btn-edit-pago');
+  if(be){be.disabled=false;be.style.cssText='';}
 }
 function nomAccion(accion){
   if(accion==='eliminar-pago'){
@@ -1997,6 +2066,23 @@ function nomAccion(accion){
     if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar pagos','error');return;}
     DB.nominaPagos=(DB.nominaPagos||[]).filter(p=>p.id!==nomPagoSelectedId);
     sDB('nominaPagos');nomPagoSelectedId=null;toast('Pago eliminado','success');renderNomina();return;
+  }
+  if(accion==='editar-pago'){
+    if(!nomPagoSelectedId){toast('Selecciona un pago','error');return;}
+    if(!canDo('editar')&&currentUser?.role!=='admin'){toast('No tienes permiso para editar','error');return;}
+    const p=(DB.nominaPagos||[]).find(x=>x.id===nomPagoSelectedId);
+    if(!p)return;
+    const emp=DB.nomina.find(e=>e.id===p.empleadoId);
+    openModal('✏️ Editar Pago — '+escHtml(emp?.nombre||p.empleadoNombre||''),`
+      <div class="form-field"><label>Fecha</label><input type="date" id="ep-fecha" value="${p.fecha||''}"></div>
+      <div class="form-field"><label>Monto</label><input type="number" id="ep-monto" value="${p.monto||0}" step="0.01" min="0"></div>
+      <div class="form-field"><label>Tipo</label><select id="ep-tipo">
+        ${[['MEN','Mensual'],['1Q','1ra Quincena'],['2Q','2da Quincena'],['SEM','Semanal'],['COM','Comisión']].map(([v,l])=>`<option value="${v}" ${p.tipo===v?'selected':''}>${l}</option>`).join('')}
+      </select></div>
+      <div class="form-field"><label>Nota</label><input type="text" id="ep-nota" value="${escHtml(p.nota||'')}"></div>`,
+      `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+       <button class="btn btn-primary" onclick="guardarEditPagoNomina('${p.id}')">💾 Guardar</button>`);
+    return;
   }
   if(!nomSelectedId)return;
   const idx=DB.nomina.findIndex((e,i)=>(e.id||String(i))===nomSelectedId);if(idx<0)return;
@@ -2006,6 +2092,18 @@ function nomAccion(accion){
     if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar empleados','error');return;}
     DB.nomina.splice(idx,1);sDB('nomina');nomSelectedId=null;renderNomina();
   }
+}
+function guardarEditPagoNomina(pid){
+  const fecha=document.getElementById('ep-fecha')?.value;
+  const monto=parseFloat(document.getElementById('ep-monto')?.value||0);
+  const tipo=document.getElementById('ep-tipo')?.value||'MEN';
+  const nota=document.getElementById('ep-nota')?.value?.trim()||'';
+  if(!fecha){toast('La fecha es requerida','error');return;}
+  if(!monto||monto<=0){toast('El monto debe ser mayor a 0','error');return;}
+  const idx=(DB.nominaPagos||[]).findIndex(p=>p.id===pid);
+  if(idx<0){toast('Pago no encontrado','error');return;}
+  DB.nominaPagos[idx]={...DB.nominaPagos[idx],fecha,monto,tipo,nota};
+  sDB('nominaPagos');closeModal();toast('Pago actualizado ✓','success');renderNomina();
 }
 function registrarPagoNomina(i){
   const e=DB.nomina[i];
@@ -2828,6 +2926,8 @@ function renderCumpleanos(){
             <div style="display:flex;align-items:center;gap:8px">
               <span class="badge ${yaEnviado?'badge-green':'badge-amber'}" style="font-size:11px">${yaEnviado?'✅ Enviado':'⏳ Pendiente'}</span>
               ${tel&&waLink?`<a href="${waLink}" target="_blank" onclick="marcarCumpleMensaje('${c.keyEnvio}')" style="padding:7px 14px;background:#25D366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">📱 WhatsApp</a>`:''}
+              <button onclick="editarClienteCumple('${c.id}')" title="Editar" style="padding:6px 10px;background:#eff6ff;color:var(--blue);border:1.5px solid var(--blue);border-radius:7px;cursor:pointer;font-size:12px">✏️</button>
+              <button onclick="borrarClienteCumple('${c.id}')" title="Eliminar" style="padding:6px 10px;background:#fef2f2;color:#ef4444;border:1.5px solid #ef4444;border-radius:7px;cursor:pointer;font-size:12px">🗑️</button>
             </div>
           </div>`;
         }).join('')}
@@ -2846,6 +2946,37 @@ function marcarCumpleMensaje(key){
   DB.cumpleanosMensajes[key]='enviado';
   sDB('cumpleanosMensajes');
   setTimeout(renderCumpleanos,400);
+}
+function editarClienteCumple(id){
+  const c=(DB.clientes||[]).find(x=>x.id===id);
+  if(!c)return;
+  openModal('✏️ Editar Cliente — '+escHtml(c.nombre),`
+    <div class="form-field"><label>Nombre</label><input type="text" id="ec-nombre" value="${escHtml(c.nombre||'')}"></div>
+    <div class="form-field"><label>WhatsApp / Teléfono</label><input type="text" id="ec-whatsapp" value="${escHtml(c.whatsapp||c.telefono||'')}"></div>
+    <div class="form-field"><label>Fecha de Cumpleaños</label><input type="date" id="ec-cumple" value="${c.fechaCumpleanos||''}"></div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="guardarEditClienteCumple('${id}')">💾 Guardar</button>`);
+}
+function guardarEditClienteCumple(id){
+  const nombre=document.getElementById('ec-nombre')?.value?.trim();
+  const whatsapp=document.getElementById('ec-whatsapp')?.value?.trim();
+  const fechaCumpleanos=document.getElementById('ec-cumple')?.value||'';
+  if(!nombre){toast('El nombre es requerido','error');return;}
+  const idx=(DB.clientes||[]).findIndex(x=>x.id===id);
+  if(idx<0)return;
+  DB.clientes[idx]={...DB.clientes[idx],nombre,whatsapp,telefono:whatsapp,fechaCumpleanos};
+  sDB('clientes');closeModal();toast('Cliente actualizado ✓','success');renderCumpleanos();
+}
+function borrarClienteCumple(id){
+  const c=(DB.clientes||[]).find(x=>x.id===id);
+  if(!c)return;
+  openModal('⚠️ Eliminar Cliente',`<p style="padding:16px 0;text-align:center">¿Eliminar a <strong>${escHtml(c.nombre)}</strong> de la lista de clientes?<br><span style="font-size:12px;color:#ef4444">Esta acción no se puede deshacer.</span></p>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-red" onclick="confirmarBorrarClienteCumple('${id}')">🗑️ Eliminar</button>`);
+}
+function confirmarBorrarClienteCumple(id){
+  DB.clientes=(DB.clientes||[]).filter(x=>x.id!==id);
+  sDB('clientes');closeModal();toast('Cliente eliminado','success');renderCumpleanos();
 }
 
 // ══ MÓDULO CUENTAS ══
@@ -8736,6 +8867,11 @@ function aplicarColoresSistema(){
 document.addEventListener('DOMContentLoaded',()=>{
   setInterval(()=>{if(currentUser)_chatActualizarBadge();},10000);
   if(DB.config?.colores)aplicarColoresSistema();
+  // Autocomplete OFF en todos los campos
+  document.querySelectorAll('input:not([type=password]),select,textarea').forEach(el=>{el.setAttribute('autocomplete','off');});
+  // Observer para campos dinámicos (modales)
+  const _acObs=new MutationObserver(ms=>{ms.forEach(m=>{m.addedNodes.forEach(n=>{if(n.querySelectorAll){n.querySelectorAll('input:not([type=password]),select,textarea').forEach(el=>{if(!el.getAttribute('autocomplete'))el.setAttribute('autocomplete','off');});}});});});
+  _acObs.observe(document.body,{childList:true,subtree:true});
 });
 
 // INIT
@@ -8791,7 +8927,27 @@ async function fbGuardar(key){
     } else {
       await _fbDB.collection(_fbCol).doc(key).set({valor:JSON.stringify(val)});
     }
-  } catch(e){ console.warn('FB save error:', e.message); }
+    // Indicador visual guardado OK
+    const dot=document.getElementById('fb-dot');const txt=document.getElementById('fb-text');
+    if(dot){dot.style.background='#22c55e';dot.title='Guardado ✓';}
+    if(txt){txt.textContent='✓ Guardado';clearTimeout(window._fbTxtTimer);window._fbTxtTimer=setTimeout(()=>{if(txt)txt.textContent='En línea';},2500);}
+  } catch(e){
+    console.warn('FB save error:', e.message);
+    const dot=document.getElementById('fb-dot');const txt=document.getElementById('fb-text');
+    // Detectar sesión expirada o sin autenticación
+    if(e.code==='permission-denied'||e.code==='unauthenticated'||e.message?.includes('permission')||e.message?.includes('auth')){
+      if(dot){dot.style.background='#ef4444';}
+      if(txt){txt.textContent='Sesión expirada';}
+      setTimeout(()=>{
+        if(confirm('Tu sesión ha expirado. ¿Deseas volver a iniciar sesión para no perder los cambios?')){
+          doLogout();
+        }
+      },500);
+    } else {
+      if(dot){dot.style.background='#f59e0b';}
+      if(txt){txt.textContent='Error al guardar';clearTimeout(window._fbTxtTimer);window._fbTxtTimer=setTimeout(()=>{if(txt)txt.textContent='En línea';},3000);}
+    }
+  }
 }
 
 async function fbCargar(){
@@ -8966,22 +9122,57 @@ function _ejecutarBackup(){
 
 function _verificarBackupAdmin(){
   if(!currentUser||currentUser.role!=='admin')return;
+  const hoy=new Date();
+  const diaSemana=hoy.getDay(); // 0=dom,1=lun,...,6=sab
+  const esDiaHabil=(diaSemana>=1&&diaSemana<=6);
+  if(!esDiaHabil)return; // domingo no hace backup
+  const fechaHoy=hoy.toISOString().slice(0,10);
+  const lastBackupFecha=(DB.config._lastBackup||'').slice(0,10);
+  if(lastBackupFecha===fechaHoy)return; // ya se hizo hoy
+  // Hacer backup automático en segundo plano
+  setTimeout(()=>{
+    if(!window._fbActivo||!window._fbCargado)return;
+    fbCargar().then(()=>{_ejecutarBackupAuto();}).catch(()=>{_ejecutarBackupAuto();});
+  },4000);
+}
+function _ejecutarBackupAuto(){
+  try{
+    const ahora=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    const meses=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fechaCorta=`${pad(ahora.getDate())}-${meses[ahora.getMonth()]}-${ahora.getFullYear()}`;
+    const filename=`BACKUP_Maedig_${fechaCorta}.json`;
+    const datos={
+      _backupInfo:{empresa:DB.config.empresa||'',fecha:ahora.toISOString(),version:'dealer_v14',
+        resumen:{vehiculos:(DB.vehiculos||[]).length,clientes:(DB.clientes||[]).length,ventas:(DB.ventas||[]).length}},
+      config:DB.config,users:DB.users,vehiculos:DB.vehiculos||[],clientes:DB.clientes||[],
+      suplidores:DB.suplidores||[],ventas:DB.ventas||[],cotizaciones:DB.cotizaciones||[],
+      caja:DB.caja||[],gastos:DB.gastos||[],nomina:DB.nomina||[],nominaPagos:DB.nominaPagos||[],
+      gastosVehiculos:DB.gastosVehiculos||[],cxp:DB.cxp||[],cxc:DB.cxc||[],
+      autorizaciones:DB.autorizaciones||[],seguros:DB.seguros||[],
+      facturasExternas:DB.facturasExternas||[],cumpleanosMensajes:DB.cumpleanosMensajes||{}
+    };
+    const blob=new Blob([JSON.stringify(datos,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+    DB.config._lastBackup=ahora.toISOString();
+    if(window._fbActivo)fbGuardar('config').catch(()=>{});
+    toast('💾 Backup automático descargado: '+filename,'success');
+  }catch(e){
+    toast('⚠️ No se pudo hacer el backup automático. Hazlo manualmente desde 💾 Backup','warning');
+  }
+  // Mostrar aviso si hace más de 2 días sin backup (para cuando falla el auto)
   const lastStr=DB.config._lastBackup||null;
   const hoy=new Date();
   let diasSinBackup=999;
-  if(lastStr){
-    const last=new Date(lastStr);
-    diasSinBackup=Math.floor((hoy-last)/(1000*60*60*24));
-  }
-  if(diasSinBackup<5)return;
-  // Solo notificar — el admin hace el backup desde el menú lateral
+  if(lastStr){const last=new Date(lastStr);diasSinBackup=Math.floor((hoy-last)/(1000*60*60*24));}
+  if(diasSinBackup<2)return;
   setTimeout(()=>{
     if(document.getElementById('backup-aviso'))return;
     const av=document.createElement('div');
     av.id='backup-aviso';
-    const msg=diasSinBackup>=999
-      ?'⚠️ No se ha realizado ningún backup del sistema.'
-      :'⚠️ Han pasado <strong>'+diasSinBackup+' días</strong> sin backup. Recuerda hacerlo desde el menú 💾 Backup.';
+    const msg=diasSinBackup>=999?'⚠️ No se ha realizado ningún backup del sistema.'
+      :'⚠️ Han pasado <strong>'+diasSinBackup+' días</strong> sin backup. Hazlo desde el menú 💾 Backup.';
     const isMobile=window.innerWidth<=768;
     av.style.cssText='position:fixed;top:'+(isMobile?'52':'56')+'px;left:'+(isMobile?'0':'220')+'px;right:0;background:#f59e0b;color:#fff;padding:9px 20px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;z-index:150;box-shadow:0 2px 8px rgba(0,0,0,.15)';
     av.innerHTML=`<span>${msg}</span>
