@@ -413,6 +413,7 @@ let DB={
 function sDB(k){ss(k,DB[k]);}
 
 const fmt=n=>(DB.config.moneda||'RD$')+' '+parseFloat(n||0).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtUSD=n=>'USD '+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today=()=>new Date().toISOString().split('T')[0];
 const fmtDate=d=>{if(!d)return '—';try{return new Date(d+'T12:00:00').toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}};
 const uid=()=>'id'+Date.now()+Math.random().toString(36).slice(2,6);
@@ -6027,7 +6028,7 @@ function renderSuplidores(tabActivo){
         <td>
           <div style="display:flex;gap:4px">
             <button class="btn btn-sm" style="background:var(--blue3);color:var(--blue);padding:4px 8px" onclick="event.stopPropagation();supAccionDirecta('editar','${s.id}')" title="Editar">✏️</button>
-            ${currentUser?.role==='admin'?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="event.stopPropagation();supAccionDirecta('eliminar','${s.id}')" title="Eliminar">🗑</button>`:''}
+            ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-sm" style="background:var(--red2);color:var(--red);padding:4px 8px" onclick="event.stopPropagation();supAccionDirecta('eliminar','${s.id}')" title="Eliminar">🗑</button>`:''}
           </div>
         </td>
       </tr>`;
@@ -6038,7 +6039,7 @@ function renderSuplidores(tabActivo){
       <div><h1>🏭 Suplidores</h1><p>${DB.suplidores.length} suplidor(es) — Vehículos: ${supVeh.length} | Empresa: ${supEmp.length} | Importadora: ${supImp.length}</p></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button id="sup-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('editar')">✏️ Editar</button>
-        ${currentUser?.role==='admin'?`<button id="sup-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('eliminar')">🗑 Eliminar</button>`:''}
+        ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="sup-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="supAccion('eliminar')">🗑 Eliminar</button>`:''}
         <button class="btn btn-secondary btn-sm" onclick="exportarSuplidoresPDF('${tabActivo}')">📄 Exportar PDF</button>
         <button class="btn btn-primary" onclick="nuevoSuplidor('${tabActivo}')">➕ Nuevo Suplidor</button>
       </div>
@@ -6251,7 +6252,7 @@ function selSupl(id,tr){
   const s=DB.suplidores.find((x,i)=>(x.id||String(i))===id)||DB.suplidores[parseInt(id)];
   const actB=(bid,bg,c)=>{const b=document.getElementById(bid);if(b){b.disabled=false;b.style.cssText='background:'+bg+';color:'+c+';cursor:pointer;';}};
   actB('sup-btn-editar','#475569','#fff');
-  if(currentUser?.role==='admin')actB('sup-btn-eliminar','#dc2626','#fff');
+  if(currentUser?.role==='admin'||canDo('eliminar'))actB('sup-btn-eliminar','#dc2626','#fff');
 }
 function supAccion(accion){
   if(!supSelectedId)return;
@@ -8143,7 +8144,7 @@ function renderSeguros(){
               <div style="display:flex;gap:4px;flex-wrap:wrap">
                 ${(s.status||'PENDIENTE')!=='PAGADO'?`<button class="btn btn-green btn-sm" onclick="abonarSeguro('${s.id}')">💵 Abonar</button>`:''}
                 <button class="btn btn-secondary btn-sm" onclick="editarSeguro('${s.id}')">✏️</button>
-                ${currentUser?.role==='admin'?`<button class="btn btn-red btn-sm" onclick="eliminarSeguro('${s.id}')">🗑</button>`:''}
+                ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-red btn-sm" onclick="eliminarSeguro('${s.id}')">🗑</button>`:''}
               </div>
             </td>
           </tr>`;
@@ -8415,7 +8416,7 @@ function renderFacturaExterna(){
           <td>
             <div style="display:flex;gap:4px">
               <button class="btn btn-sm btn-secondary" onclick="imprimirFacturaExterna('${f.id}')">🖨️</button>
-              ${currentUser?.role==='admin'?`<button class="btn btn-sm btn-red" onclick="DB.facturasExternas=DB.facturasExternas.filter(x=>x.id!=='${f.id}');sDB('facturasExternas');toast('Eliminado','success');renderFacturaExterna()">🗑</button>`:''}
+              ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-sm btn-red" onclick="DB.facturasExternas=DB.facturasExternas.filter(x=>x.id!=='${f.id}');sDB('facturasExternas');toast('Eliminado','success');renderFacturaExterna()">🗑</button>`:''}
             </div>
           </td>
         </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--gray)">Sin facturas externas</td></tr>'}
