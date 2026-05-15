@@ -391,24 +391,26 @@ const TIPOS_GASTO_VEH=['Flete/Transporte','Aduana/Impuestos','Reparación/Mecán
 let DB={
   config:ls('config')||{...defaultConfig},
   users:ls('users')||defaultUsers,
-  vehiculos:ls('vehiculos')||[],
-  clientes:ls('clientes')||[],
-  suplidores:ls('suplidores')||[],
-  ventas:ls('ventas')||[],
-  cotizaciones:ls('cotizaciones')||[],
-  caja:ls('caja')||[],
-  gastos:ls('gastos')||[],
-  nomina:ls('nomina')||[],
-  nominaPagos:ls('nominaPagos')||[],
-  gastosVehiculos:ls('gastosVehiculos')||[],
-  cxp:ls('cxp')||[],
-  cxc:ls('cxc')||[],
-  autorizaciones:ls('autorizaciones')||[],
-  seguros:ls('seguros')||[],
-  facturasExternas:ls('facturasExternas')||[],
+  // Datos: arrancan vacíos — Firebase es la única fuente de verdad.
+  // El localStorage solo se usa como caché de escritura, nunca para leer al iniciar.
+  vehiculos:[],
+  clientes:[],
+  suplidores:[],
+  ventas:[],
+  cotizaciones:[],
+  caja:[],
+  gastos:[],
+  nomina:[],
+  nominaPagos:[],
+  gastosVehiculos:[],
+  cxp:[],
+  cxc:[],
+  autorizaciones:[],
+  seguros:[],
+  facturasExternas:[],
   chat:ls('chat')||{},
   presencia:ls('presencia')||{},
-  cumpleanosMensajes:ls('cumpleanosMensajes')||{}
+  cumpleanosMensajes:{}
 };
 function sDB(k){ss(k,DB[k]);}
 
@@ -617,12 +619,8 @@ function doLogin(){
   // Mostrar bienvenida con datos del localStorage primero
   _actualizarWelcome();
   ws.classList.add('show');
-  // Firebase es obligatorio — conectar siempre
-  if(window._fbCargado){
-    _actualizarWelcome();
-    _verificarBackupAdmin();
-    setTimeout(_entrarDashboard, 2000);
-  } else if(typeof fbIniciar==='function'){
+  // Firebase es obligatorio — recargar siempre en cada login para garantizar datos frescos
+  if(typeof fbIniciar==='function'){
     let _localFbCargado=false;
     // Timeout extendido para conexiones lentas
     const _fbTimeout=setTimeout(()=>{
@@ -728,6 +726,16 @@ function showPage(id){
   if(id!=='dashboard'&&currentUser?.role!=='admin'&&!canAccess(id)){toast('No tienes acceso a este módulo','error');return;}
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
+  // Recarga silenciosa desde Firebase si hace más de 60 segundos sin actualizar
+  const ahora=Date.now();
+  if(window._fbActivo&&window._fbCargado&&(!window._lastFbRefresh||ahora-window._lastFbRefresh>60000)){
+    window._lastFbRefresh=ahora;
+    fbCargar().then(()=>{
+      const r2={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup};
+      if(r2[id])setTimeout(r2[id],100);
+    }).catch(()=>{});
+    return;
+  }
   const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup};
   if(r[id])r[id]();
 }
@@ -824,12 +832,7 @@ function imprimirDashboard(){
   win.document.close();
 }
 function renderDashboard(){
-  // Datos frescos
-  DB.vehiculos=ls('vehiculos')||DB.vehiculos;
-  DB.ventas=ls('ventas')||DB.ventas;
-  DB.gastosVehiculos=ls('gastosVehiculos')||DB.gastosVehiculos;
-  DB.cxc=ls('cxc')||DB.cxc;
-  DB.suplidores=ls('suplidores')||DB.suplidores;
+  // DB ya contiene datos frescos de Firebase — no leer localStorage
 
   const mes=document.getElementById('dash-mes')?.value||'';
   const dia=document.getElementById('dash-dia')?.value||'';
@@ -8905,6 +8908,7 @@ window.addEventListener('load', ()=>{
     fbCargar().then(()=>{
       window._fbActivo=true;
       window._fbCargado=true;
+      window._lastFbRefresh=Date.now();
       if(typeof fbActivarListeners==='function') fbActivarListeners();
       if(btn){btn.textContent='Ingresar al sistema →';btn.disabled=false;}
       // Actualizar indicador Firebase
@@ -9284,21 +9288,8 @@ function fbActivarListeners(){
           informes:()=>typeof renderInformes==='function'&&renderInformes(),
           cumpleanos:()=>typeof renderCumpleanos==='function'&&renderCumpleanos(),
         };
-        const keysParaPagina={
-          dashboard:['vehiculos','ventas','cxc','cxp','gastos','config'],
-          inventario:['vehiculos'],ventas:['ventas','clientes'],
-          clientes:['clientes'],suplidores:['suplidores'],
-          gastos:['gastos'],nomina:['nomina','nominaPagos'],
-          cxc:['cxc','vehiculos'],cxp:['gastosVehiculos','cxp','vehiculos'],
-          caja:['caja'],gastosVeh:['gastosVehiculos','vehiculos'],
-          cotizaciones:['cotizaciones','clientes'],
-          autorizaciones:['autorizaciones'],
-          usuarios:['users'],config:[],
-          informes:['ventas','gastos','cxc','gastosVehiculos','nomina'],
-          cumpleanos:['clientes','config'],
-        };
-        const afecta=keysParaPagina[pid]||[];
-        if(afecta.includes(key)&&renderMap[pid]){
+        // Re-renderizar siempre que llegue cualquier cambio de Firebase en la página activa
+        if(renderMap[pid]){
           clearTimeout(window._renderTimeout);
           window._renderTimeout=setTimeout(renderMap[pid],300);
         }
@@ -9316,6 +9307,7 @@ window.fbIniciar = async function(){
   try {
     const loaded = await fbCargar();
     window._fbActivo = true;
+    window._lastFbRefresh = Date.now();
     if(loaded){
       setStatus('#22c55e','✓ Firebase');
       window._fbCargado=true;
