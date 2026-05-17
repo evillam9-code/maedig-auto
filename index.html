@@ -726,18 +726,17 @@ function showPage(id){
   if(id!=='dashboard'&&currentUser?.role!=='admin'&&!canAccess(id)){toast('No tienes acceso a este módulo','error');return;}
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
-  // Recarga silenciosa desde Firebase si hace más de 60 segundos sin actualizar
+  // Renderizar inmediatamente con datos locales (sin esperar Firebase)
+  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup};
+  if(r[id])r[id]();
+  // Refrescar Firebase en background si hace más de 60s (sin bloquear la UI)
   const ahora=Date.now();
   if(window._fbActivo&&window._fbCargado&&(!window._lastFbRefresh||ahora-window._lastFbRefresh>60000)){
     window._lastFbRefresh=ahora;
     fbCargar().then(()=>{
-      const r2={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup};
-      if(r2[id])setTimeout(r2[id],100);
+      if(r[id])setTimeout(r[id],100);
     }).catch(()=>{});
-    return;
   }
-  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup};
-  if(r[id])r[id]();
 }
 
 function showNotif(title,msg,type='danger'){
@@ -794,43 +793,103 @@ function checkAlerts(){
 
 // ══ DASHBOARD ══
 function imprimirDashboard(){
+  // Abrir ventana nueva con resumen de datos del dashboard (sin copiar innerHTML)
+  const empresa=DB.config.empresa||'';
+  const logo=DB.config.logoData||'';
+  const rnc=DB.config.rnc||'';
+  const tel=DB.config.telefono||'';
+  const dir=DB.config.direccion||'';
+  const tasa=parseFloat(DB.config.tasaCambio||60);
   const mes=document.getElementById('dash-mes')?.value||'';
   const dia=document.getElementById('dash-dia')?.value||'';
-  let periodo='Todo el período';
-  if(dia)periodo='Día: '+fmtDate(dia);
-  else if(mes){const [y,m]=mes.split('-');const mn=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];periodo=mn[parseInt(m)-1]+' '+y;}
-  const totalVeh=(DB.vehiculos||[]).length;
-  const vendidos=(DB.vehiculos||[]).filter(v=>v.status==='VENDIDO').length;
-  const disponibles=(DB.vehiculos||[]).filter(v=>v.status!=='VENDIDO').length;
-  let ventas=(DB.ventas||[]);
-  let gastos=(DB.gastos||[]);
-  if(dia){ventas=ventas.filter(v=>v.fecha===dia);gastos=gastos.filter(g=>g.fecha===dia);}
-  else if(mes){ventas=ventas.filter(v=>(v.fecha||'').startsWith(mes));gastos=gastos.filter(g=>(g.fecha||'').startsWith(mes));}
-  const totalVentas=ventas.reduce((a,v)=>a+parseFloat(v.precioVenta||0),0);
-  const totalGanancia=ventas.reduce((a,v)=>a+parseFloat(v.ganancia||0),0);
-  const totalGastos=gastos.reduce((a,g)=>a+parseFloat(g.monto||0),0);
-  const cxcPend=(DB.cxc||[]).filter(x=>x.status==='PENDIENTE'||x.status==='PARCIAL').reduce((a,x)=>a+parseFloat(x.saldo||0),0);
+  const filtro=dia||mes;
+  const ventas=filtro?DB.ventas.filter(v=>dia?v.fecha===dia:v.fecha?.startsWith(mes)):DB.ventas;
+  const ventasRD=ventas.filter(v=>(v.moneda||'RD$')==='RD$').reduce((a,v)=>a+parseFloat(v.precioVenta||0),0);
+  const ventasUSD=ventas.filter(v=>v.moneda==='USD').reduce((a,v)=>a+parseFloat(v.precioVenta||0),0);
+  const vActivos=DB.vehiculos.filter(v=>v.status==='ACTIVO').length;
+  const vAduana=DB.vehiculos.filter(v=>v.status==='ADUANA').length;
+  const vTransito=DB.vehiculos.filter(v=>v.status==='TRÁNSITO').length;
+  const vVendidos=DB.vehiculos.filter(v=>v.status==='VENDIDO').length;
+  const vTotal=DB.vehiculos.length;
+  const cxcPend=(DB.cxc||[]).filter(x=>x.status!=='SALDADO').reduce((a,x)=>a+parseFloat(x.saldo||0),0);
   const cxpPend=(DB.gastosVehiculos||[]).filter(g=>parseFloat(g.montoPendiente||0)>0).reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
-  const win=window.open('','_blank','width=800,height=700');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resumen Inicio</title>
-  <style>body{font-family:Arial,sans-serif;padding:28px;font-size:13px;color:#1e293b}h2{margin:0 0 4px}p{margin:0 0 16px;color:#64748b}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#0f172a;color:#fff;padding:9px 12px;text-align:left;font-size:12px}td{padding:9px 12px;border-bottom:1px solid #e2e8f0}.val{font-weight:700;font-size:15px}.green{color:#16a34a}.red{color:#dc2626}.blue{color:#2563eb}@media print{button{display:none}}</style></head><body>
-  ${DB.config.logoData?`<img src="${DB.config.logoData}" style="max-height:54px;margin-bottom:10px;display:block">`:``}
-  <h2>${escHtml(DB.config.empresa||'MAEDIG AUTO SALES')}</h2>
-  <p>Resumen de Inicio — ${periodo}</p>
-  <table><thead><tr><th>Indicador</th><th>Valor</th></tr></thead><tbody>
-  <tr><td>Total Vehículos</td><td class="val">${totalVeh}</td></tr>
-  <tr><td>Disponibles</td><td class="val blue">${disponibles}</td></tr>
-  <tr><td>Vendidos</td><td class="val green">${vendidos}</td></tr>
-  <tr><td>Total Ventas (${ventas.length})</td><td class="val green">${fmt(totalVentas)}</td></tr>
-  <tr><td>Ganancia Neta</td><td class="val green">${fmt(totalGanancia)}</td></tr>
-  <tr><td>Gastos Empresa</td><td class="val red">${fmt(totalGastos)}</td></tr>
-  <tr><td>CxC Pendiente</td><td class="val red">${fmt(cxcPend)}</td></tr>
-  <tr><td>CxP Pendiente</td><td class="val red">${fmt(cxpPend)}</td></tr>
-  </tbody></table>
-  <div style="margin-top:24px;text-align:center"><button onclick="window.print()" style="padding:10px 28px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Imprimir / Guardar PDF</button></div>
-  </body></html>`);
+  const gastosMes=(DB.gastos||[]).filter(g=>filtro?(dia?g.fecha===dia:g.fecha?.startsWith(mes)):true).reduce((a,g)=>a+parseFloat(g.monto||0),0);
+  const nominaMensual=(DB.nomina||[]).filter(e=>e.activo!==false).reduce((a,e)=>{
+    const sal=parseFloat(e.salario||0);
+    const fr=(e.formaPago||'Mensual').toLowerCase();
+    return a+(fr.includes('semanal')?sal*4.33:fr.includes('quincenal')?sal*2:sal);
+  },0);
+  const periodo=dia?'Dia: '+fmtDate(dia):mes?'Mes: '+mes:'Todos los registros';
+  const sinCostos=DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&!(DB.gastosVehiculos||[]).some(g=>g.vehiculoId===v.id)).length;
+  // Ventas recientes
+  const ventasRecientes=(DB.ventas||[]).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')).slice(0,8);
+  // Inventario por propietario
+  const propMap={};
+  DB.vehiculos.filter(v=>v.status!=='VENDIDO').forEach(v=>{
+    const p=v.propietario||'Sin propietario';
+    propMap[p]=(propMap[p]||0)+1;
+  });
+  const propRows=Object.entries(propMap).sort((a,b)=>b[1]-a[1]).map(([p,n])=>
+    '<tr><td>'+escHtml(p)+'</td><td style="text-align:center;font-weight:700">'+n+' veh.</td></tr>'
+  ).join('');
+  const vtaRows=ventasRecientes.map(v=>
+    '<tr><td>'+fmtDate(v.fecha)+'</td><td style="font-weight:700">'+escHtml(v.vehiculo||'—')+'</td><td>'+escHtml(v.cliente||'—')+'</td><td style="font-weight:700;color:#16a34a">'+(v.moneda==='USD'?'$'+parseFloat(v.precioVenta||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(v.precioVenta||0))+'</td></tr>'
+  ).join('');
+  const win=window.open('','_blank','width=1000,height=750');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Resumen Dashboard</title>'
+  +'<style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px;color:#0f172a;background:#f1f5f9}'
+  +'.hdr{background:#fff;border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2563eb}'
+  +'.empresa{font-size:20px;font-weight:900}.sub{font-size:11px;color:#6b7280}'
+  +'.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}'
+  +'.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}'
+  +'.card{background:#fff;border-radius:10px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.08)}'
+  +'.card h3{font-size:10px;font-weight:700;text-transform:uppercase;color:#6b7280;margin:0 0 6px}'
+  +'.card .val{font-size:20px;font-weight:900;color:#0f172a}'
+  +'.card .sub2{font-size:11px;color:#6b7280;margin-top:2px}'
+  +'.green{border-top:3px solid #16a34a}.blue{border-top:3px solid #2563eb}.amber{border-top:3px solid #d97706}.red{border-top:3px solid #dc2626}'
+  +'table{width:100%;border-collapse:collapse}'
+  +'th{background:#0f172a;color:#fff;padding:8px 10px;text-align:left;font-size:11px}'
+  +'td{padding:7px 10px;border-bottom:1px solid #e2e8f0;font-size:12px}'
+  +'tr:nth-child(even){background:#f8fafc}'
+  +'@media print{button{display:none}body{background:#fff;padding:16px}}</style></head><body>'
+  +'<div class="hdr"><div>'
+  +(logo?'<img src="'+logo+'" style="max-height:55px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px">':'')
+  +'<div class="empresa">'+escHtml(empresa)+'</div>'
+  +(rnc?'<div class="sub">RNC: '+escHtml(rnc)+'</div>':'')
+  +(tel?'<div class="sub">Tel: '+escHtml(tel)+'</div>':'')
+  +(dir?'<div class="sub">'+escHtml(dir)+'</div>':'')
+  +'</div><div style="text-align:right"><div style="font-size:18px;font-weight:900;color:#2563eb">Resumen General</div>'
+  +'<div class="sub">'+escHtml(periodo)+' | Fecha: '+fmtDate(today())+'</div>'
+  +'<div class="sub">Tasa USD: RD$ '+tasa.toLocaleString('es-DO',{minimumFractionDigits:2})+'</div></div></div>'
+  +'<div class="grid">'
+  +'<div class="card green"><h3>Ventas RD$</h3><div class="val">'+fmt(ventasRD)+'</div><div class="sub2">'+ventas.filter(v=>(v.moneda||'RD$')==='RD$').length+' venta(s)</div></div>'
+  +'<div class="card blue"><h3>Ventas USD</h3><div class="val">$'+ventasUSD.toLocaleString('en-US',{minimumFractionDigits:2})+'</div><div class="sub2">'+ventas.filter(v=>v.moneda==='USD').length+' venta(s)</div></div>'
+  +'<div class="card amber"><h3>CxC Pendiente</h3><div class="val" style="color:#d97706">'+fmt(cxcPend)+'</div></div>'
+  +'<div class="card red"><h3>CxP Pendiente</h3><div class="val" style="color:#dc2626">'+fmt(cxpPend)+'</div></div>'
+  +'</div>'
+  +'<div class="grid">'
+  +'<div class="card"><h3>Vehículos Activos</h3><div class="val" style="color:#2563eb">'+vActivos+'</div></div>'
+  +'<div class="card"><h3>En Aduana</h3><div class="val" style="color:#d97706">'+vAduana+'</div></div>'
+  +'<div class="card"><h3>En Tránsito</h3><div class="val" style="color:#7c3aed">'+vTransito+'</div></div>'
+  +'<div class="card"><h3>Vendidos</h3><div class="val" style="color:#16a34a">'+vVendidos+'</div></div>'
+  +'</div>'
+  +'<div class="grid2">'
+  +'<div class="card"><h3>📊 Inventario por Propietario</h3><table><thead><tr><th>Propietario</th><th>Vehículos</th></tr></thead><tbody>'+propRows+'</tbody></table></div>'
+  +'<div class="card"><h3>💰 Ventas Recientes</h3><table><thead><tr><th>Fecha</th><th>Vehículo</th><th>Cliente</th><th>Precio</th></tr></thead><tbody>'+vtaRows+'</tbody></table></div>'
+  +'</div>'
+  +'<div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">'
+  +'<div class="card"><h3>Gastos Empresa (período)</h3><div class="val" style="color:#dc2626">'+fmt(gastosMes)+'</div></div>'
+  +'<div class="card"><h3>Nómina Mensual</h3><div class="val" style="color:#7c3aed">'+fmt(nominaMensual)+'</div></div>'
+  +'<div class="card"><h3>Sin Costos Registrados</h3><div class="val" style="color:#d97706">'+sinCostos+' veh.</div></div>'
+  +'</div>'
+  +'<div style="text-align:center;margin-top:24px"><button onclick="window.print()" style="padding:10px 28px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button></div>'
+  +'</body></html>');
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
+
 function renderDashboard(){
   // DB ya contiene datos frescos de Firebase — no leer localStorage
 
@@ -879,7 +938,8 @@ function renderDashboard(){
         <input type="date" id="dash-dia" style="padding:7px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px" onchange="document.getElementById('dash-mes').value='';renderDashboard()" value="${dia}">
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('dash-mes').value='';document.getElementById('dash-dia').value='';renderDashboard()">🔄 Todo</button>
         <button class="btn btn-primary btn-sm" onclick="renderDashboard()">↻ Actualizar</button>
-        <button class="btn btn-secondary btn-sm" onclick="imprimirDashboard()">📄 PDF / Imprimir</button>
+        <button class="btn btn-secondary btn-sm" onclick="imprimirDashboard()" title="Imprimir resumen">🖨️ Imprimir</button>
+
       </div>
     </div>
 
@@ -1050,9 +1110,39 @@ function agregarPropietarioRapido(){
 function previewFoto(inputId,prevId){
   const file=document.getElementById(inputId)?.files[0];
   const prev=document.getElementById(prevId);
-  if(!file||!prev)return;
+  if(!file)return;
+  // Validar formato
+  const allowed=['image/jpeg','image/jpg','image/png','application/pdf'];
+  if(!allowed.includes(file.type)){toast('Solo se permiten archivos JPG, PNG o PDF','error');document.getElementById(inputId).value='';return;}
+  // Tamaño máximo 5MB antes de comprimir
+  if(file.size>5*1024*1024){toast('El archivo es muy grande (máx. 5MB)','error');document.getElementById(inputId).value='';return;}
+  if(file.type==='application/pdf'){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      if(prev){prev.src='';prev.style.display='none';}
+      // Guardar data en dataset del input para uso posterior
+      document.getElementById(inputId)._dataUrl=e.target.result;
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+  // Comprimir imagen
   const reader=new FileReader();
-  reader.onload=e=>{prev.src=e.target.result;prev.style.display='block';};
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const MAX=1200;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const compressed=canvas.toDataURL('image/jpeg',0.75);
+      if(prev){prev.src=compressed;prev.style.display='block';}
+      document.getElementById(inputId)._dataUrl=compressed;
+    };
+    img.src=e.target.result;
+  };
   reader.readAsDataURL(file);
 }
 
@@ -1196,11 +1286,11 @@ function formVehiculo(v){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label>📋 BL (Bill of Lading)</label>
-        <input type="file" id="v-foto" accept="image/*,application/pdf" onchange="previewFoto('v-foto','v-foto-prev')">
+        <input type="file" id="v-foto" accept=".jpg,.jpeg,.png,.pdf" onchange="previewFoto('v-foto','v-foto-prev')">
         <img id="v-foto-prev" src="${v?.foto||''}" style="display:${v?.foto?'block':'none'};width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px">
       </div>
       <div class="form-field"><label>📄 Carfax</label>
-        <input type="file" id="v-carfax" accept="image/*,application/pdf" onchange="previewFoto('v-carfax','v-carfax-prev')">
+        <input type="file" id="v-carfax" accept=".jpg,.jpeg,.png,.pdf" onchange="previewFoto('v-carfax','v-carfax-prev')">
         <img id="v-carfax-prev" src="${v?.carfax||''}" style="display:${v?.carfax?'block':'none'};width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px">
       </div>
     </div>
@@ -1374,7 +1464,7 @@ function gastosVehiculo(vid){
   openModal(`💸 Gastos — ${v.codigo} ${v.marca} ${v.modelo} ${v.anio}`,`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;background:var(--gray2);padding:12px;border-radius:8px">
       <div class="form-field" style="margin:0"><label style="font-size:10px">Costo del Vehículo (RD$)</label>
-        <input type="number" id="gv-costo-veh" value="${costo||0}" step="0.01" onchange="actualizarCostoVeh('${vid}',this.value)">
+        <input type="text" id="gv-costo-veh" value="${costo||0}"  onchange="actualizarCostoVeh('${vid}',this.value)" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)">
         <div style="font-size:11px;color:var(--gray);margin-top:2px">USD: $${(costo/tasa).toFixed(2)}</div>
       </div>
       <div class="form-field" style="margin:0"><label style="font-size:10px">Suplidor</label>
@@ -1397,7 +1487,7 @@ function gastosVehiculo(vid){
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
         <div class="form-field" style="margin:0"><label style="font-size:10px">Tipo de Gasto</label><select id="gv-tipo">${TIPOS_GASTO_VEH.map(t=>`<option>${t}</option>`).join('')}</select></div>
         <div class="form-field" style="margin:0"><label style="font-size:10px">Descripción</label><input type="text" id="gv-desc" placeholder="Detalle"></div>
-        <div class="form-field" style="margin:0"><label style="font-size:10px">Monto (RD$)</label><input type="number" id="gv-monto" placeholder="0.00" step="0.01"></div>
+        <div class="form-field" style="margin:0"><label style="font-size:10px">Monto (RD$)</label><input type="text" id="gv-monto" placeholder="0.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" ></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
         <div class="form-field" style="margin:0"><label style="font-size:10px">Forma de Pago</label><select id="gv-forma"><option value="CONTADO">Contado</option><option value="CREDITO">Crédito</option></select></div>
@@ -1791,7 +1881,7 @@ function editarGasto(i){
   const catList=['Mantenimiento','Publicidad','Oficina','Transporte','Servicios','Seguro','Legal','Salarios','Otro'];
   openModal('Editar Gasto',`
     <div class="form-row c2"><div class="form-field"><label>Fecha</label><input type="date" id="g-fecha" value="${g.fecha||today()}"></div><div class="form-field"><label>Categoría</label><select id="g-cat">${catList.map(c=>`<option ${c===g.categoria?'selected':''}>${c}</option>`).join('')}</select></div></div>
-    <div class="form-row c2"><div class="form-field"><label>Suplidor</label><select id="g-sup"><option value="">Sin suplidor</option>${DB.suplidores.map(s=>`<option ${s.nombre===g.suplidor?'selected':''}>${escHtml(s.nombre)}</option>`).join('')}</select></div><div class="form-field"><label>Monto</label><input type="number" id="g-monto" value="${g.monto||0}" step="0.01"></div></div>
+    <div class="form-row c2"><div class="form-field"><label>Suplidor (Empresa)</label><select id="g-sup"><option value="">Sin suplidor</option>${(DB.suplidores||[]).filter(s=>s.tipoSuplidor==='empresa').map(s=>`<option value="${escHtml(s.empresa||s.nombre)}" ${(s.empresa||s.nombre)===g.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre)}</option>`).join('')}</select></div><div class="form-field"><label>Monto</label><input type="text" id="g-monto" value="${g.monto||0}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" ></div></div>
     <div class="form-row c2"><div class="form-field"><label>Forma de Pago</label><select id="g-forma"><option value="CONTADO" ${(g.formaPago||'CONTADO')==='CONTADO'?'selected':''}>Contado</option><option value="CREDITO" ${g.formaPago==='CREDITO'?'selected':''}>Crédito</option></select></div><div class="form-field"><label>Estado</label><select id="g-status"><option value="SALDADO" ${(g.statusGasto||'SALDADO')==='SALDADO'?'selected':''}>Saldado</option><option value="ABONADO" ${g.statusGasto==='ABONADO'?'selected':''}>Abonado</option><option value="PENDIENTE" ${g.statusGasto==='PENDIENTE'?'selected':''}>Pendiente</option></select></div></div>
     <div class="form-field"><label>Descripción</label><input type="text" id="g-desc" value="${escHtml(g.descripcion||'')}"></div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarEditGasto(${i})">💾 Guardar</button>`);
@@ -1800,7 +1890,7 @@ function guardarEditGasto(i){
   DB.gastos[i].fecha=document.getElementById('g-fecha').value;
   DB.gastos[i].categoria=document.getElementById('g-cat').value;
   DB.gastos[i].suplidor=document.getElementById('g-sup').value;
-  DB.gastos[i].monto=parseFloat(document.getElementById('g-monto').value||0);
+  DB.gastos[i].monto=parseFloat((document.getElementById('g-monto').value||'0').replace(/,/g,''));
   DB.gastos[i].formaPago=document.getElementById('g-forma').value;
   DB.gastos[i].statusGasto=document.getElementById('g-status').value;
   DB.gastos[i].descripcion=document.getElementById('g-desc').value;
@@ -1817,11 +1907,14 @@ function imprimirGastos(){
   '<tr style="background:#dbeafe"><td colspan="6" style="font-weight:800">TOTAL</td><td style="font-weight:800;color:#2563eb">'+fmt(total)+'</td></tr>'+
   '</tbody></table><div class="np" style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir / PDF</button></div></body></html>');
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 function nuevoGasto(){
   const cats=DB.config.categoriasGastos||['Alquiler','Servicios','Salarios','Papelería','Mantenimiento','Publicidad','Combustible','Impuestos','Otros'];
   // Solo suplidores de empresa
-  const supsEmp=(DB.suplidores||[]).filter(s=>s.tipoSuplidor==='empresa'||(s.tipoSuplidor==null&&!s.tipoSuplidor));
+  const supsEmp=(DB.suplidores||[]).filter(s=>s.tipoSuplidor==='empresa');
   const supsOpts=supsEmp.map(s=>`<option value="${escHtml(s.empresa||s.nombre)}">${escHtml(s.empresa||s.nombre)}</option>`).join('');
   const bcs=DB.config.bancoCuentas||[];
   const bancoOpts=bcs.map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
@@ -1912,8 +2005,8 @@ function agregarCatGasto(){
   toast('Categoría "'+n+'" agregada ✓','success');
 }
 function calcPendienteGasto(){
-  const factura=parseFloat(document.getElementById('g-monto-factura')?.value||0);
-  const abonado=parseFloat(document.getElementById('g-monto-abonado')?.value||0);
+  const factura=parseFloat((document.getElementById('g-monto-factura')?.value||'0').replace(/,/g,''));
+  const abonado=parseFloat((document.getElementById('g-monto-abonado')?.value||'0').replace(/,/g,''));
   const pend=document.getElementById('g-monto-pendiente');
   if(pend)pend.value=fmtMoneyDisplay(Math.max(0,factura-abonado));
   // Actualizar estado automático
@@ -1927,9 +2020,9 @@ function calcPendienteGasto(){
 }
 function guardarGasto(idx){
   const desc=document.getElementById('g-desc').value.trim();
-  const montoFactura=parseFloat(document.getElementById('g-monto-factura')?.value||document.getElementById('g-monto')?.value||0);
+  const montoFactura=parseFloat((document.getElementById('g-monto-factura')?.value||document.getElementById('g-monto')?.value||'0').replace(/,/g,''));
   if(!montoFactura||!desc){toast('Monto y descripción son requeridos','error');return;}
-  const montoAbonado=parseFloat(document.getElementById('g-monto-abonado')?.value||0);
+  const montoAbonado=parseFloat((document.getElementById('g-monto-abonado')?.value||'0').replace(/,/g,''));
   const montoPendiente=Math.max(0,montoFactura-montoAbonado);
   const g={
     id:idx!==undefined?DB.gastos[idx].id:uid(),
@@ -1953,10 +2046,86 @@ function guardarGasto(idx){
 
 // ══ NÓMINA ══
 let nomSelectedId=null,nomPagoSelectedId=null;
+function imprimirReciboNomina(p){
+  const emp=DB.nomina.find(e=>e.id===p.empleadoId);
+  const empresa=DB.config.empresa||'';
+  const logo=DB.config.logoData||'';
+  const rnc=DB.config.rnc||'';
+  const tel=DB.config.telefono||'';
+  const dir=DB.config.direccion||'';
+  const tipoLabel={MEN:'Mensual','1Q':'1ra Quincena','2Q':'2da Quincena',SEM:'Semanal',COM:'Comisión'};
+  const periodoLabel=tipoLabel[p.tipo||'MEN']||p.tipo||'Mensual';
+  const recibo=`
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;font-family:Arial,sans-serif;font-size:13px;color:#0f172a;width:100%">
+      ${logo?`<img src="${logo}" style="max-height:50px;max-width:120px;object-fit:contain;display:block;margin-bottom:8px">`:''}
+      <div style="font-size:16px;font-weight:900;margin-bottom:2px">${escHtml(empresa)}</div>
+      ${rnc?`<div style="font-size:10px;color:#6b7280">RNC: ${escHtml(rnc)}</div>`:''}
+      ${tel?`<div style="font-size:10px;color:#6b7280">Tel: ${escHtml(tel)}</div>`:''}
+      ${dir?`<div style="font-size:10px;color:#6b7280">${escHtml(dir)}</div>`:''}
+      <div style="border-top:2px solid #0f172a;margin:10px 0;padding-top:10px">
+        <div style="font-size:13px;font-weight:800;text-transform:uppercase;text-align:center;letter-spacing:1px;margin-bottom:10px">Recibo de Pago</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <div><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase">Empleado</div><div style="font-weight:700">${escHtml(emp?.nombre||p.empleadoNombre||'—')}</div></div>
+          <div><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase">Cargo</div><div>${escHtml(emp?.cargo||'—')}</div></div>
+          <div><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase">Período</div><div>${periodoLabel}</div></div>
+          <div><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase">Fecha</div><div>${fmtDate(p.fecha)}</div></div>
+        </div>
+        <div style="background:#f1f5f9;border-radius:6px;padding:10px;text-align:center;margin-bottom:12px">
+          <div style="font-size:10px;color:#6b7280;font-weight:700;text-transform:uppercase">Monto Pagado</div>
+          <div style="font-size:22px;font-weight:900;color:#16a34a">${fmt(p.monto||0)}</div>
+        </div>
+        ${p.nota?`<div style="font-size:10px;color:#6b7280;margin-bottom:10px">Nota: ${escHtml(p.nota)}</div>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px">
+        <div style="border-top:1px solid #0f172a;padding-top:6px;text-align:center;font-size:10px;color:#6b7280">Firma de quien entrega</div>
+        <div style="border-top:1px solid #0f172a;padding-top:6px;text-align:center;font-size:10px;color:#6b7280">Firma del empleado que recibe</div>
+      </div>
+    </div>`;
+  const win=window.open('','_blank','width=660,height=920');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibo de Pago</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;padding:12px 18px;background:#f8fafc}
+    .page{display:flex;flex-direction:column;max-width:576px;margin:0 auto;width:100%}
+    .recibo-wrap{flex:1;display:flex;align-items:center}
+    .divider{border:none;border-top:2px dashed #cbd5e1;margin:6px 0}
+    @media print{
+      body{padding:10mm 12mm;background:#fff}
+      button{display:none!important}
+      @page{size:letter portrait;margin:0}
+      .page{height:calc(11in - 20mm);justify-content:space-between}
+      .recibo-wrap{height:calc(50% - 4mm);align-items:flex-start}
+    }
+  </style></head><body>
+  <div class="page">
+    <div class="recibo-wrap"><div style="width:100%">${recibo}</div></div>
+    <hr class="divider">
+    <div class="recibo-wrap"><div style="width:100%">${recibo}</div></div>
+  </div>
+  <div style="text-align:center;margin-top:14px">
+    <button onclick="window.print()" style="padding:10px 28px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+  </div>
+  </body></html>`);
+  win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
+}
+
 function renderNomina(){
   const tab=document.getElementById('nom-tab')?.value||'empleados';
   const mesFiltro=document.getElementById('nom-mes')?.value||'';
-  const total=DB.nomina.filter(e=>e.activo).reduce((a,e)=>a+parseFloat(e.salario||0),0);
+  // Calcular nómina mensual total convirtiendo todas las frecuencias a mensual
+  const totalMensual=(()=>{
+    return (DB.nomina||[]).filter(e=>e.activo!==false).reduce((a,e)=>{
+      const sal=parseFloat(e.salario||0);
+      const freq=(e.formaPago||'Mensual').toLowerCase();
+      if(freq.includes('semanal'))return a+(sal*4.33);
+      if(freq.includes('quincenal'))return a+(sal*2);
+      return a+sal; // Mensual
+    },0);
+  })();
+  const total=totalMensual;
   const ds='background:#e2e8f0;color:#adb5bd;cursor:not-allowed;border:1px solid #dee2e6';
   const pagos=(DB.nominaPagos||[]);
   const pagosFilt=mesFiltro?pagos.filter(p=>p.mes===mesFiltro):pagos;
@@ -1975,6 +2144,7 @@ function renderNomina(){
         `:`
           <button id="nom-btn-elim-pago" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('eliminar-pago')">🗑 Eliminar Pago</button>
           <button id="nom-btn-edit-pago" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('editar-pago')">✏️ Editar Pago</button>
+          <button id="nom-btn-recibo" disabled class="btn btn-sm" style="${ds}" onclick="nomAccion('recibo')">🧾 Recibo</button>
           <button class="btn btn-secondary btn-sm" onclick="imprimirPagosNomina()">📄 PDF Pagos</button>
         `}
       </div>
@@ -2060,10 +2230,9 @@ function selNomPago(id,tr){
   nomPagoSelectedId=id;
   document.querySelectorAll('#nom-pago-tbl tbody tr').forEach(r=>r.style.background='');
   if(tr)tr.style.background='#e8f0fe';
-  const b=document.getElementById('nom-btn-elim-pago');
-  if(b){b.disabled=false;b.style.cssText='';}
-  const be=document.getElementById('nom-btn-edit-pago');
-  if(be){be.disabled=false;be.style.cssText='';}
+  ['nom-btn-elim-pago','nom-btn-edit-pago','nom-btn-recibo'].forEach(bid=>{
+    const b=document.getElementById(bid);if(b){b.disabled=false;b.style.cssText='';}
+  });
 }
 function nomAccion(accion){
   if(accion==='eliminar-pago'){
@@ -2071,6 +2240,13 @@ function nomAccion(accion){
     if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar pagos','error');return;}
     DB.nominaPagos=(DB.nominaPagos||[]).filter(p=>p.id!==nomPagoSelectedId);
     sDB('nominaPagos');nomPagoSelectedId=null;toast('Pago eliminado','success');renderNomina();return;
+  }
+  if(accion==='recibo'){
+    if(!nomPagoSelectedId){toast('Selecciona un pago','error');return;}
+    const p=(DB.nominaPagos||[]).find(x=>x.id===nomPagoSelectedId);
+    if(!p)return;
+    imprimirReciboNomina(p);
+    return;
   }
   if(accion==='editar-pago'){
     if(!nomPagoSelectedId){toast('Selecciona un pago','error');return;}
@@ -2080,7 +2256,7 @@ function nomAccion(accion){
     const emp=DB.nomina.find(e=>e.id===p.empleadoId);
     openModal('✏️ Editar Pago — '+escHtml(emp?.nombre||p.empleadoNombre||''),`
       <div class="form-field"><label>Fecha</label><input type="date" id="ep-fecha" value="${p.fecha||''}"></div>
-      <div class="form-field"><label>Monto</label><input type="number" id="ep-monto" value="${p.monto||0}" step="0.01" min="0"></div>
+      <div class="form-field"><label>Monto</label><input type="text" id="ep-monto" value="${p.monto||0}"  min="0" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)"></div>
       <div class="form-field"><label>Tipo</label><select id="ep-tipo">
         ${[['MEN','Mensual'],['1Q','1ra Quincena'],['2Q','2da Quincena'],['SEM','Semanal'],['COM','Comisión']].map(([v,l])=>`<option value="${v}" ${p.tipo===v?'selected':''}>${l}</option>`).join('')}
       </select></div>
@@ -2100,7 +2276,7 @@ function nomAccion(accion){
 }
 function guardarEditPagoNomina(pid){
   const fecha=document.getElementById('ep-fecha')?.value;
-  const monto=parseFloat(document.getElementById('ep-monto')?.value||0);
+  const monto=parseFloat((document.getElementById('ep-monto')?.value||'0').replace(/,/g,''));
   const tipo=document.getElementById('ep-tipo')?.value||'MEN';
   const nota=document.getElementById('ep-nota')?.value?.trim()||'';
   if(!fecha){toast('La fecha es requerida','error');return;}
@@ -2130,7 +2306,7 @@ function registrarPagoNomina(i){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto</label>
-        <input type="number" id="np-monto" value="${(salario).toFixed(2)}" step="0.01">
+        <input type="text" id="np-monto" value="${(salario).toFixed(2)}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" >
       </div>
       <div class="form-field"><label>Cuenta</label>
         <select id="np-cuenta">${(DB.config.cuentas||['Caja General']).map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
@@ -2147,7 +2323,7 @@ function calcMontoNomina(salario){
   if(inp)inp.value=fmtMoneyDisplay(m);
 }
 function guardarPagoNomina(i){
-  const monto=parseFloat(document.getElementById('np-monto').value||0);
+  const monto=parseFloat((document.getElementById('np-monto').value||'0').replace(/,/g,''));
   if(!monto){toast('Ingresa el monto','error');return;}
   const e=DB.nomina[i];
   const mes=document.getElementById('np-mes').value;
@@ -2179,6 +2355,9 @@ function imprimirPagosNomina(){
     '</tbody></table><div style="font-weight:bold;margin-top:12px">Total: RD$ '+total.toLocaleString('es-DO',{minimumFractionDigits:2})+'</div>'+
     '<br><button onclick="window.print()">Imprimir</button></body></html>');
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 
@@ -2556,16 +2735,16 @@ function nuevoEmpleado(){
   openModal('Nuevo Empleado',`
     <div class="form-row c2"><div class="form-field"><label class="required">Nombre Completo</label><input type="text" id="e-nombre"></div><div class="form-field"><label>Cargo / Función</label><input type="text" id="e-cargo"></div></div>
     <div class="form-row c3"><div class="form-field"><label>Documento (Cédula)</label><input type="text" id="e-doc" maxlength="13" placeholder="000-0000000-0" oninput="fmtCedulaInput(this)"></div><div class="form-field"><label>Teléfono</label><input type="text" id="e-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div><div class="form-field"><label>Fecha Ingreso</label><input type="date" id="e-ingreso" value="${today()}"></div></div>
-    <div class="form-row c3"><div class="form-field"><label>Forma de Pago</label><select id="e-pago"><option>Mensual</option><option>Quincenal</option><option>Semanal</option></select></div><div class="form-field"><label class="required">Salario Base</label><input type="number" id="e-salario" step="0.01"></div><div class="form-field"><label>Estado</label><select id="e-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select></div></div>
+    <div class="form-row c3"><div class="form-field"><label>Forma de Pago</label><select id="e-pago"><option>Mensual</option><option>Quincenal</option><option>Semanal</option></select></div><div class="form-field"><label class="required">Salario Base</label><input type="text" id="e-salario" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" ></div><div class="form-field"><label>Estado</label><select id="e-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select></div></div>
     <div class="form-row c2">
-      <div class="form-field"><label>📷 Doc. Frente</label><input type="file" id="e-doc-f" accept="image/*" onchange="previewFoto('e-doc-f','e-doc-f-prev')"><img id="e-doc-f-prev" style="display:none;width:100%;max-height:80px;object-fit:cover;border-radius:4px;margin-top:4px"></div>
-      <div class="form-field"><label>📷 Doc. Dorso</label><input type="file" id="e-doc-d" accept="image/*" onchange="previewFoto('e-doc-d','e-doc-d-prev')"><img id="e-doc-d-prev" style="display:none;width:100%;max-height:80px;object-fit:cover;border-radius:4px;margin-top:4px"></div>
+      <div class="form-field"><label>📷 Doc. Frente</label><input type="file" id="e-doc-f" accept=".jpg,.jpeg,.png" onchange="previewFoto('e-doc-f','e-doc-f-prev')"><img id="e-doc-f-prev" style="display:none;width:100%;max-height:80px;object-fit:cover;border-radius:4px;margin-top:4px"></div>
+      <div class="form-field"><label>📷 Doc. Dorso</label><input type="file" id="e-doc-d" accept=".jpg,.jpeg,.png" onchange="previewFoto('e-doc-d','e-doc-d-prev')"><img id="e-doc-d-prev" style="display:none;width:100%;max-height:80px;object-fit:cover;border-radius:4px;margin-top:4px"></div>
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarEmpleado()">💾 Guardar</button>`);
 }
 function guardarEmpleado(idx){
   const nombre=document.getElementById('e-nombre').value.trim();
-  const salario=parseFloat(document.getElementById('e-salario').value||0);
+  const salario=parseFloat((document.getElementById('e-salario').value||'0').replace(/,/g,''));
   if(!nombre||!salario){toast('Nombre y salario son requeridos','error');return;}
   const fEl=document.getElementById('e-doc-f-prev');const dEl=document.getElementById('e-doc-d-prev');
   const activoVal=document.getElementById('e-activo')?.value;
@@ -2577,7 +2756,7 @@ function editarEmpleado(i){
   const e=DB.nomina[i];
   openModal('Editar Empleado',`
     <div class="form-row c2"><div class="form-field"><label class="required">Nombre</label><input type="text" id="e-nombre" value="${escHtml(e.nombre||'')}"></div><div class="form-field"><label>Cargo</label><input type="text" id="e-cargo" value="${escHtml(e.cargo||'')}"></div></div>
-    <div class="form-row c3"><div class="form-field"><label>Fecha Inicio</label><input type="date" id="e-ingreso" value="${e.fechaIngreso||today()}"></div><div class="form-field"><label>Forma de Pago</label><select id="e-pago">${['Mensual','Quincenal','Semanal'].map(p=>`<option ${p===e.formaPago?'selected':''}>${p}</option>`).join('')}</select></div><div class="form-field"><label class="required">Salario</label><input type="number" id="e-salario" value="${e.salario||0}" step="0.01"></div></div>
+    <div class="form-row c3"><div class="form-field"><label>Fecha Inicio</label><input type="date" id="e-ingreso" value="${e.fechaIngreso||today()}"></div><div class="form-field"><label>Forma de Pago</label><select id="e-pago">${['Mensual','Quincenal','Semanal'].map(p=>`<option ${p===e.formaPago?'selected':''}>${p}</option>`).join('')}</select></div><div class="form-field"><label class="required">Salario</label><input type="text" id="e-salario" value="${e.salario||0}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" ></div></div>
     <div class="form-field"><label>Teléfono</label><input type="text" id="e-tel" value="${escHtml(e.telefono||'')}" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarEmpleado(${i})">💾 Actualizar</button>`);
 }
@@ -2603,6 +2782,8 @@ function guardarUsuario(idx){
   sDB('users');
   if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
   closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
+  // Aplicar permisos de navegación inmediatamente (ocultar/mostrar módulos en sidebar)
+  aplicarPermisosNav();
   // Re-renderizar página activa para que permisos apliquen de inmediato
   const _ap2=document.querySelector('.page.active');
   if(_ap2){
@@ -2659,6 +2840,9 @@ function exportarSuplidoresPDF(tabActivo){
   <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Guardar PDF</button></div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ EXPORTAR PDF — CAJA ══
@@ -2713,6 +2897,9 @@ function exportarCajaPDF(){
   <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Guardar PDF</button></div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ EXPORTAR PDF — CUMPLEAÑOS ══
@@ -2762,6 +2949,9 @@ function exportarCumplePDF(){
   <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Guardar PDF</button></div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ MÓDULO BACKUP ══
@@ -3216,6 +3406,9 @@ function exportarAlertasPDF(){
   <div style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir PDF</button></div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function guardarPermisosUsuarioConfig(i){
@@ -3238,6 +3431,8 @@ function guardarPermisosUsuarioConfig(i){
   sDB('users');
   toast(`Usuario ${escHtml(u.nombre)} actualizado ✓`,'success');
   if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
+  // Aplicar permisos de navegación inmediatamente (ocultar/mostrar módulos en sidebar)
+  aplicarPermisosNav();
   // Re-renderizar página activa para reflejar permisos inmediatamente
   const _ap=document.querySelector('.page.active');
   if(_ap){
@@ -3279,7 +3474,7 @@ function renderConfig(){
           <div style="display:flex;gap:10px;align-items:center">
             ${c.logoData?`<img src="${c.logoData}" style="width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid var(--gray3);background:#f8fafc" id="cf-logo-preview">`:'<div id="cf-logo-preview" style="width:64px;height:64px;border-radius:8px;border:2px dashed var(--gray3);display:flex;align-items:center;justify-content:center;color:var(--gray);font-size:24px">🏢</div>'}
             <div>
-              <input type="file" id="cf-logo-file" accept="image/*" style="display:none" onchange="cargarLogoConfig(this)">
+              <input type="file" id="cf-logo-file" accept=".jpg,.jpeg,.png" style="display:none" onchange="cargarLogoConfig(this)">
               <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cf-logo-file').click()">📷 Subir Logo</button>
               ${c.logoData?`<button class="btn btn-red btn-sm" style="margin-top:4px" onclick="DB.config.logoData='';sDB('config');renderConfig();toast('Logo eliminado','success')">🗑 Quitar</button>`:''}
             </div>
@@ -3296,7 +3491,7 @@ function renderConfig(){
       <div class="form-row c2"><div class="form-field"><label>Moneda</label><select id="cf-moneda"><option value="RD$" ${c.moneda==='RD$'?'selected':''}>RD$ - Pesos Dominicanos</option><option value="USD" ${c.moneda==='USD'?'selected':''}>USD - Dólares US</option></select></div></div>
       <div class="form-row c2">
         <div class="form-field"><label>Prefijo Código de Vehículo</label><input type="text" id="cf-prefijo" value="${escHtml(c.prefijoCodigo||'')}" placeholder="Se toma del nombre del negocio" maxlength="5"><div style="font-size:11px;color:var(--gray);margin-top:4px">Ej: F → F-001 | Vacío = primera letra del negocio</div></div>
-        <div class="form-field"><label>Tasa de Cambio (RD$ por 1 USD)</label><input type="number" id="cf-tasa" value="${c.tasaCambio||60}" step="0.01"></div>
+        
       </div>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarInfoNegocio()">💾 Guardar</button></div>
     </div>
@@ -3803,7 +3998,7 @@ function guardarInfoNegocio(){
   c.moneda=document.getElementById('cf-moneda')?.value||'RD$';
   c.rnc=document.getElementById('cf-rnc')?.value||'';
   c.prefijoCodigo=document.getElementById('cf-prefijo')?.value.trim()||'';
-  c.tasaCambio=parseFloat(document.getElementById('cf-tasa')?.value||60);
+  
   sDB('config');
   const emp=document.getElementById('topbar-empresa');
   if(emp&&c.empresa)emp.textContent=c.empresa;
@@ -3899,7 +4094,7 @@ function guardarConfig(){
   DB.config.moneda=document.getElementById('cf-moneda').value;
   DB.config.rnc=document.getElementById('cf-rnc').value;
   DB.config.prefijoCodigo=document.getElementById('cf-prefijo').value.trim();
-  DB.config.tasaCambio=parseFloat(document.getElementById('cf-tasa').value||60);
+  
   DB.config.responsable=document.getElementById('cf-responsable')?.value.trim()||'';
   DB.config.observacionRecibo=document.getElementById('cf-obs-recibo')?.value.trim()||'';
   const props=[];document.querySelectorAll('[id^="cf-prop-"]').forEach(inp=>{const v=inp.value.trim();if(v)props.push(v);});DB.config.propietarios=props;
@@ -3999,6 +4194,9 @@ function exportarInventarioPDF(){
   veh.map(v=>{const sc={ACTIVO:'green',VENDIDO:'blue',ADUANA:'amber','TRÁNSITO':'purple'};return'<tr><td style="font-family:monospace">'+escHtml(v.codigo||'—')+'</td><td>'+escHtml(v.marca)+' '+escHtml(v.modelo)+'</td><td>'+(v.anio||'—')+'</td><td>'+escHtml(v.color||'—')+'</td><td style="font-size:10px">'+escHtml(v.vin||'—')+'</td><td>'+escHtml(v.propietario||'—')+'</td><td>'+(v.tipoCompra==='IMPORTACION'?'Importación':v.tipoCompra==='LOCAL'?'Compra Local':'Recibido')+'</td><td><span class="bg '+(sc[v.status]||'gray')+'">'+(v.status||'—')+'</span></td></tr>';}).join('')+
   '</tbody></table><div class="noprint" style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / PDF</button></div></body></html>');
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ GASTOS DE VEHÍCULO MÓDULO GLOBAL ══
@@ -4008,10 +4206,25 @@ function renderGastosVeh(){
   const filtroVeh=document.getElementById('gveh-filtro-veh')?.value||'';
   const filtroSup=document.getElementById('gveh-filtro-sup')?.value||'';
   const filtroStatus=document.getElementById('gveh-filtro-status')?.value||'';
+  const filtroDesde=document.getElementById('gveh-filtro-desde')?.value||'';
+  const filtroHasta=document.getElementById('gveh-filtro-hasta')?.value||'';
+  const filtroChasis=document.getElementById('gveh-filtro-chasis')?.value?.toLowerCase()||'';
   let gastos=DB.gastosVehiculos||[];
   if(filtroVeh)gastos=gastos.filter(g=>g.vehiculoId===filtroVeh);
   if(filtroSup)gastos=gastos.filter(g=>g.suplidor===filtroSup);
   if(filtroStatus)gastos=gastos.filter(g=>(g.statusGasto||'PENDIENTE')===filtroStatus);
+  if(filtroDesde)gastos=gastos.filter(g=>g.fecha>=filtroDesde);
+  if(filtroHasta)gastos=gastos.filter(g=>g.fecha<=filtroHasta);
+  if(filtroChasis){
+    gastos=gastos.filter(g=>{
+      const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+      const vin=(v?.vin||g.vin||'').toLowerCase();
+      const cod=(v?.codigo||g.codigo||'').toLowerCase();
+      const marca=(v?.marca||'').toLowerCase();
+      const modelo=(v?.modelo||'').toLowerCase();
+      return vin.includes(filtroChasis)||cod.includes(filtroChasis)||marca.includes(filtroChasis)||modelo.includes(filtroChasis);
+    });
+  }
   // Separar por moneda
   const gastosRD=gastos.filter(g=>(g.moneda||'RD$')==='RD$');
   const gastosUSD=gastos.filter(g=>g.moneda==='USD');
@@ -4031,6 +4244,7 @@ function renderGastosVeh(){
     <div class="page-header">
       <div><h1>💸 Gastos de Vehículo</h1><p>${gastos.length} registro(s) — Pendiente RD$: <strong style="color:var(--red)">${pendRD.toLocaleString('es-DO',{minimumFractionDigits:2})} | USD: $${pendUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</strong></p></div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="abrirHojaCostosVeh()">📄 Hoja de Costos</button>
         <button id="gveh-btn-pagar" disabled class="btn btn-sm btn-green" style="${ds}" onclick="gvehAccion('pagar')">💵 Registrar Pago</button>
         ${(currentUser?.role==='admin'||canDo('editar')||canDo('eliminar'))?`${(currentUser?.role==='admin'||canDo('editar'))?`<button id="gveh-btn-editar" disabled class="btn btn-sm" style="${ds}" onclick="gvehAccion('editar')">✏️ Editar</button>`:''} ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button id="gveh-btn-eliminar" disabled class="btn btn-sm" style="${ds}" onclick="gvehAccion('eliminar')">🗑 Eliminar</button>`:''}`:''}
         <button class="btn btn-primary" onclick="nuevoGastoVeh()">➕ Nuevo Gasto</button>
@@ -4038,19 +4252,20 @@ function renderGastosVeh(){
     </div>
 
     <div class="card" style="margin-bottom:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+      <!-- FILA 1: Campos de búsqueda principal -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:flex-end;margin-bottom:12px">
         <div style="display:flex;flex-direction:column;gap:4px">
           <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Vehículo</label>
           <select id="gveh-filtro-veh" onchange="renderGastosVeh()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
             <option value="">Todos los vehículos</option>
-            ${DB.vehiculos.filter(v=>v.status!=='VENDIDO').map(v=>`<option value="${v.id}" ${v.id===filtroVeh?'selected':''}>${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)}</option>`).join('')}
+            ${DB.vehiculos.map(v=>`<option value="${v.id}" ${v.id===filtroVeh?'selected':''}}>${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio||''} ${v.status==='VENDIDO'?'(VENDIDO)':''}</option>`).join('')}
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Suplidor (Vehículos)</label>
           <select id="gveh-filtro-sup" onchange="renderGastosVeh()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
             <option value="">Todos los suplidores</option>
-            ${DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo').map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')===filtroSup?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
+            ${DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')=='vehiculo').map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(s.empresa||s.nombre||'')==filtroSup?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
           </select>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
@@ -4062,12 +4277,26 @@ function renderGastosVeh(){
             <option value="PAGADO" ${filtroStatus==='PAGADO'?'selected':''}>Pagado</option>
           </select>
         </div>
-        <div style="display:flex;gap:8px;align-items:flex-end">
-          <button class="btn btn-secondary btn-sm" onclick="exportarGastosVehPDF()" style="width:100%">📄 Exportar PDF</button>
+
+      </div>
+      <!-- FILA 2: Fechas + Chasis + Botones -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:12px;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Desde</label>
+          <input type="date" id="gveh-filtro-desde" value="${filtroDesde}" onchange="renderGastosVeh()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
         </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Hasta</label>
+          <input type="date" id="gveh-filtro-hasta" value="${filtroHasta}" onchange="renderGastosVeh()" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray)">Buscar por Chasis/VIN</label>
+          <input type="text" id="gveh-filtro-chasis" placeholder="Ej: 1HGBH41JXMN109186" value="${filtroChasis}" oninput="gvehFiltroChasisInput(this.value)" style="padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="limpiarFiltrosGVeh()" title="Limpiar filtros" style="padding:8px 14px;height:36px">🔄</button>
+        <div></div>
       </div>
     </div>
-
     <!-- RESUMEN POR MONEDA -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
       <div class="card" style="margin-bottom:0;border-top:3px solid var(--green)">
@@ -4097,8 +4326,8 @@ function renderGastosVeh(){
           <th>Vehículo</th>
           <th>Suplidor</th>
           <th>Tipo de Gasto</th>
-          <th>Moneda</th>
           <th>Banco / Cuenta</th>
+          <th>No. Factura</th>
           <th>Factura</th>
           <th>Abonado</th>
           <th>Pendiente</th>
@@ -4118,8 +4347,8 @@ function renderGastosVeh(){
             <td style="font-size:12px;font-weight:600">${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td>
             <td style="font-size:12px">${escHtml(g.suplidor||'—')}</td>
             <td><span class="badge badge-amber" style="font-size:11px">${escHtml(g._origen==='manual'?(g.descripcion||g.tipo||'—'):g.tipo||'—')}</span></td>
-            <td><span class="badge badge-blue" style="font-size:11px">${g.moneda||'RD$'}</span></td>
             <td style="font-size:12px">${escHtml(g.cuenta||'—')}</td>
+            <td style="font-size:12px;font-family:monospace">${escHtml(g.nroFactura||'—')}</td>
             <td style="font-weight:700;color:var(--navy)">${g.moneda==='USD'?'$'+parseFloat(g.montoFactura||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(g.montoFactura||0)}</td>
             <td style="color:var(--green);font-weight:600">${g.moneda==='USD'?'$'+parseFloat(g.montoPagado||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(g.montoPagado||0)}</td>
             <td style="font-weight:700;color:${parseFloat(g.montoPendiente||0)>0?'var(--red)':'var(--green)'}">${g.moneda==='USD'?'$'+parseFloat(g.montoPendiente||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(g.montoPendiente||0)}</td>
@@ -4176,7 +4405,11 @@ function nuevoGastoVeh(){
           <option value="USD">USD — Dólares</option>
         </select>
       </div>
-      <!-- Tasa interna: se usa DB.config.tasaCambio, no se muestra al usuario -->
+      <div class="form-field" id="ngv-tasa-wrap" style="display:none">
+        <label class="required">💱 Tasa del Día (RD$ x 1 USD)</label>
+        <input type="text" id="ngv-tasa" value="${DB.config.tasaCambio||60}" placeholder="Ej: 60.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)">
+        <div style="font-size:11px;color:var(--gray);margin-top:3px">Se usará para calcular el equivalente en pesos</div>
+      </div>
     </div>
     <div class="form-row c2" id="ngv-banco-wrap">
       <div class="form-field"><label class="required">Banco</label>
@@ -4198,10 +4431,13 @@ function nuevoGastoVeh(){
         <input type="text" id="ngv-abono" value="0" oninput="fmtMoneyInput(this);calcPendienteGVeh()" placeholder="0.00">
       </div>
       <div class="form-field"><label>Pendiente</label>
-        <input type="number" id="ngv-pendiente" value="0" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
+        <input type="text" id="ngv-pendiente" value="0" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
       </div>
     </div>
-    <div class="form-row c2">
+    <div class="form-row c3">
+      <div class="form-field"><label>No. Factura</label>
+        <input type="text" id="ngv-nrofactura" placeholder="Ej: FAC-0001">
+      </div>
       <div class="form-field"><label>Fecha</label>
         <input type="date" id="ngv-fecha" value="${today()}">
       </div>
@@ -4214,7 +4450,9 @@ function nuevoGastoVeh(){
 }
 
 function toggleGVehMoneda(){
-  // Tasa interna, no se muestra al usuario
+  const moneda=document.getElementById('ngv-moneda')?.value;
+  const tasaWrap=document.getElementById('ngv-tasa-wrap');
+  if(tasaWrap)tasaWrap.style.display=moneda==='USD'?'':'none';
 }
 function actualizarCuentasNGV(){
   const bancoEl=document.getElementById('ngv-banco');
@@ -4254,7 +4492,8 @@ function guardarNuevoGastoVeh(){
   const abono=parseFloat((document.getElementById('ngv-abono').value||'0').replace(/,/g,''));
   const pendiente=factura-abono;
   const moneda=document.getElementById('ngv-moneda').value;
-  const tasaUsada=parseFloat(DB.config.tasaCambio||60);
+  const moneda2=document.getElementById('ngv-moneda').value;
+  const tasaUsada=moneda2==='USD'?parseFloat((document.getElementById('ngv-tasa')?.value||DB.config.tasaCambio||60).toString().replace(/,/g,'')):parseFloat(DB.config.tasaCambio||60);
   const bancoVal=document.getElementById('ngv-banco')?.value||'';
   const cuentaVal=document.getElementById('ngv-cuenta')?.value||'';
   const _vRef=DB.vehiculos.find(x=>x.id===vid);
@@ -4275,6 +4514,7 @@ function guardarNuevoGastoVeh(){
     montoPendiente:pendiente,
     fecha:document.getElementById('ngv-fecha').value,
     fechaPago:document.getElementById('ngv-fechapago').value,
+    nroFactura:document.getElementById('ngv-nrofactura')?.value||'',
     statusGasto:pendiente<=0?'PAGADO':abono>0?'ABONADO':'PENDIENTE'
   };
   if(!DB.gastosVehiculos)DB.gastosVehiculos=[];
@@ -4308,7 +4548,7 @@ function abonarGastoVeh(gid){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto a Pagar</label>
-        <input type="number" id="abgv-monto" value="${g.montoPendiente||0}" step="0.01" max="${g.montoPendiente||0}">
+        <input type="text" id="abgv-monto" value="${g.montoPendiente||0}"  max="${g.montoPendiente||0}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)">
       </div>
       <div class="form-field"><label>Cuenta de Salida</label>
         <select id="abgv-cuenta">${cuentas.map(c=>`<option ${c===g.cuenta?'selected':''}>${escHtml(c)}</option>`).join('')}</select>
@@ -4324,7 +4564,7 @@ function abonarGastoVeh(gid){
 }
 
 function confirmarAbonoGastoVeh(i){
-  const monto=parseFloat(document.getElementById('abgv-monto').value||0);
+  const monto=parseFloat((document.getElementById('abgv-monto').value||'0').replace(/,/g,''));
   if(!monto||monto<=0){toast('Ingresa un monto válido','error');return;}
   const g=DB.gastosVehiculos[i];
   if(monto>parseFloat(g.montoPendiente||0)){toast('El monto no puede superar el pendiente','error');return;}
@@ -4377,7 +4617,11 @@ function editarGastoVeh(gid){
       </div>
     <div class="form-row c3">
       <div class="form-field"><label>Moneda</label>
-        <select id="egv-moneda"><option value="RD$" ${(g.moneda||'RD$')==='RD$'?'selected':''}>RD$</option><option value="USD" ${g.moneda==='USD'?'selected':''}>USD</option></select>
+        <select id="egv-moneda" onchange="document.getElementById('egv-tasa-wrap').style.display=this.value==='USD'?'':'none'"><option value="RD$" ${(g.moneda||'RD$')==='RD$'?'selected':''}>RD$</option><option value="USD" ${g.moneda==='USD'?'selected':''}>USD</option></select>
+      </div>
+      <div class="form-field" id="egv-tasa-wrap" style="${g.moneda==='USD'?'':'display:none'}">
+        <label>💱 Tasa del Día (RD$ x 1 USD)</label>
+        <input type="text" id="egv-tasa" value="${g.tasaCambio||DB.config.tasaCambio||60}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)">
       </div>
       <div class="form-field"><label>Cuenta Salida</label>
         <select id="egv-cuenta">${cuentas.map(c=>`<option ${c===g.cuenta?'selected':''}>${escHtml(c)}</option>`).join('')}</select>
@@ -4387,8 +4631,11 @@ function editarGastoVeh(gid){
       </div>
     </div>
     <div class="form-row c3">
+      <div class="form-field"><label>No. Factura</label>
+        <input type="text" id="egv-nrofactura" value="${escHtml(g.nroFactura||'')}" placeholder="Ej: FAC-0001">
+      </div>
       <div class="form-field"><label>Monto Factura</label>
-        <input type="number" id="egv-factura" value="${g.montoFactura||0}" step="0.01">
+        <input type="text" id="egv-factura" value="${g.montoFactura||0}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" >
       </div>
       <div class="form-field"><label>Monto Pagado</label>
         <input type="number" id="egv-pagado" value="${g.montoPagado||0}" step="0.01">
@@ -4403,8 +4650,8 @@ function editarGastoVeh(gid){
 
 function guardarEditGastoVeh(i){
   if(currentUser?.role!=='admin'){toast('Solo el administrador puede editar','error');return;}
-  const factura=parseFloat(document.getElementById('egv-factura').value||0);
-  const pagado=parseFloat(document.getElementById('egv-pagado').value||0);
+  const factura=parseFloat((document.getElementById('egv-factura').value||'0').replace(/,/g,''));
+  const pagado=parseFloat((document.getElementById('egv-pagado').value||'0').replace(/,/g,''));
   const pendiente=factura-pagado;
   const egvVid=document.getElementById('egv-veh')?.value||DB.gastosVehiculos[i].vehiculoId;
   if(egvVid){
@@ -4415,9 +4662,13 @@ function guardarEditGastoVeh(i){
   DB.gastosVehiculos[i].suplidor=document.getElementById('egv-sup').value;
   DB.gastosVehiculos[i].tipo=document.getElementById('egv-tipo').value;
   DB.gastosVehiculos[i].moneda=document.getElementById('egv-moneda').value;
+  if(DB.gastosVehiculos[i].moneda==='USD'){
+    DB.gastosVehiculos[i].tasaCambio=parseFloat((document.getElementById('egv-tasa')?.value||DB.config.tasaCambio||60).toString().replace(/,/g,''));
+  }
   DB.gastosVehiculos[i].cuenta=document.getElementById('egv-cuenta').value;
   DB.gastosVehiculos[i].fecha=document.getElementById('egv-fecha').value;
   DB.gastosVehiculos[i].fechaPago=document.getElementById('egv-fechapago').value;
+  DB.gastosVehiculos[i].nroFactura=document.getElementById('egv-nrofactura')?.value||'';
   DB.gastosVehiculos[i].montoFactura=factura;
   DB.gastosVehiculos[i].montoPagado=pagado;
   DB.gastosVehiculos[i].montoPendiente=pendiente<=0?0:pendiente;
@@ -4469,6 +4720,220 @@ function gvehAccion(accion){
   if(accion==='pagar')abonarGastoVeh(gvehSelectedId);
   else if(accion==='editar'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}else if(accion==='editar')editarGastoVeh(gvehSelectedId);
   else if(accion==='eliminar'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}else if(accion==='eliminar')eliminarGastoVeh(gvehSelectedId);
+}
+
+function limpiarFiltrosGVeh(){
+  ['gveh-filtro-veh','gveh-filtro-sup','gveh-filtro-status','gveh-filtro-desde','gveh-filtro-hasta','gveh-filtro-chasis'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  renderGastosVeh();
+}
+let _gvehChasisTimer=null;
+function gvehFiltroChasisInput(val){
+  clearTimeout(_gvehChasisTimer);
+  _gvehChasisTimer=setTimeout(()=>renderGastosVeh(),300);
+}
+
+function abrirHojaCostosVeh(){
+  // Modal para seleccionar vehículo y tasa
+  const opcionesVeh=DB.vehiculos.map(v=>`<option value="${v.id}">${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+' '+(v.anio||''))}</option>`).join('');
+  openModal('📄 Hoja de Costos — Seleccionar Vehículo',`
+    <div class="form-field" style="margin-bottom:12px">
+      <label>Buscar vehículo por cualquier dato</label>
+      <input type="text" id="hc-buscar" placeholder="Chasis, código, marca, modelo..." oninput="filtrarHCVeh(this.value)" style="margin-bottom:8px">
+      <select id="hc-veh" size="6" style="width:100%;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px;padding:4px">
+        ${opcionesVeh}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Tasa de cambio del día (RD$ x 1 USD)</label>
+      <input type="number" id="hc-tasa" value="${DB.config.tasaCambio||60}" step="0.01" placeholder="60.00">
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="generarHojaCostosVeh()">📄 Generar Hoja</button>`);
+}
+
+function filtrarHCVeh(q){
+  const sel=document.getElementById('hc-veh');if(!sel)return;
+  const lq=q.toLowerCase();
+  Array.from(sel.options).forEach(opt=>{
+    const v=DB.vehiculos.find(x=>x.id===opt.value);
+    if(!v){opt.style.display='';return;}
+    const hay=(v.codigo||'').toLowerCase().includes(lq)||(v.marca||'').toLowerCase().includes(lq)||(v.modelo||'').toLowerCase().includes(lq)||(v.vin||'').toLowerCase().includes(lq)||(v.anio||'').toString().includes(lq)||(v.placa||'').toLowerCase().includes(lq);
+    opt.style.display=hay?'':'none';
+  });
+}
+
+function generarHojaCostosVeh(){
+  const vid=document.getElementById('hc-veh')?.value;
+  if(!vid){toast('Selecciona un vehículo','error');return;}
+  const tasa=parseFloat(document.getElementById('hc-tasa')?.value||60);
+  closeModal();
+  _imprimirHojaCostosVeh(vid,tasa);
+}
+
+function _imprimirHojaCostosVeh(vid,tasa){
+  const v=DB.vehiculos.find(x=>x.id===vid);
+  if(!v){toast('Vehículo no encontrado','error');return;}
+  const gastos=(DB.gastosVehiculos||[]).filter(g=>g.vehiculoId===vid);
+  const empresa=DB.config.empresa||'';
+  const logo=DB.config.logoData||'';
+  const rnc=DB.config.rnc||'';
+  const tel=DB.config.telefono||'';
+  const dir=DB.config.direccion||'';
+  const gastosRD=gastos.filter(g=>(g.moneda||'RD$')==='RD$');
+  const gastosUSD=gastos.filter(g=>g.moneda==='USD');
+  const totRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const pagRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const pendRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const totUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const pagUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const pendUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
+  const totGenRD=totRD+(totUSD*tasa);
+  const pendGenRD=pendRD+(pendUSD*tasa);
+  const fmtN=(n,usd)=>usd?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2}):parseFloat(n||0).toLocaleString('es-DO',{minimumFractionDigits:2});
+  const fechaCorta=(f)=>{if(!f)return'—';const p=f.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0].slice(2):f;};
+  const filaGasto=(g,esUSD)=>{
+    const sc={PAGADO:'#dcfce7|#16a34a',ABONADO:'#fef3c7|#d97706',PENDIENTE:'#fee2e2|#dc2626'};
+    const [bg,col]=(sc[g.statusGasto||'PENDIENTE']||'#fee2e2|#dc2626').split('|');
+    return `<tr>
+      <td style="white-space:nowrap">${fechaCorta(g.fecha)}</td>
+      <td>${escHtml(g.tipo||'—')}</td>
+      <td>${escHtml(g.suplidor||'—')}</td>
+      <td>${escHtml(g.nroFactura||'—')}</td>
+      <td style="text-align:right;font-weight:700">${fmtN(g.montoFactura,esUSD)}</td>
+      <td style="text-align:right;color:#16a34a;font-weight:600">${fmtN(g.montoPagado,esUSD)}</td>
+      <td style="text-align:right;font-weight:700;color:#dc2626">${fmtN(g.montoPendiente,esUSD)}</td>
+      <td style="text-align:center"><span style="background:${bg};color:${col};padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${g.statusGasto||'PENDIENTE'}</span></td>
+    </tr>`;
+  };
+  const win=window.open('','_blank','width=1000,height=750');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hoja de Costos — ${escHtml(v.marca+' '+v.modelo)}</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;padding:14px 20px;font-size:11px;color:#0f172a;max-width:960px;margin:0 auto}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2563eb;padding-bottom:8px;margin-bottom:10px}
+    .company-name{font-size:20px;font-weight:900;color:#0f172a}
+    .title-hoja{font-size:24px;font-weight:900;color:#dc2626;text-align:right}
+    .veh-card{background:#0f172a;color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:12px}
+    .veh-card-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;color:#94a3b8}
+    .veh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .veh-field label{font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block;margin-bottom:3px}
+    .veh-field span{font-size:13px;font-weight:700;color:#fff}
+    .veh-cod{background:#2563eb;color:#fff;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:800}
+    table{width:100%;border-collapse:collapse;margin-top:4px;font-size:11px}
+    th{background:#0f172a;color:#fff;padding:5px 8px;text-align:left;font-size:10px;font-weight:700}
+    th:last-child,th:nth-last-child(2),th:nth-last-child(3){text-align:right}
+    td{padding:4px 8px;border-bottom:1px solid #e2e8f0;font-size:11px}
+    tr:nth-child(even){background:#f8fafc}
+    .section-title{background:#f1f5f9;border-left:4px solid #2563eb;padding:5px 10px;font-weight:800;font-size:12px;margin:10px 0 4px;border-radius:0 6px 6px 0}
+    .section-title.usd{border-left-color:#16a34a}
+    .subtotal-row{background:#e2e8f0!important;font-weight:800}
+    .resumen{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;margin-top:12px}
+    .res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+    .res-box{text-align:center;padding:12px;border-radius:8px;border:1px solid #e2e8f0;background:#fff}
+    .res-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:6px}
+    .res-val{font-size:17px;font-weight:900}
+    @media print{.noprint{display:none}body{padding:8px 12px}@page{size:letter portrait;margin:8mm}}
+  </style></head><body>
+  <div class="header">
+    <div>
+      ${logo?`<img src="${logo}" style="max-height:70px;max-width:180px;object-fit:contain;margin-bottom:8px;display:block">`:``}
+      <div class="company-name">${escHtml(empresa)}</div>
+      ${rnc?`<div style="font-size:11px;color:#475569">RNC: ${escHtml(rnc)}</div>`:''}
+      ${dir?`<div style="font-size:11px;color:#475569">${escHtml(dir)}</div>`:''}
+      ${tel?`<div style="font-size:11px;color:#475569">Tel: ${escHtml(tel)}</div>`:''}
+    </div>
+    <div style="text-align:right">
+      <div class="title-hoja">Hoja de Costos</div>
+      <div style="font-size:12px;color:#475569;margin-top:4px">Fecha: ${fmtDate(today())}</div>
+      <div style="font-size:12px;color:#475569">Tasa USD: RD$ ${tasa.toLocaleString('es-DO',{minimumFractionDigits:2})}</div>
+    </div>
+  </div>
+
+  <div class="veh-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="veh-card-title">🚗 Datos del Vehículo</div>
+      <span class="veh-cod">${escHtml(v.codigo||'—')}</span>
+    </div>
+    <div class="veh-grid">
+      <div class="veh-field"><label>Marca</label><span>${escHtml(v.marca||'—')}</span></div>
+      <div class="veh-field"><label>Modelo</label><span>${escHtml(v.modelo||'—')}</span></div>
+      <div class="veh-field"><label>Año</label><span>${escHtml(v.anio||'—')}</span></div>
+      <div class="veh-field"><label>Color</label><span>${escHtml(v.color||'—')}</span></div>
+      <div class="veh-field"><label>Chasis / VIN</label><span>${escHtml(v.vin||'—')}</span></div>
+      <div class="veh-field"><label>Estado</label><span style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px">${escHtml(v.status||'ACTIVO')}</span></div>
+    </div>
+  </div>
+
+  ${gastosRD.length>0?`
+  <div class="section-title">💰 Gastos en Pesos Dominicanos (RD$)</div>
+  <table>
+    <thead><tr><th>Fecha</th><th>Tipo de Gasto</th><th>Suplidor</th><th style="width:70px;font-size:10px">No. Fact.</th><th style="text-align:right">Factura</th><th style="text-align:right">Pagado</th><th style="text-align:right">Pendiente</th><th style="text-align:center">Estado</th></tr></thead>
+    <tbody>
+      ${gastosRD.map(g=>filaGasto(g,false)).join('')}
+      <tr class="subtotal-row">
+        <td colspan="4" style="text-align:right;font-size:11px;text-transform:uppercase">Subtotal RD$:</td>
+        <td style="text-align:right">${fmtN(totRD,false)}</td>
+        <td style="text-align:right;color:#16a34a">${fmtN(pagRD,false)}</td>
+        <td style="text-align:right;color:#dc2626">${fmtN(pendRD,false)}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>`:``}
+
+  ${gastosUSD.length>0?`
+  <div class="section-title usd">💵 Gastos en Dólares Americanos (USD)</div>
+  <table>
+    <thead><tr><th>Fecha</th><th>Tipo de Gasto</th><th>Suplidor</th><th style="width:70px;font-size:10px">No. Fact.</th><th style="text-align:right">Factura USD</th><th style="text-align:right">Pagado USD</th><th style="text-align:right">Pendiente USD</th><th style="text-align:center">Estado</th></tr></thead>
+    <tbody>
+      ${gastosUSD.map(g=>filaGasto(g,true)).join('')}
+      <tr class="subtotal-row">
+        <td colspan="4" style="text-align:right;font-size:11px;text-transform:uppercase">Subtotal USD:</td>
+        <td style="text-align:right">$${fmtN(totUSD,true)}</td>
+        <td style="text-align:right;color:#16a34a">$${fmtN(pagUSD,true)}</td>
+        <td style="text-align:right;color:#dc2626">$${fmtN(pendUSD,true)}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>`:``}
+
+  ${gastos.length===0?`<div style="text-align:center;padding:40px;color:#6b7280;border:2px dashed #e2e8f0;border-radius:10px;margin-top:16px">Sin gastos registrados para este vehículo</div>`:''}
+
+  <div class="resumen">
+    <div style="font-size:14px;font-weight:900;margin-bottom:4px">📊 RESUMEN DE COSTOS</div>
+    <div style="font-size:11px;color:#6b7280">${gastos.length} registro(s) — Tasa aplicada: RD$ ${tasa} x USD</div>
+    <div class="res-grid">
+      <div class="res-box">
+        <div class="res-label">Sub-Total RD$ (Pesos)</div>
+        <div class="res-val">${fmtN(totRD,false)}</div>
+        <div style="font-size:11px;color:#16a34a;margin-top:4px">Pagado: ${fmtN(pagRD,false)}</div>
+        ${pendRD>0?`<div style="font-size:11px;color:#dc2626">Pendiente: ${fmtN(pendRD,false)}</div>`:`<div style="font-size:11px;color:#16a34a">✅ Sin pendiente</div>`}
+      </div>
+      ${gastosUSD.length>0?`
+      <div class="res-box">
+        <div class="res-label">Sub-Total USD (Dólares)</div>
+        <div class="res-val" style="color:#2563eb">$${fmtN(totUSD,true)}</div>
+        <div style="font-size:11px;color:#16a34a;margin-top:4px">Pagado: $${fmtN(pagUSD,true)}</div>
+        ${pendUSD>0?`<div style="font-size:11px;color:#dc2626">Pendiente: $${fmtN(pendUSD,true)}</div>`:`<div style="font-size:11px;color:#16a34a">✅ Sin pendiente</div>`}
+        <div style="font-size:10px;color:#6b7280;margin-top:4px">≈ RD$ ${fmtN(totUSD*tasa,false)}</div>
+      </div>`:`<div class="res-box" style="background:#f8fafc"><div class="res-label">Gastos USD</div><div style="color:#6b7280;margin-top:8px">Sin gastos en USD</div></div>`}
+      <div class="res-box" style="background:#fef3c7;border-color:#d97706">
+        <div class="res-label" style="color:#d97706">TOTAL GENERAL RD$</div>
+        <div class="res-val" style="color:#d97706">${fmtN(totGenRD,false)}</div>
+        ${pendGenRD>0?`<div style="font-size:11px;color:#dc2626;margin-top:4px;font-weight:700">Pendiente: ${fmtN(pendGenRD,false)}</div>`:`<div style="font-size:11px;color:#16a34a;margin-top:4px">✅ Todo pagado</div>`}
+      </div>
+    </div>
+  </div>
+
+  <div class="noprint" style="margin-top:28px;text-align:center">
+    <button onclick="window.print()" style="padding:12px 32px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+  </div>
+  </body></html>`);
+  win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function exportarGastosVehPDF(){
@@ -4573,6 +5038,9 @@ function _generarPDFGastosVeh(gastos,tasa,filtroSup,filtroVeh,soloUnVeh){
   <div class="noprint" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="padding:10px 28px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button></div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ VENTAS ══
@@ -4916,7 +5384,7 @@ function nuevaVenta(){
         <div class="form-row c2" style="margin-bottom:0">
           <div class="form-field" style="margin:0"><label style="font-size:10px">Monto Recibido</label><input type="text" id="sv-rec-monto" placeholder="0.00" oninput="fmtMoneyInput(this);calcPend()"></div>
           <div class="form-field" style="margin:0"><label style="font-size:10px">Adjuntar Matrícula</label>
-            <input type="file" id="sv-rec-matricula" accept="image/*" onchange="previewFoto('sv-rec-matricula','sv-rec-mat-prev')">
+            <input type="file" id="sv-rec-matricula" accept=".jpg,.jpeg,.png" onchange="previewFoto('sv-rec-matricula','sv-rec-mat-prev')">
             <img id="sv-rec-mat-prev" style="display:none;width:100%;max-height:60px;object-fit:cover;border-radius:4px;margin-top:4px">
           </div>
         </div>
@@ -4966,6 +5434,26 @@ function registrarEntrega(ventaId){
   const veh=DB.vehiculos.find(x=>x.id===v.vehiculoId);
   const cxcPend=(DB.cxc||[]).filter(x=>x.ventaId===ventaId&&x.status!=='SALDADO');
   const cxpPend=(DB.gastosVehiculos||[]).filter(g=>g.ventaId===ventaId&&parseFloat(g.montoPendiente||0)>0);
+  // CASO 9: Bloquear entrega si hay CxC pendiente para este vehículo
+  if(cxcPend.length>0){
+    const totalPend=cxcPend.reduce((a,x)=>a+parseFloat(x.saldo||0),0);
+    const esUSD=(cxcPend[0].moneda||'RD$')==='USD';
+    const fmtPend=esUSD?'$'+totalPend.toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(totalPend);
+    openModal('🚫 Entrega Bloqueada',`
+      <div style="text-align:center;padding:16px 8px">
+        <div style="font-size:48px;margin-bottom:12px">🚫</div>
+        <div style="font-size:18px;font-weight:800;color:var(--red);margin-bottom:8px">No se puede registrar la entrega</div>
+        <div style="font-size:14px;color:var(--navy);margin-bottom:16px">El cliente <strong>${escHtml(v.cliente||'—')}</strong> tiene <strong>${cxcPend.length} cuenta(s) por cobrar pendiente(s)</strong> relacionada(s) a este vehículo.</div>
+        <div style="background:var(--red2);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:12px;color:var(--gray);font-weight:700;text-transform:uppercase;margin-bottom:4px">Saldo pendiente</div>
+          <div style="font-size:24px;font-weight:900;color:var(--red)">${fmtPend}</div>
+        </div>
+        <div style="font-size:13px;color:var(--gray)">El cliente debe saldar su deuda antes de poder recibir la entrega del vehículo.</div>
+      </div>`,
+      `<button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+       <button class="btn btn-primary" onclick="closeModal();showPage('cxc')">💰 Ver CxC Pendiente</button>`);
+    return;
+  }
   openModal(`📦 Registrar Entrega — ${escHtml(v.factura||'')}`,`
     <div style="background:var(--blue3);border-radius:8px;padding:12px;margin-bottom:14px">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
@@ -4990,7 +5478,7 @@ function registrarEntrega(ventaId){
     </div>
     <div class="form-field">
       <label>📷 Foto de Placa / Matrícula (adjuntar)</label>
-      <input type="file" id="ent-foto" accept="image/*" onchange="previewFoto('ent-foto','ent-foto-prev')">
+      <input type="file" id="ent-foto" accept=".jpg,.jpeg,.png" onchange="previewFoto('ent-foto','ent-foto-prev')">
       <img id="ent-foto-prev" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-top:8px;border:2px solid var(--green)">
     </div>
     <div class="form-field">
@@ -5585,6 +6073,9 @@ function imprimirFactura(vid){
 
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function exportarVentasPDF(mes){
@@ -5614,6 +6105,9 @@ function exportarVentasPDF(mes){
   <div class="np" style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / PDF</button></div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 
@@ -5844,7 +6338,7 @@ function imprimirCotizacion(i){
   const win=window.open('','_blank','width=820,height=750');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Cotización — ${escHtml(c.cliente||'')} — ${escHtml(c.vehiculo||'')}</title>
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a}
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#0f172a}
   .page{max-width:700px;margin:0 auto;padding:32px}
   .hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:4px solid #2563eb;margin-bottom:20px}
   .logo-box{width:60px;height:60px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0}
@@ -5856,10 +6350,10 @@ function imprimirCotizacion(i){
   .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
   .campo label{font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block;margin-bottom:2px}
   .campo span{font-size:12px;font-weight:600;display:block;padding:5px 8px;background:#f8fafc;border-radius:4px;border-left:3px solid #2563eb}
-  .monto-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:16px;text-align:center;margin:16px 0}
-  .monto-label{font-size:11px;font-weight:700;text-transform:uppercase;color:#16a34a;margin-bottom:6px}
-  .monto-val{font-size:30px;font-weight:900;color:#16a34a}
-  .monto-sub{font-size:11px;color:#6b7280;margin-top:4px}
+  .monto-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:10px 14px;text-align:right;margin:10px 0;display:flex;align-items:center;justify-content:flex-end;gap:12px}
+  .monto-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#16a34a;margin-bottom:3px}
+  .monto-val{font-size:22px;font-weight:900;color:#16a34a}
+  .monto-sub{font-size:10px;color:#6b7280;margin-top:3px}
   .firma{margin-top:48px;text-align:center}
   .firma-linea{border-top:1px solid #000;padding-top:5px;font-size:11px;color:#475569;display:inline-block;min-width:200px}
   .pie{text-align:center;font-size:9px;color:#94a3b8;margin-top:20px;padding-top:10px;border-top:1px solid #e2e8f0}
@@ -5888,8 +6382,8 @@ function imprimirCotizacion(i){
     ${escHtml(c.tipoDoc||'Cédula')}: <strong>${escHtml(c.documento||c.cedula||'—')}</strong>${c.telefono?`, Tel: <strong>${escHtml(c.telefono)}</strong>`:''},
     para fines de <strong>financiamiento vehicular</strong>.
   </div>
-  <div style="margin-bottom:14px">
-    <div class="sec-titulo">🚗 Vehículo a Financiar</div>
+  <div style="margin-bottom:14px;border:2px solid #2563eb;border-radius:10px;padding:14px;background:#f8faff">
+    <div class="sec-titulo" style="background:#2563eb;font-size:12px;padding:6px 14px">🚗 Vehículo a Financiar</div>
     <div class="g3">
       <div class="campo"><label>Marca</label><span>${escHtml(vObj?.marca||c.marca||'—')}</span></div>
       <div class="campo"><label>Modelo</label><span>${escHtml(vObj?.modelo||c.modelo||'—')}</span></div>
@@ -5900,9 +6394,11 @@ function imprimirCotizacion(i){
     </div>
   </div>
   <div class="monto-box">
-    <div class="monto-label">Monto Cotizado para Financiamiento</div>
+    <div>
+      <div class="monto-label">Monto Cotizado para Financiamiento</div>
+      ${esUSD?`<div class="monto-sub">Tasa: RD$ ${tasa} x USD | Equiv: ${fmt(parseFloat(c.precio||0)*tasa)}</div>`:''}
+    </div>
     <div class="monto-val">${fV(c.precio)}</div>
-    ${esUSD?`<div class="monto-sub">Equivalente: ${fmt(parseFloat(c.precio||0)*tasa)} | Tasa: RD$ ${tasa} x USD</div>`:''}
   </div>
   ${c.notas?`<div style="background:#fef3c7;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e">📝 <strong>Observaciones:</strong> ${escHtml(c.notas)}</div>`:''}
   <div style="font-size:11px;color:#475569;margin-top:16px;line-height:1.7">
@@ -5922,6 +6418,9 @@ function imprimirCotizacion(i){
   </div>
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 // ══ CLIENTES (mejorado: solo RD, foto docs, referencia) ══
 function formCliente(c){return`
@@ -5967,11 +6466,11 @@ function formCliente(c){return`
   </div>
   <div class="form-row c2">
     <div class="form-field"><label>📷 Documento Frente</label>
-      <input type="file" id="c-doc-frente" accept="image/*" onchange="previewFoto('c-doc-frente','c-doc-frente-prev')">
+      <input type="file" id="c-doc-frente" accept=".jpg,.jpeg,.png" onchange="previewFoto('c-doc-frente','c-doc-frente-prev')">
       <img id="c-doc-frente-prev" src="${c?.docFrente||''}" style="display:${c?.docFrente?'block':'none'};width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:6px">
     </div>
     <div class="form-field"><label>📷 Documento Dorso</label>
-      <input type="file" id="c-doc-dorso" accept="image/*" onchange="previewFoto('c-doc-dorso','c-doc-dorso-prev')">
+      <input type="file" id="c-doc-dorso" accept=".jpg,.jpeg,.png" onchange="previewFoto('c-doc-dorso','c-doc-dorso-prev')">
       <img id="c-doc-dorso-prev" src="${c?.docDorso||''}" style="display:${c?.docDorso?'block':'none'};width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-top:6px">
     </div>
   </div>`;}
@@ -6508,7 +7007,7 @@ function editarCXP(gid, origen){
     </div>
     <div class="form-row c3">
       <div class="form-field"><label>Monto Factura</label>
-        <input type="number" id="ecxp-factura" value="${g.montoFactura||0}" step="0.01">
+        <input type="text" id="ecxp-factura" value="${g.montoFactura||0}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" >
       </div>
       <div class="form-field"><label>Monto Pagado</label>
         <input type="number" id="ecxp-pagado" value="${g.montoPagado||0}" step="0.01">
@@ -6526,8 +7025,8 @@ function guardarEditCXP(gid, origen){
   const i = arr.findIndex(g=>g.id===gid);
   if(i<0)return;
   const vid = document.getElementById('ecxp-veh')?.value||'';
-  const factura = parseFloat(document.getElementById('ecxp-factura').value||0);
-  const pagado = parseFloat(document.getElementById('ecxp-pagado').value||0);
+  const factura = parseFloat((document.getElementById('ecxp-factura').value||'0').replace(/,/g,''));
+  const pagado = parseFloat((document.getElementById('ecxp-pagado').value||'0').replace(/,/g,''));
   const pendiente = Math.max(0, factura-pagado);
   if(vid){
     const vRef = DB.vehiculos.find(x=>x.id===vid);
@@ -6661,7 +7160,7 @@ function abonarCXPManual(gid){
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto a Pagar</label>
-        <input type="number" id="cxpm-pay-monto" value="${g.montoPendiente||0}" step="0.01" max="${g.montoPendiente||0}">
+        <input type="text" id="cxpm-pay-monto" value="${g.montoPendiente||0}"  max="${g.montoPendiente||0}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)">
       </div>
       <div class="form-field"><label>Fecha de Pago</label>
         <input type="date" id="cxpm-pay-fecha" value="${today()}">
@@ -6687,7 +7186,7 @@ function actualizarCuentasPagoManual(){
   cuentaEl.innerHTML=(b?b.cuentas:[]).map(c=>`<option value="${escHtml(c.tipo+' \u2014 '+c.numero)}">${escHtml(c.tipo)} \u2014 ${escHtml(c.numero)}</option>`).join('')||'<option value="Caja General">Caja General</option>';
 }
 function confirmarPagoCXPManual(i){
-  const monto=parseFloat(document.getElementById('cxpm-pay-monto')?.value||0);
+  const monto=parseFloat((document.getElementById('cxpm-pay-monto')?.value||'0').replace(/,/g,''));
   if(!monto||monto<=0){toast('Ingresa un monto v\u00e1lido','error');return;}
   const g=DB.cxp[i];
   if(monto>parseFloat(g.montoPendiente||0)){toast('El monto no puede superar el pendiente','error');return;}
@@ -6917,6 +7416,9 @@ function imprimirReciboPagoCXP(g, pago){
   </div>
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function imprimirCXP(){
@@ -6931,67 +7433,100 @@ function imprimirCXP(){
   if(filtroMoneda)gastosPend=gastosPend.filter(g=>(g.moneda||'RD$')===filtroMoneda);
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const empresa=DB.config.empresa||'DealerSystem';
-  const filtroLabel=filtroSup?('Suplidor: '+filtroSup):(filtroVeh?'Vehículo filtrado':'Todos los pendientes');
-  // Separar por moneda
+  const logo=DB.config.logoData||'';
+  const rnc=DB.config.rnc||'';
+  const tel=DB.config.telefono||'';
+  const dir=DB.config.direccion||'';
   const gastosRD=gastosPend.filter(g=>(g.moneda||'RD$')==='RD$');
   const gastosUSD=gastosPend.filter(g=>g.moneda==='USD');
   const totalRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
   const totalUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0);
-  const generarFilas=(lista)=>lista.map(g=>{
+  const totFactRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const totPagRD=gastosRD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const totFactUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoFactura||0),0);
+  const totPagUSD=gastosUSD.reduce((a,g)=>a+parseFloat(g.montoPagado||0),0);
+  const generarFilas=(lista,esUSD)=>lista.map(g=>{
     const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
-    const esUSD=g.moneda==='USD';
-    const fV=(n)=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2}):fmt(n);
+    const fV=(n)=>esUSD?'$'+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2}):parseFloat(n||0).toLocaleString('es-DO',{minimumFractionDigits:2});
     const sc={ABONADO:'a',PENDIENTE:'r'};
-    return`<tr><td>${fmtDate(g.fecha)}</td><td style="font-weight:700">${escHtml(g.suplidor||'—')}</td><td>${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td><td style="font-family:monospace;font-size:10px">${escHtml(v?.vin||'—')}</td><td>${escHtml(g.tipo||'—')}</td><td>${fV(g.montoFactura||0)}</td><td style="color:#16a34a">${fV(g.montoPagado||0)}</td><td style="font-weight:800;color:#dc2626">${fV(g.montoPendiente||0)}</td><td><span class="badge ${sc[g.statusGasto||'PENDIENTE']||'r'}">${g.statusGasto||'PENDIENTE'}</span></td></tr>`;
+    return`<tr><td>${fmtDate(g.fecha)}</td><td style="font-weight:700">${escHtml(g.suplidor||'—')}</td><td>${v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—'}</td><td style="font-family:monospace;font-size:10px">${escHtml(g.nroFactura||'—')}</td><td>${escHtml(g.tipo||g.descripcion||'—')}</td><td style="font-weight:700">${fV(g.montoFactura||0)}</td><td style="color:#16a34a">${fV(g.montoPagado||0)}</td><td style="font-weight:800;color:#dc2626">${fV(g.montoPendiente||0)}</td><td><span class="badge ${sc[g.statusGasto||'PENDIENTE']||'r'}">${g.statusGasto||'PENDIENTE'}</span></td></tr>`;
   }).join('');
-  const logoCXP=DB.config.logoData||'';
-  const rncCXP=DB.config.rnc||'';
-  const telCXP=DB.config.telefono||'';
-  const dirCXP=DB.config.direccion||'';
   const win=window.open('','_blank','width=1100,height=750');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CxP Vehículos — ${escHtml(empresa)}</title>
-  <style>body{font-family:Arial,sans-serif;padding:24px;font-size:12px;color:#0f172a}
-  h2{font-size:18px;margin:0}h3{font-size:13px;margin:4px 0;color:#475569}
-  h4{font-size:13px;font-weight:800;margin:20px 0 6px;padding:6px 10px;border-radius:4px}
-  .rd{background:#fee2e2;color:#dc2626}.usd{background:#dbeafe;color:#2563eb}
-  table{width:100%;border-collapse:collapse;margin-top:8px}
-  th{background:#0f172a;color:#fff;padding:7px 10px;text-align:left;font-size:11px}
-  td{padding:7px 10px;border-bottom:1px solid #e2e8f0}
-  tr:nth-child(even){background:#f8fafc}
-  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
-  .a{background:#fef3c7;color:#d97706}.r{background:#fee2e2;color:#dc2626}
-  .tot{display:flex;justify-content:flex-end;padding:8px 10px;font-weight:800;font-size:13px;border-top:2px solid #0f172a}
-  @media print{.noprint{display:none}}</style></head><body>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CxP — ${escHtml(empresa)}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:24px;font-size:12px;color:#0f172a}
+    h2{font-size:18px;margin:0}h3{font-size:13px;margin:4px 0;color:#475569}
+    h4{font-size:13px;font-weight:800;margin:20px 0 6px;padding:6px 10px;border-radius:4px}
+    .rd{background:#fee2e2;color:#dc2626}.usd{background:#dbeafe;color:#2563eb}
+    table{width:100%;border-collapse:collapse;margin-top:4px}
+    th{background:#0f172a;color:#fff;padding:8px 10px;text-align:left;font-size:11px}
+    td{padding:7px 10px;border-bottom:1px solid #e2e8f0;font-size:12px}
+    tr:nth-child(even){background:#f8fafc}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+    .a{background:#fef3c7;color:#d97706}.r{background:#fee2e2;color:#dc2626}
+    .tots{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+    .tot{border-radius:8px;padding:12px;text-align:center}
+    .tot label{font-size:10px;font-weight:700;text-transform:uppercase;display:block;margin-bottom:4px}
+    .tot span{font-size:18px;font-weight:800;display:block}
+    /* Encabezado que se repite en cada hoja al imprimir */
+    @media print{
+      .noprint{display:none}
+      .print-header{display:table-header-group!important}
+      thead{display:table-header-group}
+      .page-num::after{content:' de ' counter(pages)}
+      @page{margin:1.5cm;counter-increment:pages;@bottom-right{content:'Página ' counter(page) ' de ' counter(pages)}}
+    }
+  </style></head><body>
   <div style="border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start">
     <div>
-      ${logoCXP?`<img src="${logoCXP}" style="max-height:55px;max-width:150px;object-fit:contain;margin-bottom:6px;display:block">`:''}
+      ${logo?`<img src="${logo}" style="max-height:55px;max-width:150px;object-fit:contain;margin-bottom:6px;display:block">`:''}
       <h2>${escHtml(empresa)}</h2>
-      ${rncCXP?`<div style="font-size:11px;color:#475569">RNC: ${escHtml(rncCXP)}</div>`:''}
-      ${telCXP?`<div style="font-size:11px;color:#475569">Tel: ${escHtml(telCXP)}</div>`:''}
-      ${dirCXP?`<div style="font-size:11px;color:#475569">${escHtml(dirCXP)}</div>`:''}
-      <h3>CUENTAS POR PAGAR — VEHÍCULOS</h3>
-      <div style="font-size:11px;color:#6b7280">Filtro: ${filtroLabel} | Fecha: ${fmtDate(today())} | Tasa: RD$ ${tasa} x USD</div>
+      ${rnc?`<div style="font-size:11px;color:#475569">RNC: ${escHtml(rnc)}</div>`:''}
+      ${tel?`<div style="font-size:11px;color:#475569">Tel: ${escHtml(tel)}</div>`:''}
+      ${dir?`<div style="font-size:11px;color:#475569">${escHtml(dir)}</div>`:''}
+      <h3>CUENTAS POR PAGAR</h3>
+      <div style="font-size:11px;color:#6b7280">Fecha: ${fmtDate(today())} | Tasa USD: RD$ ${tasa} | ${gastosPend.length} registro(s)</div>
     </div>
     <div style="text-align:right">
-      ${totalRD>0?`<div style="font-size:11px;color:#6b7280">Pendiente RD$</div><div style="font-size:18px;font-weight:800;color:#dc2626">${fmt(totalRD)}</div>`:''}
-      ${totalUSD>0?`<div style="font-size:11px;color:#6b7280;margin-top:4px">Pendiente USD</div><div style="font-size:18px;font-weight:800;color:#2563eb">$${totalUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div>`:''}
+      <div style="font-size:10px;color:#6b7280">TOTAL PENDIENTE</div>
+      ${totalRD>0?`<div style="font-size:20px;font-weight:800;color:#dc2626">${parseFloat(totalRD).toLocaleString('es-DO',{minimumFractionDigits:2})}</div>`:'' }
+      ${totalUSD>0?`<div style="font-size:18px;font-weight:800;color:#2563eb">$${totalUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</div>`:''}
     </div>
   </div>
   ${gastosRD.length>0?`
+  <div class="tots">
+    <div class="tot" style="background:#f1f5f9"><label>Total Facturado RD$</label><span>${parseFloat(totFactRD).toLocaleString('es-DO',{minimumFractionDigits:2})}</span></div>
+    <div class="tot" style="background:#dcfce7"><label style="color:#16a34a">Total Pagado RD$</label><span style="color:#16a34a">${parseFloat(totPagRD).toLocaleString('es-DO',{minimumFractionDigits:2})}</span></div>
+    <div class="tot" style="background:#fee2e2"><label style="color:#dc2626">Pendiente RD$</label><span style="color:#dc2626">${parseFloat(totalRD).toLocaleString('es-DO',{minimumFractionDigits:2})}</span></div>
+  </div>
   <h4 class="rd">💰 Pendientes en RD$ — Pesos Dominicanos</h4>
-  <table><thead><tr><th>Fecha</th><th>Suplidor</th><th>Vehículo</th><th>Chasis</th><th>Tipo Gasto</th><th>Factura</th><th>Pagado</th><th>Pendiente</th><th>Estado</th></tr></thead>
-  <tbody>${generarFilas(gastosRD)}
-  <tr style="background:#fee2e2"><td colspan="7" style="font-weight:800;text-align:right">TOTAL PENDIENTE RD$:</td><td style="font-weight:800;color:#dc2626">${fmt(totalRD)}</td><td></td></tr>
-  </tbody></table>`:''}
+  <table>
+    <thead><tr><th>Fecha</th><th>Suplidor</th><th>Vehículo</th><th>No. Factura</th><th>Tipo Gasto</th><th>Factura</th><th>Pagado</th><th>Pendiente</th><th>Estado</th></tr></thead>
+    <tbody>${generarFilas(gastosRD,false)}
+    <tr style="background:#fee2e2"><td colspan="7" style="font-weight:800;text-align:right;font-size:11px">TOTAL PENDIENTE RD$:</td><td style="font-weight:800;color:#dc2626">${parseFloat(totalRD).toLocaleString('es-DO',{minimumFractionDigits:2})}</td><td></td></tr>
+    </tbody>
+  </table>`:''}
   ${gastosUSD.length>0?`
-  <h4 class="usd">💵 Pendientes en USD — Dólares</h4>
-  <table><thead><tr><th>Fecha</th><th>Suplidor</th><th>Vehículo</th><th>Chasis</th><th>Tipo Gasto</th><th>Factura</th><th>Pagado</th><th>Pendiente</th><th>Estado</th></tr></thead>
-  <tbody>${generarFilas(gastosUSD)}
-  <tr style="background:#dbeafe"><td colspan="7" style="font-weight:800;text-align:right">TOTAL PENDIENTE USD:</td><td style="font-weight:800;color:#2563eb">$${totalUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</td><td></td></tr>
-  </tbody></table>`:''}
-  <div class="noprint" style="margin-top:24px;text-align:center"><button onclick="window.print()" style="padding:10px 28px;background:#dc2626;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button></div>
+  <div class="tots" style="margin-top:16px">
+    <div class="tot" style="background:#f1f5f9"><label>Total Facturado USD</label><span>$${parseFloat(totFactUSD).toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+    <div class="tot" style="background:#dcfce7"><label style="color:#16a34a">Total Pagado USD</label><span style="color:#16a34a">$${parseFloat(totPagUSD).toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+    <div class="tot" style="background:#dbeafe"><label style="color:#2563eb">Pendiente USD</label><span style="color:#2563eb">$${parseFloat(totalUSD).toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+  </div>
+  <h4 class="usd">💵 Pendientes en USD — Dólares Americanos</h4>
+  <table>
+    <thead><tr><th>Fecha</th><th>Suplidor</th><th>Vehículo</th><th>No. Factura</th><th>Tipo Gasto</th><th>Factura USD</th><th>Pagado USD</th><th>Pendiente USD</th><th>Estado</th></tr></thead>
+    <tbody>${generarFilas(gastosUSD,true)}
+    <tr style="background:#dbeafe"><td colspan="7" style="font-weight:800;text-align:right;font-size:11px">TOTAL PENDIENTE USD:</td><td style="font-weight:800;color:#2563eb">$${parseFloat(totalUSD).toLocaleString('en-US',{minimumFractionDigits:2})}</td><td></td></tr>
+    </tbody>
+  </table>`:''}
+  <div class="noprint" style="margin-top:24px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 28px;background:#dc2626;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+  </div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ CUENTAS POR COBRAR (CxC) ══
@@ -7475,6 +8010,9 @@ function imprimirCXC(){
   </div>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function imprimirReciboCobro(cxc, pago){
@@ -7564,6 +8102,9 @@ function imprimirReciboCobro(cxc, pago){
   </div>
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function verAbonosCXC(id){
@@ -7739,6 +8280,9 @@ function imprimirResumenPagosCXC(id){
 
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function diagnosticoCXC(){
@@ -7788,16 +8332,17 @@ function renderAutorizaciones(){
       <div class="table-wrap"><table id="auth-tbl">
         <thead><tr>
           <th style="width:36px"></th>
-          <th>Fecha</th><th>Suplidor</th><th>Productos</th><th>Total Items</th><th>Estado</th>
+          <th>Fecha</th><th>Suplidor</th><th>Vehículo</th><th>Productos</th><th>Items</th><th>Estado</th>
         </tr></thead>
         <tbody>${auths.length?auths.slice().reverse().map(a=>`
           <tr onclick="selAuth('${a.id}',this)" style="cursor:pointer">
             <td style="text-align:center"><input type="radio" name="auth-sel" onclick="event.stopPropagation();selAuth('${a.id}',this.closest('tr'))" style="width:15px;height:15px;cursor:pointer;accent-color:var(--blue)"></td>
             <td>${fmtDate(a.fecha)}</td>
             <td style="font-weight:600">${escHtml(a.suplidor||'—')}</td>
-            <td style="font-size:12px">${escHtml((a.productos||[]).map(p=>p.descripcion).join(', ').slice(0,60)||'—')}</td>
-            <td><span class="badge badge-blue">${(a.productos||[]).length} item(s)</span></td>
-            <td><span class="badge badge-amber">Pendiente</span></td>
+            <td style="font-size:12px">${(()=>{const v=DB.vehiculos.find(x=>x.id===a.vehiculoId);return v?escHtml(v.codigo+' '+v.marca+' '+v.modelo):'—';})()}</td>
+            <td style="font-size:12px">${escHtml((a.productos||[]).map(p=>p.descripcion).join(', ').slice(0,50)||'—')}</td>
+            <td><span class="badge badge-blue">${(a.productos||[]).length}</span></td>
+            <td>${(()=>{const ec={PENDIENTE:'badge-amber',RECIBIDA:'badge-green',REGISTRADA:'badge-blue'};const el={PENDIENTE:'🟡 Pendiente',RECIBIDA:'🟢 Recibida',REGISTRADA:'✅ Registrada'};const e=a.estado||'PENDIENTE';return`<span class="badge ${ec[e]||'badge-amber'}">${el[e]||e}</span>`;})()}</td>
           </tr>`).join(''):'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray)">Sin autorizaciones</td></tr>'}
         </tbody>
       </table></div>
@@ -7826,6 +8371,7 @@ function authAccion(accion){
 }
 function nuevaAutorizacion(){
   const supOpts=(DB.suplidores||[]).map(s=>`<option value="${escHtml(s.empresa||s.nombre)}">${escHtml(s.empresa||s.nombre)}</option>`).join('');
+  const vehOpts=DB.vehiculos.map(v=>`<option value="${v.id}">${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+(v.anio?' '+v.anio:''))}</option>`).join('');
   openModal('📝 Nueva Autorización de Compra',`
     <div class="form-row c2">
       <div class="form-field"><label class="required">Suplidor</label>
@@ -7835,12 +8381,23 @@ function nuevaAutorizacion(){
         <input type="date" id="auth-fecha" value="${today()}">
       </div>
     </div>
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">🚗 Vehículo Asociado</label>
+        <select id="auth-veh"><option value="">-- Seleccionar vehículo --</option>${vehOpts}</select>
+      </div>
+      <div class="form-field"><label>Estado</label>
+        <select id="auth-estado">
+          <option value="PENDIENTE">🟡 Pendiente</option>
+          <option value="RECIBIDA">🟢 Recibida</option>
+          <option value="REGISTRADA">✅ Registrada en Gastos</option>
+        </select>
+      </div>
+    </div>
     <div class="form-field"><label class="required">Productos / Repuestos a Comprar</label></div>
     <div id="auth-productos-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:center">
+      <div style="display:grid;grid-template-columns:3fr 1fr auto;gap:6px;align-items:center">
         <input type="text" id="auth-prod-0-desc" placeholder="Descripción del producto/repuesto">
         <input type="number" id="auth-prod-0-cant" placeholder="Cantidad" min="1" value="1">
-        <input type="text" id="auth-prod-0-precio" placeholder="Precio estimado">
         <button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>
       </div>
     </div>
@@ -7853,13 +8410,15 @@ function agregarProductoAuth(){
   const i=list.children.length;
   const div=document.createElement('div');
   div.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:center';
-  div.innerHTML=`<input type="text" id="auth-prod-${i}-desc" placeholder="Descripción"><input type="number" id="auth-prod-${i}-cant" placeholder="Cantidad" min="1" value="1"><input type="text" id="auth-prod-${i}-precio" placeholder="Precio estimado"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>`;
+  div.innerHTML=`<input type="text" id="auth-prod-${i}-desc" placeholder="Descripción"><input type="number" id="auth-prod-${i}-cant" placeholder="Cantidad" min="1" value="1"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button>`;
   list.appendChild(div);
 }
 function guardarAutorizacion(idx){
   const sup=document.getElementById('auth-sup').value;
   const fecha=document.getElementById('auth-fecha').value;
   if(!sup){toast('Selecciona un suplidor','error');return;}
+  const _authVeh=document.getElementById('auth-veh')?.value||'';
+  if(!_authVeh){toast('Selecciona el vehículo asociado','error');return;}
   const productos=[];
   document.querySelectorAll('[id^="auth-prod-"][id$="-desc"]').forEach(inp=>{
     const i=inp.id.replace('auth-prod-','').replace('-desc','');
@@ -7869,7 +8428,9 @@ function guardarAutorizacion(idx){
     if(desc)productos.push({descripcion:desc,cantidad:parseInt(cant)||1,precio});
   });
   if(!productos.length){toast('Agrega al menos un producto','error');return;}
-  const auth={id:uid(),suplidor:sup,fecha,productos,creadoPor:currentUser.nombre,fechaCreacion:today()};
+  const authVehId=document.getElementById('auth-veh')?.value||'';
+  const authEstado=document.getElementById('auth-estado')?.value||'PENDIENTE';
+  const auth={id:uid(),suplidor:sup,fecha,productos,vehiculoId:authVehId,estado:authEstado,creadoPor:currentUser.nombre,fechaCreacion:today()};
   if(idx!==undefined)DB.autorizaciones[idx]=auth;
   else{if(!DB.autorizaciones)DB.autorizaciones=[];DB.autorizaciones.push(auth);}
   sDB('autorizaciones');closeModal();toast('Autorización guardada ✓','success');renderAutorizaciones();
@@ -7877,15 +8438,28 @@ function guardarAutorizacion(idx){
 function editarAutorizacion(idx){
   const a=DB.autorizaciones[idx];
   const supOpts=(DB.suplidores||[]).map(s=>`<option value="${escHtml(s.empresa||s.nombre)}" ${(s.empresa||s.nombre)===a.suplidor?'selected':''}>${escHtml(s.empresa||s.nombre)}</option>`).join('');
+  const vehOpts2=DB.vehiculos.map(v=>`<option value="${v.id}" ${v.id===a.vehiculoId?'selected':''}>${escHtml(v.codigo+' — '+v.marca+' '+v.modelo+(v.anio?' '+v.anio:''))}</option>`).join('');
   openModal('✏️ Editar Autorización',`
     <div class="form-row c2">
       <div class="form-field"><label>Suplidor</label><select id="auth-sup"><option value="">--</option>${supOpts}</select></div>
       <div class="form-field"><label>Fecha</label><input type="date" id="auth-fecha" value="${a.fecha}"></div>
     </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>🚗 Vehículo Asociado</label>
+        <select id="auth-veh"><option value="">-- Sin vehículo --</option>${vehOpts2}</select>
+      </div>
+      <div class="form-field"><label>Estado</label>
+        <select id="auth-estado">
+          <option value="PENDIENTE" ${(a.estado||'PENDIENTE')==='PENDIENTE'?'selected':''}>🟡 Pendiente</option>
+          <option value="RECIBIDA" ${a.estado==='RECIBIDA'?'selected':''}>🟢 Recibida</option>
+          <option value="REGISTRADA" ${a.estado==='REGISTRADA'?'selected':''}>✅ Registrada en Gastos</option>
+        </select>
+      </div>
+    </div>
     <div class="form-field"><label>Productos</label></div>
     <div id="auth-productos-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
       ${(a.productos||[]).map((p,i)=>`
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:center">
+        <div style="display:grid;grid-template-columns:3fr 1fr auto;gap:6px;align-items:center">
           <input type="text" id="auth-prod-${i}-desc" value="${escHtml(p.descripcion)}" placeholder="Descripción">
           <input type="number" id="auth-prod-${i}-cant" value="${p.cantidad||1}" placeholder="Cantidad">
           <input type="text" id="auth-prod-${i}-precio" value="${escHtml(p.precio||'')}" placeholder="Precio">
@@ -7898,31 +8472,36 @@ function editarAutorizacion(idx){
 }
 function imprimirAutorizacion(a){
   const empresa=DB.config.empresa||'DealerSystem';
+  const logo=DB.config.logoData||'';
   const rnc=DB.config.rnc||'';
   const dir=DB.config.direccion||'';
   const tel=DB.config.telefono||'';
-  const responsable=DB.config.responsable||DB.config.propietarios?.[0]||'';
   const fecha=fmtDate(a.fecha);
   const totalItems=(a.productos||[]).reduce((s,p)=>s+(parseInt(p.cantidad)||1),0);
+  const veh=DB.vehiculos.find(v=>v.id===a.vehiculoId);
+  const estadoLabel={PENDIENTE:'🟡 Pendiente',RECIBIDA:'🟢 Recibida',REGISTRADA:'✅ Registrada en Gastos'};
   const win=window.open('','_blank','width=900,height=700');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Autorización de Compra</title>
   <style>
-    body{font-family:Arial,sans-serif;padding:40px;font-size:13px;color:#1a1a1a}
+    body{font-family:Arial,sans-serif;padding:40px;font-size:14px;color:#1a1a1a}
     .header{border-bottom:3px solid #0f172a;padding-bottom:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start}
-    .empresa-nombre{font-size:22px;font-weight:900;color:#0f172a}
-    .empresa-datos{font-size:12px;color:#64748b;margin-top:4px}
-    .titulo{font-size:18px;font-weight:800;text-align:center;margin:24px 0;text-transform:uppercase;letter-spacing:1px;color:#0f172a;border:2px solid #0f172a;padding:10px}
+    .empresa-nombre{font-size:28px;font-weight:900;color:#0f172a;margin-top:6px}
+    .empresa-datos{font-size:13px;color:#64748b;margin-top:6px}
+    .titulo{font-size:19px;font-weight:800;text-align:center;margin:24px 0;text-transform:uppercase;letter-spacing:1px;color:#0f172a;border:2px solid #0f172a;padding:10px}
+    .veh-info{background:#f1f5f9;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;display:flex;gap:24px;align-items:center}
     table{width:100%;border-collapse:collapse;margin:20px 0}
-    th{background:#0f172a;color:#fff;padding:10px;text-align:left;font-size:12px}
-    td{padding:10px;border-bottom:1px solid #e2e8f0;font-size:12px}
+    th{background:#0f172a;color:#fff;padding:10px;text-align:left;font-size:13px}
+    td{padding:10px;border-bottom:1px solid #e2e8f0;font-size:13px}
     tr:nth-child(even){background:#f8fafc}
-    .mensaje{margin:24px 0;padding:16px;background:#f8fafc;border-left:4px solid #2563eb;font-size:13px;line-height:1.6}
-    .firmas{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px}
-    .firma-linea{border-top:1px solid #0f172a;padding-top:8px;font-size:12px;text-align:center;color:#64748b}
+    .mensaje{margin:24px 0;padding:16px;background:#f8fafc;border-left:4px solid #2563eb;font-size:14px;line-height:1.7}
+    .firma-wrap{margin-top:56px;width:50%}
+    .firma-linea{border-top:1px solid #0f172a;padding-top:8px;font-size:13px;text-align:center;color:#64748b}
+    .estado-badge{display:inline-block;padding:3px 12px;border-radius:12px;font-size:12px;font-weight:700;background:#fef3c7;color:#d97706}
     @media print{button{display:none}}
   </style></head><body>
   <div class="header">
     <div>
+      ${logo?`<img src="${logo}" style="max-height:70px;max-width:180px;object-fit:contain;display:block;margin-bottom:6px">`:''}
       <div class="empresa-nombre">${escHtml(empresa)}</div>
       <div class="empresa-datos">
         ${rnc?'RNC: '+escHtml(rnc)+'<br>':''}
@@ -7930,17 +8509,19 @@ function imprimirAutorizacion(a){
         ${tel?'Tel: '+escHtml(tel):''}
       </div>
     </div>
-    <div style="text-align:right;font-size:12px;color:#64748b">
+    <div style="text-align:right;font-size:13px;color:#64748b">
       <div>Fecha: <strong>${fecha}</strong></div>
       <div style="margin-top:4px">Suplidor: <strong>${escHtml(a.suplidor)}</strong></div>
+      <div style="margin-top:6px"><span class="estado-badge">${estadoLabel[a.estado||'PENDIENTE']||a.estado||'Pendiente'}</span></div>
     </div>
   </div>
+  ${veh?`<div class="veh-info"><span style="font-size:18px">🚗</span><div><strong>Vehículo:</strong> ${escHtml(veh.codigo+' — '+veh.marca+' '+veh.modelo+(veh.anio?' '+veh.anio:''))}</div>${veh.vin?`<div><strong>Chasis/VIN:</strong> ${escHtml(veh.vin)}</div>`:''}${veh.color?`<div><strong>Color:</strong> ${escHtml(veh.color)}</div>`:''}</div>`:''}
   <div class="titulo">Autorización de Compra</div>
   <table>
-    <thead><tr><th>#</th><th>Descripción del Producto / Repuesto</th><th>Cantidad</th><th>Precio Estimado</th></tr></thead>
+    <thead><tr><th>#</th><th>Descripción del Producto / Repuesto</th><th style="text-align:center">Cantidad</th></tr></thead>
     <tbody>
-      ${(a.productos||[]).map((p,i)=>`<tr><td>${i+1}</td><td>${escHtml(p.descripcion)}</td><td style="text-align:center">${p.cantidad||1}</td><td>${escHtml(p.precio||'—')}</td></tr>`).join('')}
-      <tr style="background:#f1f5f9;font-weight:bold"><td colspan="2">Total de Items</td><td style="text-align:center">${totalItems}</td><td></td></tr>
+      ${(a.productos||[]).map((p,i)=>`<tr><td>${i+1}</td><td>${escHtml(p.descripcion)}</td><td style="text-align:center">${p.cantidad||1}</td></tr>`).join('')}
+      <tr style="background:#f1f5f9;font-weight:bold"><td colspan="2">Total de Items</td><td style="text-align:center">${totalItems}</td></tr>
     </tbody>
   </table>
   <div class="mensaje">
@@ -7949,19 +8530,16 @@ function imprimirAutorizacion(a){
     entregados según los términos acordados entre las partes. Esta autorización fue emitida el <strong>${fecha}</strong> 
     y es válida únicamente para los productos aquí especificados.
   </div>
-  <div class="firmas">
-    <div>
-      <div style="height:60px"></div>
-      <div class="firma-linea">Firma del Responsable de Compra</div>
-    </div>
-    <div>
-      <div style="height:60px"></div>
-      <div class="firma-linea">${escHtml(responsable||'Propietario / Administrador')}<br>${escHtml(empresa)}</div>
-    </div>
+  <div class="firma-wrap">
+    <div style="height:60px"></div>
+    <div class="firma-linea">Firma del Responsable de Compra</div>
   </div>
-  <br><button onclick="window.print()">🖨️ Imprimir</button>
+  <br><button onclick="window.print()" style="margin-top:20px;padding:10px 24px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">🖨️ Imprimir</button>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 function toggleSidebar(){
@@ -8089,6 +8667,9 @@ function exportarInformePDF(){
   <br><button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700">🖨️ Imprimir / Guardar como PDF</button>
   </body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ SEGUROS ══
@@ -8377,6 +8958,9 @@ function exportarSegurosPDF(){
     <button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700">🖨️ Imprimir / PDF</button>
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 function eliminarSeguro(id){
   if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}
@@ -8603,6 +9187,9 @@ function imprimirFacturaExterna(id){
   </div>
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ HOJA DE SALIDA DE VEHÍCULO ══
@@ -8692,6 +9279,9 @@ function imprimirHojaSalida(vid){
   </div>
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ FORMULARIO LAVADO DE ACTIVOS (UAF/DGII República Dominicana) ══
@@ -8812,6 +9402,9 @@ function imprimirLavadoActivos(vid){
   </div>
   </div></body></html>`);
   win.document.close();
+  // Cerrar ventana tras imprimir o al cerrar manualmente
+  win.onafterprint=()=>{ try{win.close();}catch(e){} };
+  win.addEventListener('focus',()=>{ window.focus(); });
 }
 
 // ══ COLORES DEL SISTEMA ══
