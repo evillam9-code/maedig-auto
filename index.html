@@ -2293,7 +2293,10 @@ function registrarPagoNomina(i){
   openModal('💵 Registrar Pago — '+escHtml(e.nombre),`
     <p style="margin-bottom:12px">Salario base: <strong>${fmt(e.salario)}</strong></p>
     <div class="form-row c2">
-      <div class="form-field"><label>Mes</label><input type="month" id="np-mes" value="${mes}"></div>
+      <div class="form-field"><label class="required">Fecha de Pago</label><input type="date" id="np-fecha-pago" value="${today()}"></div>
+      <div class="form-field"><label>Mes / Período</label><input type="month" id="np-mes" value="${mes}"></div>
+    </div>
+    <div class="form-row c2">
       <div class="form-field"><label>Tipo de Pago</label>
         <select id="np-tipo" onchange="calcMontoNomina(${salario})">
           <option value="MEN">Mensual</option>
@@ -2303,14 +2306,15 @@ function registrarPagoNomina(i){
           <option value="COM">Comisión</option>
         </select>
       </div>
+      <div class="form-field"><label>Cuenta</label>
+        <select id="np-cuenta">${(DB.config.cuentas||['Caja General']).map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
+      </div>
     </div>
     <div class="form-row c2">
       <div class="form-field"><label class="required">Monto</label>
         <input type="text" id="np-monto" value="${(salario).toFixed(2)}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" >
       </div>
-      <div class="form-field"><label>Cuenta</label>
-        <select id="np-cuenta">${(DB.config.cuentas||['Caja General']).map(c=>`<option>${escHtml(c)}</option>`).join('')}</select>
-      </div>
+      <div></div>
     </div>
     <div class="form-field"><label>Nota</label><input type="text" id="np-nota" placeholder="Opcional"></div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -2332,8 +2336,9 @@ function guardarPagoNomina(i){
   const nota=document.getElementById('np-nota')?.value||'';
   const tipoLabel={MEN:'Mensual','1Q':'1ra Quincena','2Q':'2da Quincena',SEM:'Semanal',COM:'Comisión'}[tipo]||tipo;
   if(!DB.nominaPagos)DB.nominaPagos=[];
-  DB.nominaPagos.push({id:uid(),empleadoId:e.id,empleadoNombre:e.nombre,mes,tipo,monto,cuenta,fecha:today(),nota});
-  DB.caja.push({id:uid(),fecha:today(),tipo:'SALIDA',categoria:'Nómina/Salario',
+  const fechaPago=document.getElementById('np-fecha-pago')?.value||today();
+  DB.nominaPagos.push({id:uid(),empleadoId:e.id,empleadoNombre:e.nombre,mes,tipo,monto,cuenta,fecha:fechaPago,nota});
+  DB.caja.push({id:uid(),fecha:fechaPago,tipo:'SALIDA',categoria:'Nómina/Salario',
     descripcion:'Pago nómina: '+e.nombre+' ('+tipoLabel+')',
     monto,referencia:cuenta,responsable:currentUser.nombre});
   sDB('nominaPagos');sDB('caja');closeModal();toast('Pago registrado ✓','success');renderNomina();
