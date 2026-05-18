@@ -759,15 +759,15 @@ function showNotif(title,msg,type='danger'){
 }
 function checkAlerts(){
   const c=document.getElementById('alert-container');if(c)c.innerHTML='';
-  // Si el usuario no tiene acceso al módulo alertas, no mostrar ninguna notificación
-  const esAdmin=currentUser?.role==='admin';
-  const tieneModulo=(currentUser?.modulos||[]).includes('alertas');
-  if(!esAdmin&&!tieneModulo)return;
+  // Respetar permisos de módulo
+  if(!canAccess('alertas'))return;
   const hoy=today();
-  // Obtener alertas permitidas del usuario actual
-  const alertasPermitidas=currentUser?.role==='admin'
-    ?null // admin ve todo
-    :(currentUser?.alertasPermitidas||['SIN_VIN','SIN_COSTO','CXP','CXC_VENCIDA','CXC','SIN_VENDER_6M','SIN_VENDER_1A','DOCS']);
+  // Alertas permitidas — aplica a TODOS incluyendo admin
+  // Si alertasPermitidas no está definido, el admin ve todas por defecto
+  const esAdmin=currentUser?.role==='admin';
+  const alertasPermitidas=currentUser?.alertasPermitidas!==undefined
+    ?currentUser.alertasPermitidas
+    :(esAdmin?null:['SIN_VIN','SIN_COSTO','CXP','CXC_VENCIDA','CXC','SIN_VENDER_6M','SIN_VENDER_1A','DOCS']);
   const puedeVer=tipo=>!alertasPermitidas||alertasPermitidas.includes(tipo);
 
   if(puedeVer('SIN_VIN')){
@@ -3488,6 +3488,41 @@ function guardarPermisosUsuarioConfig(i){
 
 function renderConfig(){
   const c=DB.config;
+  const esAdmin=currentUser?.role==='admin';
+  // Alertas que el usuario actual tiene activas (admin incluido)
+  const ALERT_TYPES_ALL=[
+    {id:'SIN_VIN',label:'Vehículo sin Chasis/VIN'},
+    {id:'SIN_COSTO',label:'Vehículo sin costos'},
+    {id:'CXP',label:'Gastos por pagar (CxP)'},
+    {id:'CXC_VENCIDA',label:'CxC vencidas'},
+    {id:'CXC',label:'CxC pendientes'},
+    {id:'SIN_VENDER_6M',label:'6 meses sin venderse'},
+    {id:'SIN_VENDER_1A',label:'1 año sin venderse'},
+    {id:'DOCS',label:'Documentos de entrega pendientes'}
+  ];
+  // Si el admin no tiene alertasPermitidas, ve todas por defecto
+  const misAlertas=currentUser?.alertasPermitidas||ALERT_TYPES_ALL.map(a=>a.id);
+  const misNotifHTML=`
+    <div class="card">
+      <div class="card-title">🔔 Mis Notificaciones al Entrar</div>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:14px">Selecciona cuáles alertas quieres ver al iniciar sesión. Si desactivas una, el popup ya no aparecerá.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        ${ALERT_TYPES_ALL.map(a=>`
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;background:var(--gray2);border:1.5px solid var(--gray3);border-radius:8px;cursor:pointer">
+            <input type="checkbox" id="mn-${a.id}" ${misAlertas.includes(a.id)?'checked':''} style="accent-color:var(--blue);width:14px;height:14px">
+            ${a.label}
+          </label>`).join('')}
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="guardarMisNotificaciones()">💾 Guardar mis notificaciones</button>
+        <button class="btn btn-secondary btn-sm" onclick="
+          document.querySelectorAll('[id^=mn-]').forEach(c=>c.checked=true);
+        ">✅ Activar todas</button>
+        <button class="btn btn-secondary btn-sm" onclick="
+          document.querySelectorAll('[id^=mn-]').forEach(c=>c.checked=false);
+        ">🔕 Desactivar todas</button>
+      </div>
+    </div>`;
   // Si Firebase activo pero aún no cargó, mostrar aviso
   const fbPendiente=window._fbActivo&&!window._fbCargado;
   document.getElementById('page-config').innerHTML=`
@@ -3499,6 +3534,7 @@ function renderConfig(){
       </div>
     </div>
     ${fbPendiente?'<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400e;display:flex;align-items:center;gap:8px"><span>⏳</span> Sincronizando con Firebase... Los datos se actualizarán en unos segundos.</div>':''}
+    ${misNotifHTML}
     <div class="card">
       <div class="card-title">🏢 Información del Negocio</div>
       <div class="form-row c2">
@@ -3776,6 +3812,22 @@ function renderConfig(){
     </div>
 
     </div>`;
+}
+function guardarMisNotificaciones(){
+  const ALERT_IDS=['SIN_VIN','SIN_COSTO','CXP','CXC_VENCIDA','CXC','SIN_VENDER_6M','SIN_VENDER_1A','DOCS'];
+  const seleccionadas=ALERT_IDS.filter(id=>{
+    const el=document.getElementById('mn-'+id);
+    return el&&el.checked;
+  });
+  // Guardar en el usuario actual
+  const idx=DB.users.findIndex(u=>u.id===currentUser.id);
+  if(idx!==-1){
+    DB.users[idx].alertasPermitidas=seleccionadas;
+    currentUser.alertasPermitidas=seleccionadas;
+    sDB('users');
+    if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
+    toast('Notificaciones guardadas \u2713','success');
+  }
 }
 function agregarRolConfig(){
   const list=document.getElementById('cf-roles-list');
