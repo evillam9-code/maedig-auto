@@ -203,12 +203,20 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 <script>
 (function(){
   var VERSION='dealer_v14';
-  var saved=localStorage.getItem('ds_version');
-  if(saved&&saved!==VERSION){
-    localStorage.setItem('ds_version',VERSION);
+  var APP_BUILD='20260517-maedig';
+  var storedBuild=localStorage.getItem('maedig_build');
+  if(storedBuild&&storedBuild!==APP_BUILD){
+    var savedUsers=localStorage.getItem('maedig_users');
+    var savedConfig=localStorage.getItem('maedig_config');
+    localStorage.clear();
+    if(savedUsers)localStorage.setItem('maedig_users',savedUsers);
+    if(savedConfig)localStorage.setItem('maedig_config',savedConfig);
+    localStorage.setItem('maedig_build',APP_BUILD);
+    localStorage.setItem('maedig_version',VERSION);
     location.reload(true);
-  } else if(!saved){
-    localStorage.setItem('ds_version',VERSION);
+  } else if(!storedBuild){
+    localStorage.setItem('maedig_build',APP_BUILD);
+    localStorage.setItem('maedig_version',VERSION);
   }
 })();
 </script>
@@ -304,7 +312,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
         <div style="font-weight:800;color:#60a5fa">Edward Villa</div>
         <div><a href="tel:8498579190" style="color:#94a3b8;text-decoration:none">849-857-9190</a></div>
       </div>
-      <div class="nav-item" id="nav-backup-btn" style="display:none;color:var(--green)" onclick="showPage('backup')"><span class="ico">💾</span>Backup</div>
+      <div class="nav-item" id="nav-backup" style="display:none;color:var(--green)" onclick="showPage('backup')"><span class="ico">💾</span>Backup</div>
       <div class="nav-item" onclick="doLogout()" style="color:var(--red)"><span class="ico">🚪</span>Cerrar sesión</div>
     </div>
   </div>
@@ -361,8 +369,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 
 <script>
 // STORAGE
-const ls=k=>{try{const v=localStorage.getItem('ds_'+k);return v?JSON.parse(v):null}catch{return null}};
-const ss=(k,v)=>{try{localStorage.setItem('ds_'+k,JSON.stringify(v))}catch{}};
+const ls=k=>{try{const v=localStorage.getItem('maedig_'+k);return v?JSON.parse(v):null}catch{return null}};
+const ss=(k,v)=>{try{localStorage.setItem('maedig_'+k,JSON.stringify(v))}catch{}};
 
 // DEFAULT CONFIG
 const defaultConfig={
@@ -676,7 +684,7 @@ function aplicarPermisosNav(){
     nav.style.display=tiene?'':'none';
   });
   // Backup solo para admin
-  const backupBtn=document.getElementById('nav-backup-btn');
+  const backupBtn=document.getElementById('nav-backup');
   if(backupBtn)backupBtn.style.display=currentUser?.role==='admin'?'flex':'none';
 }
 function cambiarMiContrasena(){
@@ -704,7 +712,7 @@ function guardarCambioContrasena(){
 }
 function doLogout(){
   if(currentUser){
-    try{const p=JSON.parse(localStorage.getItem('fayre_presencia')||'{}');delete p[currentUser.id];localStorage.setItem('fayre_presencia',JSON.stringify(p));}catch{}
+    try{const p=JSON.parse(localStorage.getItem('maedig_presencia')||'{}');delete p[currentUser.id];localStorage.setItem('maedig_presencia',JSON.stringify(p));}catch{}
     if(window._presenciaBC)try{window._presenciaBC.postMessage({uid:currentUser.id,ts:0});}catch{}
     if(window._presenciaGlobalInterval)clearInterval(window._presenciaGlobalInterval);
   }
@@ -2558,7 +2566,7 @@ function renderUsuarios(){
           const mods=u.role==='admin'?['Dashboard','Nueva Venta','Ventas','Inventario','Clientes','Suplidores','Gastos','Nómina','Informes','Caja','CxC','CxP','Usuarios','Configuración']:(u.modulos||[]);
           const modsLabel=mods.map(id=>{const m=MODS.find(x=>x.id===id);return m?m.label:id;});
           const ahora=Date.now();
-          let presGlobal={};try{presGlobal=JSON.parse(localStorage.getItem('fayre_presencia')||'{}');}catch{}
+          let presGlobal={};try{presGlobal=JSON.parse(localStorage.getItem('maedig_presencia')||'{}');}catch{}
           const ult=presGlobal[u.id]||(DB.presencia||{})[u.id]||0;
           const enLinea=ult>0&&(ahora-ult)<30000;
           const estadoHTML=enLinea
@@ -2957,6 +2965,26 @@ function exportarCumplePDF(){
   // Cerrar ventana tras imprimir o al cerrar manualmente
   win.onafterprint=()=>{ try{win.close();}catch(e){} };
   win.addEventListener('focus',()=>{ window.focus(); });
+}
+
+// ══ PUBLICAR VERSION (notifica a otros navegadores que hay update) ══
+async function publicarNuevaVersion(silencioso){
+  if(!window._fbActivo||!window._fbDB||!window._fbCol){
+    if(!silencioso)toast('No hay conexion a Firebase','error');
+    return;
+  }
+  try{
+    const newVersion='maedig_'+Date.now();
+    await window._fbDB.collection(window._fbCol).doc('system_version').set({
+      version:newVersion,
+      fecha:new Date().toISOString(),
+      publicadoPor:(window.currentUser&&window.currentUser.nombre)||'Admin'
+    });
+    localStorage.setItem('maedig_version',newVersion);
+    if(!silencioso)toast('Version publicada — otros usuarios seran notificados','success');
+  }catch(e){
+    if(!silencioso)toast('Error al publicar version','error');
+  }
 }
 
 // ══ MÓDULO BACKUP ══
@@ -3941,8 +3969,8 @@ function _chatScrollBottom(){
 // ══ PRESENCIA GLOBAL (funciona sin servidor, entre pestañas locales) ══
 let _presenciaGlobalInterval=null;
 let _presenciaBC=null;
-function _leerPresenciaGlobal(){try{return JSON.parse(localStorage.getItem('fayre_presencia')||'{}');}catch{return {};}}
-function _escribirPresenciaGlobal(uid,ts){const p=_leerPresenciaGlobal();p[uid]=ts;localStorage.setItem('fayre_presencia',JSON.stringify(p));}
+function _leerPresenciaGlobal(){try{return JSON.parse(localStorage.getItem('maedig_presencia')||'{}');}catch{return {};}}
+function _escribirPresenciaGlobal(uid,ts){const p=_leerPresenciaGlobal();p[uid]=ts;localStorage.setItem('maedig_presencia',JSON.stringify(p));}
 function _sincPresencia(){const g=_leerPresenciaGlobal();DB.presencia=Object.assign(DB.presencia||{},g);}
 function _pingPresencia(){
   if(!currentUser)return;
@@ -3956,13 +3984,13 @@ function _iniciarPresenciaGlobal(){
   if(!currentUser)return;
   try{
     if(_presenciaBC)_presenciaBC.close();
-    _presenciaBC=new BroadcastChannel('fayre_presencia');
+    _presenciaBC=new BroadcastChannel('maedig_presencia');
     _presenciaBC.onmessage=function(e){
       if(e.data&&e.data.uid){
         if(!DB.presencia)DB.presencia={};
         if(e.data.ts===0){
           delete DB.presencia[e.data.uid];
-          const p=_leerPresenciaGlobal();delete p[e.data.uid];localStorage.setItem('fayre_presencia',JSON.stringify(p));
+          const p=_leerPresenciaGlobal();delete p[e.data.uid];localStorage.setItem('maedig_presencia',JSON.stringify(p));
         }else{
           DB.presencia[e.data.uid]=e.data.ts;
           _escribirPresenciaGlobal(e.data.uid,e.data.ts);
@@ -3982,7 +4010,7 @@ function _iniciarPresenciaGlobal(){
   },10000);
   window.addEventListener('beforeunload',()=>{
     if(currentUser){
-      const p=_leerPresenciaGlobal();delete p[currentUser.id];localStorage.setItem('fayre_presencia',JSON.stringify(p));
+      const p=_leerPresenciaGlobal();delete p[currentUser.id];localStorage.setItem('maedig_presencia',JSON.stringify(p));
       if(_presenciaBC)try{_presenciaBC.postMessage({uid:currentUser.id,ts:0});}catch{}
     }
   },{once:true});
