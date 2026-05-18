@@ -218,6 +218,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
     localStorage.setItem('maedig_build',APP_BUILD);
     localStorage.setItem('maedig_version',VERSION);
   }
+  // Limpiar claves ds_ residuales de versiones anteriores
+  try{const old=Object.keys(localStorage).filter(k=>k.startsWith('ds_'));old.forEach(k=>localStorage.removeItem(k));}catch{}
 })();
 </script>
 </head>
