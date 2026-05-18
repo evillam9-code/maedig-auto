@@ -759,6 +759,10 @@ function showNotif(title,msg,type='danger'){
 }
 function checkAlerts(){
   const c=document.getElementById('alert-container');if(c)c.innerHTML='';
+  // Si el usuario no tiene acceso al módulo alertas, no mostrar ninguna notificación
+  const esAdmin=currentUser?.role==='admin';
+  const tieneModulo=(currentUser?.modulos||[]).includes('alertas');
+  if(!esAdmin&&!tieneModulo)return;
   const hoy=today();
   // Obtener alertas permitidas del usuario actual
   const alertasPermitidas=currentUser?.role==='admin'
