@@ -315,6 +315,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
         <div><a href="tel:8498579190" style="color:#94a3b8;text-decoration:none">849-857-9190</a></div>
       </div>
       <div class="nav-item" id="nav-backup" style="display:none;color:var(--green)" onclick="showPage('backup')"><span class="ico">💾</span>Backup</div>
+      <div class="nav-item" id="nav-bitacora" style="display:none;color:#a78bfa" onclick="showPage('bitacora')"><span class="ico">🔍</span>Bitácora</div>
       <div class="nav-item" onclick="doLogout()" style="color:var(--red)"><span class="ico">🚪</span>Cerrar sesión</div>
     </div>
   </div>
@@ -356,6 +357,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
       <div class="page" id="page-cuentas"></div>
       <div class="page" id="page-cumpleanos"></div>
       <div class="page" id="page-backup"></div>
+      <div class="page" id="page-bitacora"></div>
     </div>
   </div>
 </div>
@@ -420,7 +422,8 @@ let DB={
   facturasExternas:[],
   chat:ls('chat')||{},
   presencia:ls('presencia')||{},
-  cumpleanosMensajes:{}
+  cumpleanosMensajes:{},
+  bitacora:ls('bitacora')||[]
 };
 function sDB(k){ss(k,DB[k]);}
 
@@ -620,6 +623,7 @@ function doLogin(){
     setTimeout(()=>{if(DB.config?.colores)aplicarColoresSistema();},500);
     setTimeout(()=>{if(DB.config?.colores)aplicarColoresSistema();},1500);
     actualizarLogoSidebar();
+    logBit('Sesión','Inició sesión','—');
     showPage('dashboard');
     setTimeout(checkAlerts,1500);
     _iniciarPresenciaGlobal();
@@ -688,7 +692,116 @@ function aplicarPermisosNav(){
   // Backup solo para admin
   const backupBtn=document.getElementById('nav-backup');
   if(backupBtn)backupBtn.style.display=currentUser?.role==='admin'?'flex':'none';
+  const nbit=document.getElementById('nav-bitacora');
+  if(nbit)nbit.style.display=currentUser?.role==='admin'?'flex':'none';
 }
+/* ═══════════════════════════════════════════
+   BITÁCORA DE ACTIVIDAD — máx 200 entradas
+═══════════════════════════════════════════ */
+const _MOD_LABELS={dashboard:'Inicio',inventario:'Reg. Vehículo',gastosVeh:'Gastos Vehículo',
+  cxp:'Cuentas x Pagar',clientes:'Clientes',ventas:'Ventas',cxc:'Cuentas x Cobrar',
+  gastos:'Gastos Empresa',nomina:'Nómina',caja:'Caja',cotizaciones:'Cotizaciones',
+  autorizaciones:'Autorización',seguros:'Seguros',facturaExterna:'Facturas Ext.',
+  suplidores:'Suplidores',informes:'Informes',usuarios:'Usuarios',config:'Configuración',
+  cuentas:'Cuentas',backup:'Backup',bitacora:'Bitácora',alertas:'Alertas',chat:'Chat'};
+
+function logBit(modulo,accion,detalle){
+  if(!currentUser)return;
+  if(!DB.bitacora)DB.bitacora=[];
+  const ahora=new Date();
+  const fecha=ahora.toLocaleDateString('es-DO',{year:'numeric',month:'2-digit',day:'2-digit'});
+  const hora=ahora.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  DB.bitacora.unshift({
+    id:uid(),fecha,hora,
+    usuario:currentUser.nombre||currentUser.username||'—',
+    userId:currentUser.id||'',
+    role:currentUser.role||'',
+    modulo:_MOD_LABELS[modulo]||modulo,
+    accion,
+    detalle:(detalle||'').substring(0,120)
+  });
+  if(DB.bitacora.length>200)DB.bitacora=DB.bitacora.slice(0,200);
+  sDB('bitacora');
+}
+
+function renderBitacora(){
+  if(currentUser?.role!=='admin'){
+    document.getElementById('page-bitacora').innerHTML='<div style="text-align:center;padding:48px"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:700;color:var(--navy)">Acceso restringido</div><p style="color:var(--gray);margin-top:8px">Solo el administrador puede ver la bitácora.</p></div>';
+    return;
+  }
+  const bits=DB.bitacora||[];
+  const fUsuario=document.getElementById('bit-f-usuario')?.value||'';
+  const fModulo=document.getElementById('bit-f-modulo')?.value||'';
+  const fFecha=document.getElementById('bit-f-fecha')?.value||'';
+  const fBuscar=(document.getElementById('bit-f-buscar')?.value||'').toLowerCase();
+  const lista=bits.filter(b=>{
+    if(fUsuario&&b.usuario!==fUsuario)return false;
+    if(fModulo&&b.modulo!==fModulo)return false;
+    if(fFecha){const [y,m,d]=fFecha.split('-');const fmtFecha=`${d}/${m}/${y}`;if(b.fecha!==fmtFecha)return false;}
+    if(fBuscar&&!(b.accion+b.detalle+b.modulo+b.usuario).toLowerCase().includes(fBuscar))return false;
+    return true;
+  });
+  const usuarios=[...new Set(bits.map(b=>b.usuario))].sort();
+  const modulos=[...new Set(bits.map(b=>b.modulo))].sort();
+  function badgeAccion(a){
+    const l=a.toLowerCase();
+    if(l.includes('inici')&&l.includes('ses'))return'background:#dcfce7;color:#16a34a';
+    if(l.includes('cerr')&&l.includes('ses'))return'background:#fee2e2;color:#dc2626';
+    if(l.includes('elimin')||l.includes('borr'))return'background:#fee2e2;color:#dc2626';
+    if(l.includes('guard')||l.includes('nuevo')||l.includes('regist')||l.includes('creó')||l.includes('agreg'))return'background:#dbeafe;color:#2563eb';
+    if(l.includes('edit')||l.includes('actua')||l.includes('modif'))return'background:#fef3c7;color:#d97706';
+    if(l.includes('pag')||l.includes('abon')||l.includes('cobr'))return'background:#ede9fe;color:#7c3aed';
+    if(l.includes('venta'))return'background:#dcfce7;color:#16a34a';
+    return'background:#f1f5f9;color:#475569';
+  }
+  const filas=lista.length?lista.map(b=>`
+    <tr>
+      <td style="white-space:nowrap;font-size:11px;color:var(--gray)">${b.fecha}</td>
+      <td style="white-space:nowrap;font-size:11px;color:var(--gray)">${b.hora}</td>
+      <td><div style="font-weight:700;font-size:12px">${escHtml(b.usuario)}</div><div style="font-size:10px;color:var(--gray)">${escHtml(b.role||'')}</div></td>
+      <td><span style="background:#f1f5f9;color:#334155;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${escHtml(b.modulo)}</span></td>
+      <td><span style="padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;${badgeAccion(b.accion)}">${escHtml(b.accion)}</span></td>
+      <td style="font-size:12px;color:var(--navy);max-width:260px">${escHtml(b.detalle||'—')}</td>
+    </tr>`).join('')
+    :'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--gray)">No hay registros con los filtros seleccionados</td></tr>';
+  const usados=Math.round(JSON.stringify(DB.bitacora).length/1024);
+  document.getElementById('page-bitacora').innerHTML=`
+    <div class="page-header">
+      <div>
+        <h1>🔍 Bitácora de Actividad</h1>
+        <p style="color:var(--gray);font-size:13px">${bits.length} registros de ${bits.length>=200?'200 (máximo)':'200 máx'} · ${usados} KB usados · Solo visible para Administrador</p>
+      </div>
+      <button class="btn btn-red btn-sm" onclick="if(confirm('¿Limpiar toda la bitácora? Esta acción no se puede deshacer.')){DB.bitacora=[];sDB('bitacora');renderBitacora();toast('Bitácora limpiada','success')}">🗑 Limpiar todo</button>
+    </div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:14px">
+        <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:4px">Usuario</label>
+          <select id="bit-f-usuario" onchange="renderBitacora()" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+            <option value="">Todos</option>
+            ${usuarios.map(u=>`<option value="${escHtml(u)}" ${fUsuario===u?'selected':''}>${escHtml(u)}</option>`).join('')}
+          </select></div>
+        <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:4px">Módulo</label>
+          <select id="bit-f-modulo" onchange="renderBitacora()" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
+            <option value="">Todos</option>
+            ${modulos.map(m=>`<option value="${escHtml(m)}" ${fModulo===m?'selected':''}>${escHtml(m)}</option>`).join('')}
+          </select></div>
+        <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:4px">Fecha</label>
+          <input type="date" id="bit-f-fecha" value="${fFecha}" onchange="renderBitacora()" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px"></div>
+        <div><label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--gray);display:block;margin-bottom:4px">Buscar</label>
+          <input type="text" id="bit-f-buscar" value="${escHtml(fBuscar)}" oninput="renderBitacora()" placeholder="Acción, detalle..." style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px"></div>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('bit-f-usuario').value='';document.getElementById('bit-f-modulo').value='';document.getElementById('bit-f-fecha').value='';document.getElementById('bit-f-buscar').value='';renderBitacora()">✕ Limpiar</button>
+      </div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Mostrando <strong>${lista.length}</strong> de <strong>${bits.length}</strong> registros</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Hora</th><th>Usuario</th><th>Módulo</th><th>Acción</th><th>Detalle</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+/* ═══════════════════════════════════════════ */
+
 function cambiarMiContrasena(){
   openModal('🔑 Cambiar Mi Contraseña',`
     <div class="form-field"><label>Contraseña actual</label><input type="password" id="cp-actual" placeholder="Contraseña actual" autocomplete="new-password"></div>
@@ -714,6 +827,7 @@ function guardarCambioContrasena(){
 }
 function doLogout(){
   if(currentUser){
+    logBit('Sesión','Cerró sesión','—');
     try{const p=JSON.parse(localStorage.getItem('maedig_presencia')||'{}');delete p[currentUser.id];localStorage.setItem('maedig_presencia',JSON.stringify(p));}catch{}
     if(window._presenciaBC)try{window._presenciaBC.postMessage({uid:currentUser.id,ts:0});}catch{}
     if(window._presenciaGlobalInterval)clearInterval(window._presenciaGlobalInterval);
@@ -737,7 +851,7 @@ function showPage(id){
   document.getElementById('page-'+id)?.classList.add('active');
   document.getElementById('nav-'+id)?.classList.add('active');
   // Renderizar inmediatamente con datos locales (sin esperar Firebase)
-  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup};
+  const r={dashboard:renderDashboard,inventario:renderInventario,ventas:renderVentas,cotizaciones:renderCotizaciones,clientes:renderClientes,suplidores:renderSuplidores,caja:renderCaja,gastos:renderGastos,nomina:renderNomina,informes:renderInformes,usuarios:renderUsuarios,config:renderConfig,gastosVeh:renderGastosVeh,cxp:renderCXP,cxc:renderCXC,autorizaciones:renderAutorizaciones,seguros:renderSeguros,facturaExterna:renderFacturaExterna,alertas:renderAlertas,chat:renderChat,cuentas:renderCuentas,cumpleanos:renderCumpleanos,backup:renderBackup,bitacora:renderBitacora};
   if(r[id])r[id]();
   // Refrescar Firebase en background si hace más de 60s (sin bloquear la UI)
   const ahora=Date.now();
@@ -1369,7 +1483,7 @@ function guardarVehiculo(id){
     DB.vehiculos.push(obj);
   }
   sDB('vehiculos');
-  toast(id?'Vehículo actualizado ✓':'Vehículo agregado ✓','success');
+  logBit('inventario',id?'Editó vehículo':'Registró vehículo',document.getElementById('inv-codigo')?.value||'');toast(id?'Vehículo actualizado ✓':'Vehículo agregado ✓','success');
   renderInventario();
   preguntarCerrar('closeModal()');
 }
@@ -1844,7 +1958,7 @@ function guardarCajaMov(tipo){
     descripcion:desc,monto,moneda,banco,cuenta,
     referencia:banco+(cuenta?' / '+cuenta:''),
     responsable:document.getElementById('cj-resp').value});
-  sDB('caja');closeModal();toast('Registro guardado ✓','success');renderCaja();
+  logBit('caja','Registro manual de caja','');sDB('caja');closeModal();toast('Registro guardado ✓','success');renderCaja();
 }
 
 // ══ GASTOS ══
@@ -1908,7 +2022,7 @@ function guardarEditGasto(i){
   DB.gastos[i].formaPago=document.getElementById('g-forma').value;
   DB.gastos[i].statusGasto=document.getElementById('g-status').value;
   DB.gastos[i].descripcion=document.getElementById('g-desc').value;
-  sDB('gastos');closeModal();toast('Gasto actualizado ✓','success');renderGastos();
+  logBit('gastos','Editó gasto empresa','');sDB('gastos');closeModal();toast('Gasto actualizado ✓','success');renderGastos();
 }
 function imprimirGastos(){
   const mes=new Date().toISOString().slice(0,7);
@@ -2055,7 +2169,7 @@ function guardarGasto(idx){
   else DB.gastos.push(g);
   if(g.formaPago==='CONTADO'&&montoAbonado>0)
     DB.caja.push({id:uid(),fecha:g.fecha,tipo:'SALIDA',categoria:'Gasto de Empresa',descripcion:'Gasto: '+desc,monto:montoAbonado,responsable:g.responsable});
-  sDB('gastos');sDB('caja');closeModal();toast('Gasto guardado ✓','success');renderGastos();
+  logBit('gastos','Guardó gasto empresa','');sDB('gastos');sDB('caja');closeModal();toast('Gasto guardado ✓','success');renderGastos();
 }
 
 // ══ NÓMINA ══
@@ -2355,7 +2469,7 @@ function guardarPagoNomina(i){
   DB.caja.push({id:uid(),fecha:fechaPago,tipo:'SALIDA',categoria:'Nómina/Salario',
     descripcion:'Pago nómina: '+e.nombre+' ('+tipoLabel+')',
     monto,referencia:cuenta,responsable:currentUser.nombre});
-  sDB('nominaPagos');sDB('caja');closeModal();toast('Pago registrado ✓','success');renderNomina();
+  logBit('nomina','Pagó nómina','');sDB('nominaPagos');sDB('caja');closeModal();toast('Pago registrado ✓','success');renderNomina();
 }
 function imprimirPagosNomina(){
   const pagos=DB.nominaPagos||[];
@@ -2769,7 +2883,7 @@ function guardarEmpleado(idx){
   const activoVal=document.getElementById('e-activo')?.value;
   const e={id:idx!==undefined?DB.nomina[idx].id:uid(),nombre,cargo:document.getElementById('e-cargo').value,documento:document.getElementById('e-doc')?.value||'',fechaIngreso:document.getElementById('e-ingreso').value,formaPago:document.getElementById('e-pago').value,salario,telefono:document.getElementById('e-tel').value,activo:activoVal!=='false',docFrente:fEl?.style.display!=='none'&&fEl?.src?fEl.src:(idx!==undefined?DB.nomina[idx]?.docFrente||'':''),docDorso:dEl?.style.display!=='none'&&dEl?.src?dEl.src:(idx!==undefined?DB.nomina[idx]?.docDorso||'':''),pagos:idx!==undefined?DB.nomina[idx].pagos||[]:[]};
   if(idx!==undefined)DB.nomina[idx]=e;else DB.nomina.push(e);
-  sDB('nomina');closeModal();toast('Empleado guardado ✓','success');renderNomina();
+  logBit('nomina','Guardó empleado','');sDB('nomina');closeModal();toast('Empleado guardado ✓','success');renderNomina();
 }
 function editarEmpleado(i){
   const e=DB.nomina[i];
@@ -2800,7 +2914,7 @@ function guardarUsuario(idx){
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
   sDB('users');
   if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
-  closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
+  logBit('usuarios','Creó usuario','');closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
   // Aplicar permisos de navegación inmediatamente (ocultar/mostrar módulos en sidebar)
   aplicarPermisosNav();
   // Re-renderizar página activa para que permisos apliquen de inmediato
@@ -4618,6 +4732,7 @@ function guardarNuevoGastoVeh(){
     sDB('vehiculos');
   }
   sDB('gastosVehiculos');
+  logBit('gastosVeh','Registró gasto',tipo+' — '+sup+' '+fmtMoneyDisplay(factura));
   toast('Gasto registrado ✓','success');
   renderGastosVeh();
   preguntarCerrar('closeModal()');
@@ -4671,7 +4786,7 @@ function confirmarAbonoGastoVeh(i){
   }
   sDB('gastosVehiculos');
   closeModal();
-  toast('Pago registrado ✓','success');
+  logBit('gastosVeh','Registró pago/abono','');toast('Pago registrado ✓','success');
   renderGastosVeh();
 }
 
@@ -4774,7 +4889,7 @@ function guardarEditGastoVeh(i){
   }
   sDB('gastosVehiculos');
   closeModal();
-  toast('Gasto actualizado ✓','success');
+  logBit('gastosVeh','Editó gasto',DB.gastosVehiculos[i]?.tipo||'');toast('Gasto actualizado ✓','success');
   renderGastosVeh();
 }
 
@@ -5626,7 +5741,7 @@ function confirmarEliminarVenta(id){
     DB.cxc=DB.cxc.filter(x=>x.ventaId!==id);sDB('cxc');
   }
   DB.ventas=DB.ventas.filter(x=>x.id!==id);
-  sDB('ventas');closeModal();toast('Venta eliminada','success');renderVentas();
+  logBit('ventas','Eliminó venta',v?.factura||'');sDB('ventas');closeModal();toast('Venta eliminada','success');renderVentas();
 }
 function toggleVehRecibido(){
   const cb=document.getElementById('sv-tiene-recibido');
@@ -5878,7 +5993,7 @@ function confirmarVenta(nf){
   closeModal();
   // Imprimir recibo automáticamente
   imprimirFactura(venta.id);
-  toast('Venta registrada ✓ — Generando recibo...','success');
+  logBit('ventas','Registró venta',`${_vRef?.codigo||''} ${_vRef?.marca||''} ${_vRef?.modelo||''}`);toast('Venta registrada ✓ — Generando recibo...','success');
   renderVentas();
 }
 
@@ -5942,7 +6057,7 @@ function confirmarAbVenta(vid){
   DB.caja.push({id:uid(),fecha:document.getElementById('ab-fecha').value,tipo:'ENTRADA',categoria:'Cobro de Venta',descripcion:`Cobro ${DB.ventas[i].factura}: ${DB.ventas[i].cliente}`,monto,referencia:document.getElementById('ab-cuenta')?.value||'',responsable:currentUser.nombre});
   sDB('ventas');sDB('caja');
   closeModal();
-  toast('Cobro registrado ✓','success');
+  logBit('ventas','Registró cobro','');toast('Cobro registrado ✓','success');
   renderVentas();
 }
 
@@ -6593,7 +6708,7 @@ function guardarCliente(idx){
   const fEl=document.getElementById('c-doc-frente-prev');const dEl=document.getElementById('c-doc-dorso-prev');
   const c={id:idx!==undefined?DB.clientes[idx].id:uid(),nombre,tipoDoc:document.getElementById('c-tipodoc').value,documento:document.getElementById('c-doc').value.trim(),ingresos:parseFloat((document.getElementById('c-ingresos')?.value||'0').replace(/,/g,''))||0,ciudad:document.getElementById('c-ciudad').value,provincia:document.getElementById('c-prov').value,telefono:document.getElementById('c-tel').value,telefono2:document.getElementById('c-tel2').value,whatsapp:document.getElementById('c-whatsapp')?.value||'',direccion:document.getElementById('c-dir').value,fechaCumpleanos:document.getElementById('c-cumpleanos')?.value||'',refNombre:document.getElementById('c-ref-nombre')?.value||'',refTel:document.getElementById('c-ref-tel')?.value||'',docFrente:fEl?.style.display!=='none'&&fEl?.src?fEl.src:(idx!==undefined?DB.clientes[idx]?.docFrente||'':''),docDorso:dEl?.style.display!=='none'&&dEl?.src?dEl.src:(idx!==undefined?DB.clientes[idx]?.docDorso||'':'')};
   if(idx!==undefined)DB.clientes[idx]=c;else DB.clientes.push(c);
-  sDB('clientes');closeModal();toast('Cliente guardado ✓','success');renderClientes();
+  logBit('clientes','Guardó cliente','');sDB('clientes');closeModal();toast('Cliente guardado ✓','success');renderClientes();
 }
 
 // ══ SUPLIDORES ══
@@ -7229,7 +7344,7 @@ function guardarCXPManual(){
     statusGasto:pendiente<=0?'PAGADO':abono>0?'ABONADO':'PENDIENTE',
     pagos:[]
   });
-  sDB('cxp');
+  logBit('cxp','Nueva CXP manual',desc+' — '+fmtMoneyDisplay(monto));sDB('cxp');
   closeModal();toast('CXP manual guardada ✓','success');renderCXP();
 }
 function abonarCXPManual(gid){
