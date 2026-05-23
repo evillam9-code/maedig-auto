@@ -33554,8 +33554,7 @@ async function _construirWord(hoy,semana,historial,modAlerts){
     sp(80,60),pieTbl
   ]}]});
 
-  const buf=await Packer.toBuffer(doc);
-  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const blob=await Packer.toBlob(doc);
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;
   a.download=`Informe_Semanal_Sem${semana}_${hoy.toISOString().split('T')[0]}.docx`;
