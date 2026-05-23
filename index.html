@@ -725,8 +725,12 @@ function logBit(modulo,accion,detalle){
     accion,
     detalle:(detalle||'').substring(0,120)
   });
-  if(DB.bitacora.length>200)DB.bitacora=DB.bitacora.slice(0,200);
+  if(DB.bitacora.length>500)DB.bitacora=DB.bitacora.slice(0,500);
   sDB('bitacora');
+  // Sincronizar con Firebase para bitácora centralizada
+  if(typeof fbGuardar==='function'&&window._fbActivo){
+    fbGuardar('bitacora').catch(()=>{});
+  }
 }
 
 function renderBitacora(){
@@ -9779,7 +9783,7 @@ async function fbGuardar(key){
 
 async function fbCargar(){
   const keys=['config','config_logo','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
-    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log','cumpleanosMensajes'];
+    'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log','cumpleanosMensajes','bitacora'];
   let loaded=false;
   for(const key of keys){
     try {
@@ -33400,7 +33404,13 @@ function calcularAlertas(hoy){
   const segVencer=seg.filter(s=>{if(!s.hasta)return false;const diff=(new Date(s.hasta)-hoy)/(1000*60*60*24);return diff>=0&&diff<=30;});
   const segPend=seg.filter(s=>parseFloat(s.pendiente||Math.max(0,parseFloat(s.prima||0)-parseFloat(s.abonado||0)))>0);
   return{
-    suplidores:{hayProblema:supSinRNC.length>0,vacio:sup.length===0,total:sup.length,sinRNC:supSinRNC.length},
+    suplidores:{hayProblema:supSinRNC.length>0,vacio:sup.length===0,total:sup.length,sinRNC:supSinRNC.length,
+      totalVeh:sup.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo').length,
+      totalImp:sup.filter(s=>s.tipoSuplidor==='importadora').length,
+      totalEmp:sup.filter(s=>s.tipoSuplidor==='empresa').length,
+      sinRNCVeh:sup.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo'&&(!s.rnc||s.rnc.trim()==='')).length,
+      sinRNCImp:sup.filter(s=>s.tipoSuplidor==='importadora'&&(!s.rnc||s.rnc.trim()==='')).length,
+      sinRNCEmp:sup.filter(s=>s.tipoSuplidor==='empresa'&&(!s.rnc||s.rnc.trim()==='')).length},
     vehiculos:{hayProblema:vehSinCosto.length>0||vehSinPlaca.length>0,vacio:veh.length===0,total:veh.length,activos:veh.filter(v=>v.status==='ACTIVO').length,aduana:veh.filter(v=>v.status==='ADUANA').length,eeuu:veh.filter(v=>v.status==='EN EEUU').length,sinCosto:vehSinCosto.map(v=>v.codigo||v.id),sinPlaca:vehSinPlaca.length},
     gastosVeh:{hayProblema:gvPend.length>0,vacio:gv.length===0,total:gv.length,pendientes:gvPend.length,totalPend:gvPend.reduce((a,g)=>a+parseFloat(g.montoPendiente||0),0)},
     cxp:{hayProblema:cxpVenc.length>0,vacio:cxpD.length===0,total:cxpD.length,vencidas:cxpVenc.length,totalPend:cxpPendTotal,nombresVenc:cxpVenc.slice(0,2).map(c=>c.suplidor||c.proveedor||'—')},
@@ -33453,17 +33463,17 @@ async function _construirWord(hoy,semana,historial,modAlerts){
   const fin=new Date(ini);fin.setDate(ini.getDate()+5);
   const rango=`${pad(ini.getDate())} al ${pad(fin.getDate())} de ${meses[fin.getMonth()]} ${fin.getFullYear()}`;
   const empresa=DB.config?.empresa||'MAEDIG AUTO SALES S.R.L.';
+  const logoData=DB.config?.logoData||'';
 
   function semanasConsec(modKey){let count=0;for(let i=historial.length-1;i>=0;i--){if(historial[i][modKey]&&historial[i][modKey].hayProblema)count++;else break;}return count;}
 
-  function modHead(ico,label,estado,semanas){
-    const ei={ok:{txt:'AL DÍA ✓',color:C.green,bg:C.greenLight},warn:{txt:'PENDIENTE ⚠️',color:C.amber,bg:C.amberLight},crit:{txt:`CRÍTICO 🔴 (${semanas} sem)`,color:C.red,bg:C.redLight},empty:{txt:'SIN DATOS',color:C.gray,bg:C.grayLight}}[estado]||{txt:'SIN DATOS',color:C.gray,bg:C.grayLight};
+  function modHead(ico,label,estado){
+    const ei={ok:{txt:'AL DÍA ✓',color:C.green,bg:C.greenLight},warn:{txt:'PENDIENTE ⚠️',color:C.amber,bg:C.amberLight},crit:{txt:'CRÍTICO 🔴',color:C.red,bg:C.redLight},empty:{txt:'SIN DATOS',color:C.gray,bg:C.grayLight}}[estado]||{txt:'SIN DATOS',color:C.gray,bg:C.grayLight};
     return new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[6600,2760],rows:[new TableRow({children:[
-      new TableCell({borders:{top:linBdr(C.blue,8),bottom:linBdr(C.grayMid,2),left:linBdr(C.blue,8),right:noBdr()},shading:{fill:C.grayLight,type:ShadingType.CLEAR},margins:{top:100,bottom:100,left:180,right:80},width:{size:6600,type:WidthType.DXA},children:[para([mk(ico+'  ',{size:24,bold:true,color:C.navy}),magicmk(label.toUpperCase(),{size:22,bold:true,color:C.navy})])]}),
-      new TableCell({borders:{top:linBdr(C.blue,8),bottom:linBdr(C.grayMid,2),left:noBdr(),right:linBdr(C.blue,8)},shading:{fill:ei.bg,type:ShadingType.CLEAR},margins:{top:100,bottom:100,left:80,right:180},width:{size:2760,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[para([mk(ei.txt,{size:20,bold:true,color:ei.color})],{alignment:AlignmentType.RIGHT})]})
+      new TableCell({borders:{top:linBdr(C.blue,10),bottom:linBdr(C.blue,3),left:linBdr(C.blue,10),right:noBdr()},shading:{fill:'F8FAFC',type:ShadingType.CLEAR},margins:{top:100,bottom:100,left:180,right:80},width:{size:6600,type:WidthType.DXA},children:[para([mk(ico+'  ',{size:24,bold:true,color:C.navy}),mk(label.toUpperCase(),{size:22,bold:true,color:C.navy})])]}),
+      new TableCell({borders:{top:linBdr(C.blue,10),bottom:linBdr(C.blue,3),left:noBdr(),right:linBdr(C.blue,10)},shading:{fill:ei.bg,type:ShadingType.CLEAR},margins:{top:100,bottom:100,left:80,right:180},width:{size:2760,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[para([mk(ei.txt,{size:20,bold:true,color:ei.color})],{alignment:AlignmentType.RIGHT})]})
     ]})]});
   }
-  function magicmk(text,opts={}){return new TextRun({text:String(text||''),font:'Arial',size:opts.size||20,...opts});}
   function detRow(label,value,highlight=false,isAccion=false){
     const bg=isAccion?C.blueLight:C.white;const lc=isAccion?C.blueDark:C.gray;const vc=highlight?C.redDark:C.navy;
     return new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[2400,6960],rows:[new TableRow({children:[
@@ -33471,14 +33481,24 @@ async function _construirWord(hoy,semana,historial,modAlerts){
       new TableCell({borders:{top:noBdr(),bottom:linBdr(C.grayMid,2),left:noBdr(),right:noBdr()},shading:{fill:bg,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:120,right:160},width:{size:6960,type:WidthType.DXA},children:[para([mk(value,{size:18,color:vc,bold:highlight})])]})
     ]})]});
   }
-  function emptyMod(ico,label){return[modHead(ico,label,'empty',0),new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[9360],rows:[new TableRow({children:[new TableCell({borders:allBdrs(C.grayMid,2),shading:{fill:C.grayLight,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:160,right:160},width:{size:9360,type:WidthType.DXA},children:[para([mk('Sin registros — Módulo no utilizado aún.',{size:18,color:C.gray,italics:true})],{alignment:AlignmentType.CENTER})]})]})]})  ,sp(60,120)];}
+  function emptyMod(ico,label){return[modHead(ico,label,'empty'),new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[9360],rows:[new TableRow({children:[new TableCell({borders:allBdrs(C.grayMid,2),shading:{fill:'F8FAFC',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:160,right:160},width:{size:9360,type:WidthType.DXA},children:[para([mk('Sin registros — Módulo no utilizado aún.',{size:18,color:C.gray,italics:true})],{alignment:AlignmentType.CENTER})]})]})]})  ,sp(60,120)];}
   function buildMod(ico,label,modKey,rowsFn){
     const A=modAlerts[modKey];if(!A||A.vacio)return emptyMod(ico,label);
-    const sem=semanasConsec(modKey);
-    const est=!A.hayProblema?'ok':sem>=3?'crit':'warn';
-    return[modHead(ico,label,est,sem),...rowsFn(A),sp(60,120)];
+    const sem=semanasConsec(modKey);const est=!A.hayProblema?'ok':sem>=3?'crit':'warn';
+    return[modHead(ico,label,est),...rowsFn(A),sp(60,120)];
   }
-  const secSup=buildMod('🏭','Suplidores','suplidores',A=>[detRow('Total',`${A.total} suplidores registrados`),...(A.sinRNC>0?[detRow('Sin documento',`${A.sinRNC} sin RNC`,true),detRow('Acción','Gestionar → Completar documentos',false,true)]:[detRow('Estado','Todos completos')])]);
+  // Suplidores — 3 tipos separados
+  const secSup=(()=>{
+    const A=modAlerts.suplidores;if(!A||A.vacio)return emptyMod('🏭','Suplidores');
+    const sem=semanasConsec('suplidores');const est=!A.hayProblema?'ok':sem>=3?'crit':'warn';
+    return[modHead('🏭','Suplidores',est),
+      detRow('Total',`${A.total} suplidores registrados`),
+      detRow('🚗 Vehículos',`${A.totalVeh} registrados${A.sinRNCVeh>0?' — '+A.sinRNCVeh+' sin RNC':'  (todos con RNC)'}`,A.sinRNCVeh>0),
+      detRow('🚢 Importadora',`${A.totalImp} registrados${A.sinRNCImp>0?' — '+A.sinRNCImp+' sin RNC':'  (todos con RNC)'}`,A.sinRNCImp>0),
+      detRow('🏢 Empresa',`${A.totalEmp} registrados${A.sinRNCEmp>0?' — '+A.sinRNCEmp+' sin RNC':'  (todos con RNC)'}`,A.sinRNCEmp>0),
+      ...(A.hayProblema?[detRow('Acción','Gestionar → Completar RNC de suplidores faltantes',false,true)]:[detRow('Estado','Todos los suplidores con documentos completos')]),
+      sp(60,120)];
+  })();
   const secVeh=buildMod('🚗','Registro de Vehículo','vehiculos',A=>[detRow('Total',`${A.total} vehículos | Activos: ${A.activos} | Aduana: ${A.aduana} | En EEUU: ${A.eeuu}`),...(A.sinCosto.length>0?[detRow('Sin costo',`${A.sinCosto.length} sin costo: ${A.sinCosto.slice(0,4).join(', ')}${A.sinCosto.length>4?'...':''}`,true)]:[]),...(A.sinPlaca>0?[detRow('Sin placa',`${A.sinPlaca} activos sin placa`)]:[]),...(A.hayProblema?[detRow('Acción','Actualizar → Ingresar costo y datos faltantes',false,true)]:[detRow('Estado','Todos los vehículos completos')])]);
   const secGV=buildMod('💸','Gastos de Vehículo','gastosVeh',A=>[detRow('Total',`${A.total} gastos registrados`),...(A.pendientes>0?[detRow('Pendientes',`${A.pendientes} con pago pendiente — ${fmtMon(A.totalPend)}`,true),detRow('Acción','Gestionar → Procesar pagos pendientes',false,true)]:[detRow('Estado','Todos al día')])]);
   const secCXP=buildMod('📑','Cuentas por Pagar','cxp',A=>[detRow('Total',`${A.total} cuentas | Pendiente: ${fmtMon(A.totalPend)}`),...(A.vencidas>0?[detRow('Vencidas',`${A.vencidas} factura(s): ${A.nombresVenc.join(', ')}`,true),detRow('Acción','Gestionar → Pagar facturas vencidas de inmediato',false,true)]:[detRow('Estado','Sin cuentas vencidas')])]);
@@ -33500,10 +33520,16 @@ async function _construirWord(hoy,semana,historial,modAlerts){
   if(modAlerts.clientes.sinDoc?.length>0&&urgentes.length<3)urgentes.push(`${modAlerts.clientes.sinDoc.length} cliente(s) sin cédula`);
   const top3=urgentes.slice(0,3);
 
-  // Header Word
-  const headerTbl=new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[6200,3160],rows:[new TableRow({children:[
-    new TableCell({borders:{top:linBdr(C.blue,10),bottom:linBdr(C.blue,4),left:linBdr(C.blue,10),right:noBdr()},shading:{fill:C.headerBg,type:ShadingType.CLEAR},margins:{top:160,bottom:160,left:220,right:120},width:{size:6200,type:WidthType.DXA},children:[para([mk(empresa,{size:28,bold:true,color:C.white})]),para([mk('INFORME SEMANAL DE GESTIÓN',{size:22,bold:true,color:'60A5FA'})]),para([mk(`Semana ${semana}  •  ${rango}`,{size:18,color:'94A3B8'})]),para([mk(`Generado: ${fechaStr}  |  Por: ${currentUser?.nombre||'Admin'}`,{size:16,color:'64748B'})])]}),
-    new TableCell({borders:{top:linBdr(C.blue,10),bottom:linBdr(C.blue,4),left:noBdr(),right:linBdr(C.blue,10)},shading:{fill:C.headerBg,type:ShadingType.CLEAR},margins:{top:120,bottom:120,left:80,right:220},width:{size:3160,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[para([mk(`Historial: ${historial.length}/4`,{size:18,color:'94A3B8'})],{alignment:AlignmentType.RIGHT}),para([mk('Solo Administrador',{size:16,color:'475569',italics:true})],{alignment:AlignmentType.RIGHT})]})
+  // Encabezado — fondo claro, borde azul, con logo
+  const logoChildren=[];
+  if(logoData&&logoData.startsWith('data:')){
+    try{const b64=logoData.split(',')[1];const mime=logoData.split(';')[0].split(':')[1]||'image/png';const imgType=mime.includes('png')?'png':mime.includes('jpg')||mime.includes('jpeg')?'jpg':'png';logoChildren.push(para([new docx.ImageRun({data:Uint8Array.from(atob(b64),c=>c.charCodeAt(0)),transformation:{width:80,height:80},type:imgType})]));}
+    catch(e){logoChildren.push(para([mk('🏢',{size:32})]));}
+  } else {logoChildren.push(para([mk('🏢',{size:32})]));}
+  const headerTbl=new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[1400,5000,2960],rows:[new TableRow({children:[
+    new TableCell({borders:{top:linBdr(C.blue,10),bottom:linBdr(C.blue,4),left:linBdr(C.blue,10),right:noBdr()},shading:{fill:'F8FAFC',type:ShadingType.CLEAR},margins:{top:120,bottom:120,left:160,right:80},width:{size:1400,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:logoChildren}),
+    new TableCell({borders:{top:linBdr(C.blue,10),bottom:linBdr(C.blue,4),left:noBdr(),right:noBdr()},shading:{fill:'F8FAFC',type:ShadingType.CLEAR},margins:{top:120,bottom:120,left:100,right:80},width:{size:5000,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[para([mk(empresa,{size:26,bold:true,color:C.navy})]),para([mk('INFORME SEMANAL DE GESTIÓN',{size:20,bold:true,color:C.blue})]),para([mk(`Semana ${semana}  •  ${rango}`,{size:17,color:C.gray})]),para([mk(`Generado: ${fechaStr}  |  Por: ${currentUser?.nombre||'Admin'}`,{size:15,color:C.gray})])]}),
+    new TableCell({borders:{top:linBdr(C.blue,10),bottom:linBdr(C.blue,4),left:noBdr(),right:linBdr(C.blue,10)},shading:{fill:'EFF6FF',type:ShadingType.CLEAR},margins:{top:120,bottom:120,left:80,right:160},width:{size:2960,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[para([mk(`Historial: ${historial.length}/4`,{size:17,bold:true,color:C.blue})],{alignment:AlignmentType.RIGHT}),para([mk('Solo Administrador',{size:15,color:C.gray,italics:true})],{alignment:AlignmentType.RIGHT}),para([mk('Uso Interno',{size:15,color:C.gray,italics:true})],{alignment:AlignmentType.RIGHT})]})
   ]})]});
 
   // TOP 3 tabla
@@ -33511,38 +33537,12 @@ async function _construirWord(hoy,semana,historial,modAlerts){
   ):[new TableRow({children:[new TableCell({borders:noBdrs(),shading:{fill:C.greenLight,type:ShadingType.CLEAR},margins:{top:100,bottom:100,left:160,right:160},width:{size:9360,type:WidthType.DXA},children:[para([mk('Sin acciones urgentes. El sistema está al día.',{size:20,bold:true,color:C.green})],{alignment:AlignmentType.CENTER})]})]})];
   const urgTbl=new Table({width:{size:9360,type:WidthType.DXA},columnWidths:top3.length>0?[500,8860]:[9360],rows:urgRows});
 
-  // Bitácora L-S
-  const{dias:diasSem,resultado:bitsRes}=analizarBitacoraSemanal();
-  const nomDias=diasSem.map(d=>d.toLocaleDateString('es-DO',{weekday:'short',day:'2-digit',month:'2-digit'}));
-  const colW=[2800,...Array(6).fill(Math.floor(6560/6)),1000];
-  const bitHdrRow=new TableRow({children:[
-    new TableCell({borders:allBdrs(C.navy,4),shading:{fill:C.headerBg,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:100,right:60},width:{size:2800,type:WidthType.DXA},children:[para([mk('Usuario',{size:17,bold:true,color:C.white})])]}),
-    ...nomDias.map((d,i)=>new TableCell({borders:allBdrs(C.navy,4),shading:{fill:C.headerBg,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:60,right:60},width:{size:Math.floor(6560/6),type:WidthType.DXA},children:[para([mk(d,{size:16,bold:true,color:C.white})],{alignment:AlignmentType.CENTER})]})),
-    new TableCell({borders:allBdrs(C.navy,4),shading:{fill:C.headerBg,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:60,right:80},width:{size:1000,type:WidthType.DXA},children:[para([mk('Total',{size:16,bold:true,color:C.white})],{alignment:AlignmentType.CENTER})]})
-  ]});
-  const bitDataRows=bitsRes.map((u,ri)=>{
-    const bgRow=ri%2===0?C.grayLight:C.white;
-    const celdas=u.diasData.map((d,ci)=>{
-      let txt,bg,color;
-      if(d.esFuturo){txt='—';bg=C.white;color=C.gray;}
-      else if(d.hizoAlgo){txt=`✓ ${d.total}`;bg=C.greenLight;color=C.greenDark;}
-      else if(d.iniciSesion){txt='Entró';bg=C.blueLight;color=C.blueDark;}
-      else{txt='Sin act.';bg=C.grayLight;color=C.gray;}
-      return new TableCell({borders:allBdrs(C.grayMid,2),shading:{fill:bg,type:ShadingType.CLEAR},margins:{top:50,bottom:50,left:50,right:50},width:{size:Math.floor(6560/6),type:WidthType.DXA},children:[para([mk(txt,{size:16,bold:d.hizoAlgo,color})],{alignment:AlignmentType.CENTER})]});
-    });
-    return new TableRow({children:[
-      new TableCell({borders:allBdrs(C.grayMid,2),shading:{fill:bgRow,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:100,right:60},width:{size:2800,type:WidthType.DXA},children:[para([mk(u.usuario,{size:18,bold:true,color:C.navy})])]}),
-      ...celdas,
-      new TableCell({borders:allBdrs(C.grayMid,2),shading:{fill:bgRow,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:60,right:80},width:{size:1000,type:WidthType.DXA},children:[para([mk(`${u.diasActivos}/6`,{size:18,bold:true,color:u.diasActivos>0?C.green:C.gray})],{alignment:AlignmentType.CENTER})]})
-    ]});
-  });
-  const bitTbl=new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[2800,...Array(6).fill(Math.floor(6560/6)),1000],rows:[bitHdrRow,...bitDataRows]});
-
   // Pie
-  const pieTbl=new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[9360],rows:[new TableRow({children:[new TableCell({borders:{top:linBdr(C.blue,6),bottom:noBdr(),left:noBdr(),right:noBdr()},shading:{fill:C.grayLight,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:200,right:200},width:{size:9360,type:WidthType.DXA},children:[para([mk(`Generado automáticamente por DealerSystem  •  ${empresa}  •  ${fechaStr}  •  Uso interno — Solo Administrador`,{size:16,color:C.gray,italics:true})],{alignment:AlignmentType.CENTER})]})]})]});
+  const pieTbl=new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[9360],rows:[new TableRow({children:[new TableCell({borders:{top:linBdr(C.blue,6),bottom:noBdr(),left:noBdr(),right:noBdr()},shading:{fill:'F8FAFC',type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:200,right:200},width:{size:9360,type:WidthType.DXA},children:[para([mk(`Generado automáticamente por DealerSystem  •  ${empresa}  •  ${fechaStr}  •  Uso interno — Solo Administrador`,{size:16,color:C.gray,italics:true})],{alignment:AlignmentType.CENTER})]})]})]});
 
   function secTitle(txt,color){return para([mk(txt,{size:22,bold:true,color})],{border:{bottom:{style:BorderStyle.SINGLE,size:6,color,space:1}},spacing:{before:120,after:120}});}
 
+  // Documento final — sin sección actividad semanal
   const doc=new Document({styles:{default:{document:{run:{font:'Arial',size:20}}}},sections:[{properties:{page:{size:{width:12240,height:15840},margin:{top:720,right:720,bottom:720,left:720}}},children:[
     headerTbl,sp(140,80),
     secTitle('ESTADO DE MÓDULOS',C.blue),
@@ -33550,8 +33550,7 @@ async function _construirWord(hoy,semana,historial,modAlerts){
     ...secCli,...secVentas,...secCXC,...secGastos,
     ...secNom,...secCot,...secAuth,...secSeg,
     sp(80,60),secTitle('🔴 TOP 3 ACCIONES URGENTES ESTA SEMANA',C.red),urgTbl,
-    sp(100,80),secTitle('📅 ACTIVIDAD SEMANAL POR USUARIO (Lunes a Sábado)',C.navy),bitTbl,
-    sp(80,60),pieTbl
+    sp(100,80),pieTbl
   ]}]});
 
   const blob=await Packer.toBlob(doc);
