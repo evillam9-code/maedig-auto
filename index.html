@@ -4831,47 +4831,43 @@ function nuevoGastoVeh(){
   openModal('➕ Nuevo Gasto de Vehículo',`
     <div class="form-row c2">
       <div class="form-field"><label class="required">Vehículo</label>
-        <div style="display:flex;gap:6px;align-items:flex-start">
-        <select id="ngv-veh" style="${DB.vehiculos.length===0?'border:2px solid var(--red)':''};flex:1">
-          <option value="">${DB.vehiculos.length===0?'⚠️ No hay vehículos registrados':'Seleccionar vehículo...'}</option>
-          ${DB.vehiculos.filter(v=>v.status!=='VENDIDO').map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio}</option>`).join('')}
-          ${DB.vehiculos.filter(v=>v.status==='VENDIDO').length?`<option disabled>── Vendidos ──</option>${DB.vehiculos.filter(v=>v.status==='VENDIDO').map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio} (VENDIDO)</option>`).join('')}`:''}
-        </select>
-        ${DB.vehiculos.length===0?'<div style="color:var(--red);font-size:11px;margin-top:4px">⚠️ Debes registrar un vehículo antes de agregar gastos.</div>':''}
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="ngv-veh" style="${DB.vehiculos.length===0?'border:2px solid var(--red)':''};flex:1">
+            <option value="">${DB.vehiculos.length===0?'⚠️ No hay vehículos registrados':'Seleccionar vehículo...'}</option>
+            ${DB.vehiculos.filter(v=>v.status!=='VENDIDO').map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio}</option>`).join('')}
+            ${DB.vehiculos.filter(v=>v.status==='VENDIDO').length?`<option disabled>── Vendidos ──</option>${DB.vehiculos.filter(v=>v.status==='VENDIDO').map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio} (VENDIDO)</option>`).join('')}`:''}
+          </select>
+          <button type="button" onclick="quickNuevoVehiculo('ngv-veh')" style="padding:5px 9px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0" title="Nuevo vehículo">➕</button>
         </div>
-        <button type="button" onclick="quickNuevoVehiculo('ngv-veh')" style="padding:5px 9px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:700" title="Nuevo vehículo">➕</button>
+        ${DB.vehiculos.length===0?'<div style="color:var(--red);font-size:11px;margin-top:4px">⚠️ Debes registrar un vehículo antes de agregar gastos.</div>':''}
       </div>
       <div class="form-field"><label class="required">Suplidor</label>
-        <div style="display:flex;gap:6px;align-items:flex-start">
-        <select id="ngv-sup" style="flex:1">
-          ${(()=>{const supVeh=DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo');return supVeh.length?supVeh.map((s,i)=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${i===0?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join(''):'<option value="">Sin suplidores de vehículos</option>';})()}
-        </select>
-        <button type="button" onclick="quickNuevoSuplidor('ngv-sup','vehiculo')" style="padding:5px 9px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:700" title="Nuevo suplidor">➕</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="ngv-sup" style="flex:1">
+            ${(()=>{const supVeh=DB.suplidores.filter(s=>(s.tipoSuplidor||'vehiculo')==='vehiculo');return supVeh.length?supVeh.map((s,i)=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${i===0?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join(''):'<option value="">Sin suplidores de vehículos</option>';})()}
+          </select>
+          <button type="button" onclick="quickNuevoSuplidor('ngv-sup','vehiculo')" style="padding:5px 9px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0" title="Nuevo suplidor">➕</button>
+        </div>
       </div>
     </div>
-    <div class="form-row c3">
+    <div class="form-row" style="grid-template-columns:1fr;gap:14px;margin-bottom:14px">
       <div class="form-field"><label class="required">Tipo de Gasto</label>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center">
           <select id="ngv-tipo" style="flex:1">
             <option value="">Seleccionar...</option>
             ${tiposGasto.map(t=>`<option>${escHtml(t)}</option>`).join('')}
           </select>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="quickAddToList('ngv-tipo','tiposGastoVeh',TIPOS_GASTO_VEH)" style="padding:5px 9px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:700" title="Agregar tipo">➕</button>
+          <button type="button" onclick="quickAddToList('ngv-tipo','tiposGastoVeh',TIPOS_GASTO_VEH)" style="padding:5px 9px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0" title="Agregar tipo">➕</button>
         </div>
       </div>
+    </div>
+    <div class="form-row c3" id="ngv-banco-wrap">
       <div class="form-field"><label class="required">Moneda</label>
         <select id="ngv-moneda" onchange="toggleGVehMoneda();calcPendienteGVeh()">
           <option value="RD$">RD$ — Pesos</option>
           <option value="USD">USD — Dólares</option>
         </select>
       </div>
-      <div class="form-field" id="ngv-tasa-wrap" style="display:none">
-        <label class="required">💱 Tasa del Día (RD$ x 1 USD)</label>
-        <input type="text" id="ngv-tasa" value="${DB.config.tasaCambio||60}" placeholder="Ej: 60.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)">
-        <div style="font-size:11px;color:var(--gray);margin-top:3px">Se usará para calcular el equivalente en pesos</div>
-      </div>
-    </div>
-    <div class="form-row c2" id="ngv-banco-wrap">
       <div class="form-field"><label class="required">Banco</label>
         <select id="ngv-banco" onchange="actualizarCuentasNGV()">
           ${(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="Caja General">Caja General</option>'}
@@ -4881,6 +4877,13 @@ function nuevoGastoVeh(){
         <select id="ngv-cuenta">
           ${(()=>{const bcs=DB.config.bancoCuentas||[];const b=bcs[0];return b?(b.cuentas||[]).map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):'<option value="Caja General">Caja General</option>';})()}
         </select>
+      </div>
+    </div>
+    <div class="form-row" id="ngv-tasa-wrap" style="display:none;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="form-field">
+        <label class="required">💱 Tasa del Día (RD$ x 1 USD)</label>
+        <input type="text" id="ngv-tasa" value="${DB.config.tasaCambio||60}" placeholder="Ej: 60.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)">
+        <div style="font-size:11px;color:var(--gray);margin-top:3px">Se usará para calcular el equivalente en pesos</div>
       </div>
     </div>
     <div class="form-row c3">
@@ -4894,15 +4897,20 @@ function nuevoGastoVeh(){
         <input type="text" id="ngv-pendiente" value="0" readonly style="background:#f8fafc;font-weight:700;color:var(--red)">
       </div>
     </div>
-    <div class="form-row c3">
-      <div class="form-field"><label>No. Factura</label>
-        <input type="text" id="ngv-nrofactura" placeholder="Ej: FAC-0001">
-      </div>
+    <div class="form-row c2">
       <div class="form-field"><label>Fecha</label>
         <input type="date" id="ngv-fecha" value="${today()}">
       </div>
       <div class="form-field"><label>Fecha de Pago</label>
         <input type="date" id="ngv-fechapago">
+      </div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Nº Factura del Suplidor</label>
+        <input type="text" id="ngv-nrofactura" placeholder="Ej: FAC-0001">
+      </div>
+      <div class="form-field"><label>Observación / Comentario</label>
+        <input type="text" id="ngv-obs" placeholder="Detalle adicional...">
       </div>
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -4975,6 +4983,7 @@ function guardarNuevoGastoVeh(){
     fecha:document.getElementById('ngv-fecha').value,
     fechaPago:document.getElementById('ngv-fechapago').value,
     nroFactura:document.getElementById('ngv-nrofactura')?.value||'',
+    observacion:document.getElementById('ngv-obs')?.value||'',
     statusGasto:pendiente<=0?'PAGADO':abono>0?'ABONADO':'PENDIENTE'
   };
   if(!DB.gastosVehiculos)DB.gastosVehiculos=[];
