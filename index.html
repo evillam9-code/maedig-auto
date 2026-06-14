@@ -947,25 +947,31 @@ function renderFeria(){
   }).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray)">Sin ventas registradas en feria</td></tr>';
 
   const extrasTab=puedeConfig?`
-      <div style="display:grid;grid-template-columns:240px 1fr;gap:14px;align-items:start">
-        <!-- Lista de vehículos a la izquierda -->
-        <div class="card" style="margin-bottom:0;padding:10px">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px;padding:0 4px">Vehículos disponibles</div>
-          <div id="feria-admin-veh-list">
+      <!-- Selector de vehículo con búsqueda -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Seleccionar vehículo a configurar</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <select id="feria-admin-veh-sel" onchange="feriaSelAdmin(this.value,null)"
+            style="flex:1;padding:10px 14px;border:1.5px solid var(--gray3);border-radius:8px;font-size:14px;background:#fff">
+            <option value="">-- Seleccionar vehículo --</option>
             ${vehDisp.map(v=>{
               const ex=(DB.feria.extras||{})[v.id]||{};
-              return '<div id="feria-adm-'+v.id+'" data-vid="'+v.id+'" onclick="feriaSelAdmin(this.dataset.vid,this)"'
-                +' style="border-radius:8px;padding:10px;margin-bottom:6px;cursor:pointer;border:1.5px solid var(--gray3);transition:.15s">'
-                +'<div style="font-size:10px;font-weight:700;color:var(--blue)">'+escHtml(v.codigo)+'</div>'
-                +'<div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.3">'+escHtml(v.marca)+' '+escHtml(v.modelo)+'</div>'
-                +'<div style="font-size:11px;color:var(--gray)">'+(v.anio||'')+' · '+v.status+'</div>'
-                +(ex.precioFeria?'<div style="font-size:10px;font-weight:700;color:var(--green);margin-top:3px">✓ Configurado</div>':'')
-                +'</div>';
-            }).join('')||'<div style="color:var(--gray);padding:8px;font-size:12px">Sin vehículos</div>'}
-          </div>
+              return '<option value="'+v.id+'">'
+                +escHtml(v.codigo)+' — '+escHtml(v.marca)+' '+escHtml(v.modelo)+' '+(v.anio||'')
+                +(ex.precioFeria?' ✓':' (sin configurar)')
+                +'</option>';
+            }).join('')}
+          </select>
         </div>
-        <!-- Formulario a la derecha -->
-        <div id="feria-admin-form" style="display:none">
+        <!-- Resumen del vehículo seleccionado -->
+        <div id="feria-adm-preview" style="display:none;margin-top:10px;padding:10px 14px;background:var(--blue3);border-radius:8px;border:1px solid var(--blue)">
+          <div style="font-size:11px;font-weight:700;color:var(--blue)" id="feria-adm-prev-code"></div>
+          <div style="font-size:14px;font-weight:700;color:var(--navy)" id="feria-adm-prev-name"></div>
+          <div style="font-size:12px;color:var(--gray)" id="feria-adm-prev-status"></div>
+        </div>
+      </div>
+      <!-- Formulario (aparece debajo al seleccionar vehículo) -->
+      <div id="feria-admin-form" style="display:none">
           <div class="card" style="margin-bottom:0">
           <div class="card-title" id="feria-admin-title">⚙️ Extras de feria</div>
           <div class="form-row c2">
@@ -1021,7 +1027,6 @@ function renderFeria(){
             <button class="btn btn-secondary" onclick="feriaShowTab('vendedor')">📱 Ver en vista vendedor</button>
           </div>
         </div>
-        </div>
       </div>`
     :'<div class="card"><div style="text-align:center;padding:32px;color:var(--gray)">No tienes permiso para configurar extras</div></div>';
 
@@ -1055,9 +1060,12 @@ function renderFeria(){
       <div class="card" style="margin-bottom:14px">
         <div class="form-field" style="margin-bottom:0">
           <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray)">🔍 Seleccionar Vehículo</label>
-          <select id="feria-veh-sel" onchange="feriaCargarVehiculo(this.value)" style="margin-top:6px">
+          <select id="feria-veh-sel" onchange="feriaSeleccionarVehModal(this.value)" style="margin-top:6px;font-size:14px;padding:10px">
             <option value="">-- Seleccionar del inventario --</option>
-            ${vehDisp.map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio||''}</option>`).join('')}
+            ${vehDisp.map(v=>{
+              const ex=(DB.feria?.extras||{})[v.id]||{};
+              return `<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio||''}${ex.precioFeria?' ✓':''}</option>`;
+            }).join('')}
           </select>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;color:#166534;text-align:center;margin-top:8px">
             📢 Tasa oficial: RD$ ${parseFloat(DB.config.tasaCambio||60).toFixed(2)}
@@ -1190,6 +1198,114 @@ function feriaShowTab(tab){
     if(btn) btn.style.cssText=btn.style.cssText.replace(/border-bottom:[^;]+;/,'')
       +(t===tab?'border-bottom:3px solid var(--blue);color:var(--blue);':'border-bottom:3px solid transparent;color:var(--gray);');
   });
+}
+
+function feriaSeleccionarVehModal(vid){
+  if(!vid){
+    // Reset
+    const empty=document.getElementById('feria-empty');
+    const panel=document.getElementById('feria-car-panel');
+    if(empty)empty.style.display='block';
+    if(panel)panel.style.display='none';
+    window._feriaVehActivo=null;
+    return;
+  }
+  const v=DB.vehiculos.find(x=>x.id===vid);
+  if(!v)return;
+  const ex=(DB.feria?.extras||{})[vid]||{};
+  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const precioUSD=parseFloat(ex.precioFeria||0);
+  const precioRD=precioUSD?'RD$ '+(precioUSD*tasa).toLocaleString('es-DO',{maximumFractionDigits:0}):'—';
+
+  openModal('🚗 '+escHtml(v.codigo)+' — '+escHtml(v.marca+' '+v.modelo+(v.anio?' '+v.anio:'')),`
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--gray);margin-bottom:4px">${escHtml(v.color||'')} · ${v.status}</div>
+      ${precioUSD?`
+      <div style="background:#059669;color:#fff;padding:14px;border-radius:10px;margin:10px 0">
+        <div style="font-size:10px;text-transform:uppercase;opacity:.85">Precio especial de feria</div>
+        <div style="font-size:24px;font-weight:800;margin:4px 0">$${precioUSD.toLocaleString('en-US',{minimumFractionDigits:2})} USD</div>
+        <div style="font-size:12px;opacity:.9">≈ ${precioRD}</div>
+      </div>
+      ${ex.min?`<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;color:#c2410c;margin-bottom:10px;text-align:center">⚠️ Mínimo: $${parseFloat(ex.min).toLocaleString('en-US')} USD</div>`:''}
+      `:'<div style="background:var(--gray2);border-radius:8px;padding:12px;margin:10px 0;color:var(--gray);font-size:13px">Sin precio de feria configurado</div>'}
+      ${ex.beneficios&&ex.beneficios.length?`
+      <div style="text-align:left;margin-top:10px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:6px">🎁 Beneficios incluidos</div>
+        ${ex.beneficios.map(b=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gray3);font-size:13px"><span style="color:#059669">✓</span>'+escHtml(b)+'</div>').join('')}
+      </div>`:''}
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label class="required">Nombre del Cliente</label><input type="text" id="fvm-cli-nombre" placeholder="Ej: María González"></div>
+      <div class="form-field"><label>Teléfono</label><input type="text" id="fvm-cli-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Banco del Cliente</label>
+        <select id="fvm-banco"><option value="">-- Seleccione --</option>
+          ${(DB.config.bancos||['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro']).map(b=>`<option>${escHtml(b)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-field"><label>Tipo Documento</label>
+        <select id="fvm-tipodoc" onchange="onTipoDocChange('fvm-tipodoc','fvm-doc')">
+          <option value="Cédula">Cédula</option><option value="RNC">RNC</option><option value="Pasaporte">Pasaporte</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field"><label>Número Documento</label>
+      <input type="text" id="fvm-doc" maxlength="13" placeholder="000-0000000-0" oninput="fmtDocInput('fvm-tipodoc','fvm-doc')">
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal();document.getElementById('feria-veh-sel').value=''">Cancelar</button>
+     <button class="btn btn-primary" onclick="feriaGenerarCotizacionModal('${vid}')">📄 Generar Cotización</button>`
+  );
+}
+
+function feriaGenerarCotizacionModal(vid){
+  const v=DB.vehiculos.find(x=>x.id===vid);
+  const nombre=document.getElementById('fvm-cli-nombre')?.value.trim();
+  const banco=document.getElementById('fvm-banco')?.value;
+  if(!v){toast('Vehículo no encontrado','error');return;}
+  if(!nombre){toast('Ingresa el nombre del cliente','error');return;}
+  if(!banco){toast('Selecciona el banco del cliente','error');return;}
+
+  const ex=(DB.feria?.extras||{})[vid]||{};
+  const precioUSD=parseFloat(ex.precioFeria||0);
+  const tasa=parseFloat(DB.config.tasaCambio||60);
+
+  if(!DB.feria)DB.feria={extras:{},ventas:[]};
+  const venta={
+    id:uid(),fecha:today(),vendedor:currentUser?.nombre||'',
+    cliente:nombre,telefono:document.getElementById('fvm-cli-tel')?.value||'',
+    vehiculoId:vid,vehiculo:v.codigo+' '+v.marca+' '+v.modelo+(v.anio?' '+v.anio:''),
+    banco,precio:precioUSD,moneda:'USD',
+    tipoDoc:document.getElementById('fvm-tipodoc')?.value||'Cédula',
+    documento:document.getElementById('fvm-doc')?.value||'',
+    cotizacionId:''
+  };
+  DB.feria.ventas.push(venta);
+  const cotId=_crearCotizacionFeria(venta);
+  const vi=DB.feria.ventas.findIndex(x=>x.id===venta.id);
+  if(vi>=0)DB.feria.ventas[vi].cotizacionId=cotId;
+  sDB('feria');
+  closeModal();
+  // Reset selector
+  const sel=document.getElementById('feria-veh-sel');
+  if(sel)sel.value='';
+  feriaCargarVehiculo('');
+
+  const ci=DB.cotizaciones.findIndex(c=>c.id===cotId);
+  toast('✅ Cotización generada y guardada','success');
+  if(ci>=0){
+    openModal('✅ Cotización Creada',
+      '<div style="text-align:center;padding:20px"><div style="font-size:40px;margin-bottom:12px">📋</div>'
+      +'<div style="font-size:16px;font-weight:700;margin-bottom:8px">Cotización generada</div>'
+      +'<div style="font-size:13px;color:var(--gray)">Cliente: <strong>'+escHtml(nombre)+'</strong></div>'
+      +'<div style="font-size:13px;color:var(--gray);margin-bottom:12px">Vehículo: <strong>'+escHtml(venta.vehiculo)+'</strong></div>'
+      +(precioUSD?'<div style="font-size:20px;font-weight:800;color:var(--green)">$'+precioUSD.toLocaleString('en-US',{minimumFractionDigits:2})+' USD</div>'
+        +'<div style="font-size:12px;color:var(--gray)">≈ RD$ '+(precioUSD*tasa).toLocaleString('es-DO',{maximumFractionDigits:0})+'</div>':'')
+      +'</div>',
+      '<button class="btn btn-secondary" onclick="closeModal();renderFeria()">Cerrar</button>'
+      +'<button class="btn btn-primary" onclick="closeModal();imprimirCotizacion('+ci+');renderFeria()">🖨️ Imprimir Cotización</button>'
+    );
+  }
 }
 
 function feriaCargarVehiculo(vid){
@@ -1389,10 +1505,28 @@ function feriaGenerarCotizacion(){
 // ── ADMIN: Configurar Extras ──────────────────────────────────
 function feriaSelAdmin(vid, el){
   window._feriaAdminVehId=vid;
-  document.querySelectorAll('[id^="feria-adm-"]').forEach(x=>{
-    x.style.borderColor='var(--gray3)';x.style.background='';x.style.boxShadow='';
-  });
-  if(el){el.style.borderColor='var(--blue)';el.style.background='#eff6ff';el.style.boxShadow='0 0 0 3px rgba(37,99,235,.12)';}
+  // Sync the select dropdown if called from elsewhere
+  const selDd=document.getElementById('feria-admin-veh-sel');
+  if(selDd&&selDd.value!==vid)selDd.value=vid||'';
+  // Show/hide preview card
+  const preview=document.getElementById('feria-adm-preview');
+  if(preview){
+    if(vid){
+      const vPrev=DB.vehiculos.find(x=>x.id===vid);
+      const exPrev=(DB.feria?.extras||{})[vid]||{};
+      if(vPrev){
+        const codeEl=document.getElementById('feria-adm-prev-code');
+        const nameEl=document.getElementById('feria-adm-prev-name');
+        const statEl=document.getElementById('feria-adm-prev-status');
+        if(codeEl)codeEl.textContent=vPrev.codigo;
+        if(nameEl)nameEl.textContent=vPrev.marca+' '+vPrev.modelo+(vPrev.anio?' '+vPrev.anio:'');
+        if(statEl)statEl.textContent=vPrev.status+(exPrev.precioFeria?' · ✓ Precio: $'+parseFloat(exPrev.precioFeria).toLocaleString('en-US')+' USD':' · Sin precio configurado');
+        preview.style.display='block';
+      }
+    } else {
+      preview.style.display='none';
+    }
+  }
 
   const v=DB.vehiculos.find(x=>x.id===vid);
   const ex=(DB.feria?.extras||{})[vid]||{};
@@ -1462,9 +1596,9 @@ function feriaGuardarExtras(){
   };
   sDB('feria');
   toast('✅ Extras guardados correctamente','success');
-  // Refrescar lista de vehículos para mostrar badge "Configurado"
+  // Refresh the select options and re-select the vehicle
   renderFeria();
-  setTimeout(()=>{feriaShowTab('extras');feriaSelAdmin(vid,document.getElementById('feria-adm-'+vid));},100);
+  setTimeout(()=>{feriaShowTab('extras');feriaSelAdmin(vid,null);},100);
 }
 
 function _crearCotizacionFeria(venta){
@@ -3797,9 +3931,49 @@ function renderInformes(){
 }
 
 // ══ USUARIOS ══
+// Global MODS definition for user permissions (used by editarUsuario + guardarUsuario)
+const MODS_PERMS=[
+  {id:'dashboard',label:'🏠 Inicio'},
+  {id:'informes',label:'📊 Informes'},{id:'consultas',label:'🔍 Consultas'},
+  {id:'suplidores',label:'🏭 Suplidores'},{id:'inventario',label:'🚗 Vehículo'},
+  {id:'gastosVeh',label:'💸 Gastos Veh.'},{id:'cxp',label:'📑 CxP'},
+  {id:'clientes',label:'👤 Clientes'},{id:'ventas',label:'💰 Ventas'},
+  {id:'cxc',label:'📬 CxC'},{id:'gastos',label:'🏢 Gastos'},
+  {id:'nomina',label:'👷 Nómina'},{id:'caja',label:'💳 Caja'},
+  {id:'cotizaciones',label:'📋 Cotizaciones'},{id:'autorizaciones',label:'📝 Autorizaciones'},
+  {id:'seguros',label:'🛡️ Seguros'},
+  {id:'feria',label:'🎪 Feria',subperms:[
+    {id:'feria-vendedor',label:'📱 Vista Vendedor'},
+    {id:'feria-extras',label:'⚙️ Config. Extras'},
+    {id:'feria-historial',label:'📋 Historial'}
+  ]},
+  {id:'facturaExterna',label:'🧾 Facturas'},{id:'alertas',label:'🔔 Alertas'},
+  {id:'verSaldoCaja',label:'💰 Saldo Caja'},{id:'chat',label:'💬 Chat'},
+  {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
+  {id:'prestamos',label:'🏛️ Préstamos'},
+];
+
+function _modTodos(pfx){
+  document.querySelectorAll('[id^="'+pfx+'mod-"]').forEach(function(cb){
+    cb.checked=true;
+    var mid=cb.id.replace(pfx+'mod-','');
+    toggleModSubperms(mid,true);
+  });
+}
+function _modLimpiar(pfx){
+  document.querySelectorAll('[id^="'+pfx+'mod-"]').forEach(function(cb){
+    if(cb.id!==pfx+'mod-dashboard'){
+      cb.checked=false;
+      var mid=cb.id.replace(pfx+'mod-','');
+      toggleModSubperms(mid,false);
+    }
+  });
+}
+
 function toggleModSubperms(modId, checked){
+  // Sub-perms are always shown; this function is kept for compatibility
   const wrap=document.getElementById('u-subperms-'+modId);
-  if(wrap)wrap.style.display=checked?'flex':'none';
+  if(wrap)wrap.style.opacity=checked?'1':'0.4';
 }
 
 function renderUsuarios(){
@@ -3819,6 +3993,7 @@ function renderUsuarios(){
     {id:'usuarios',label:'Usuarios'},{id:'config',label:'Configuración'},
     {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
     {id:'prestamos',label:'🏛️ Préstamos'},
+    {id:'feria',label:'🎪 Feria',subperms:[{id:'feria-vendedor',label:'📱 Vista Vendedor'},{id:'feria-extras',label:'⚙️ Config. Extras'},{id:'feria-historial',label:'📋 Historial'}]},
   ];
   const BORRAR=[
     {id:'ventas',label:'Ventas'},{id:'clientes',label:'Clientes'},
@@ -3850,24 +4025,34 @@ function renderUsuarios(){
       </div>
 
       <div style="margin-bottom:12px">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">MÓDULOS PERMITIDOS</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px">MÓDULOS PERMITIDOS</div>
+          <div style="display:flex;gap:6px">
+            <button type="button" onclick="document.querySelectorAll('[id^=nu-mod-]').forEach(cb=>{cb.checked=true;toggleModSubperms(cb.dataset.mid,true);})" style="padding:3px 10px;font-size:11px;background:var(--blue3);color:var(--blue);border:1px solid var(--blue);border-radius:5px;cursor:pointer;font-weight:600">✅ Todos</button>
+            <button type="button" onclick="_modLimpiar('nu-')" style="padding:3px 10px;font-size:11px;background:var(--red2);color:var(--red);border:1px solid var(--red);border-radius:5px;cursor:pointer;font-weight:600">✕ Limpiar</button>
+          </div>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
-          ${MODS.map(m=>{
-      const hasSub=m.subperms&&m.subperms.length;
-      return `<div style="display:flex;flex-direction:column;align-items:center">
-            <label style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;cursor:pointer;padding:8px 4px;border:1.5px solid var(--gray3);border-radius:8px;text-align:center;transition:.15s;width:100%" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--gray3)'">
-              <input type="checkbox" id="nu-mod-${m.id}" style="width:16px;height:16px;accent-color:var(--blue);margin-bottom:2px"
-                onchange="toggleModSubperms('${m.id}',this.checked)">
-              ${escHtml(m.label)}
-            </label>
-            ${hasSub?`<div id="u-subperms-${m.id}" style="display:none;flex-direction:column;gap:2px;margin-top:4px;width:100%;padding:0 2px">
-              ${m.subperms.map(sp=>`<label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;color:var(--gray)">
-                <input type="checkbox" id="u-sp-${sp.id}" checked style="accent-color:var(--blue);width:11px;height:11px">
-                ${sp.label}
-              </label>`).join('')}
-            </div>`:''}
-          </div>`;
-    }).join('')}
+          ${(()=>{
+  return MODS.map(m=>{
+    const hasSub=m.subperms&&m.subperms.length;
+    const isChecked=false;
+    let html='<div style="display:flex;flex-direction:column;align-items:center">'
+      +'<label style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;cursor:pointer;padding:8px 4px;border:1.5px solid var(--gray3);border-radius:8px;text-align:center;transition:.15s;width:100%">'
+      +'<input type="checkbox" id="nu-mod-'+m.id+'" style="width:16px;height:16px;accent-color:var(--blue);margin-bottom:2px" data-mid="'+m.id+'" onchange="toggleModSubperms(this.dataset.mid,this.checked)">'
+      +escHtml(m.label)
+      +'</label>';
+    if(hasSub){
+      html+='<div id="u-subperms-'+m.id+'" style="display:flex;flex-direction:column;gap:2px;margin-top:4px;width:100%;padding:0 2px;border-left:2px solid var(--blue3);padding-left:8px">'
+        +m.subperms.map(sp=>'<label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;color:var(--gray)">'
+          +'<input type="checkbox" id="u-sp-'+sp.id+'" checked style="accent-color:var(--blue);width:11px;height:11px">'
+          +escHtml(sp.label)+'</label>').join('')
+        +'</div>';
+    }
+    html+='</div>';
+    return html;
+  }).join('');
+})()}
         </div>
       </div>
 
@@ -3956,6 +4141,13 @@ function crearUsuarioNuevo(){
   const puedeEditar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-edit-'+id)?.checked);
   const deleteMods=role==='admin'?DEL_IDS:DEL_IDS.filter(id=>document.getElementById('nu-del-'+id)?.checked);
   const editMods=role==='admin'?DEL_IDS:DEL_IDS.filter(id=>document.getElementById('nu-edit-'+id)?.checked);
+  // Feria sub-perms
+  const feriaPerms={};
+  if(role==='admin'||document.getElementById('nu-mod-feria')?.checked){
+    feriaPerms['feria-vendedor']=role==='admin'||document.getElementById('u-sp-feria-vendedor')?.checked!==false;
+    feriaPerms['feria-extras']=role==='admin'||document.getElementById('u-sp-feria-extras')?.checked===true;
+    feriaPerms['feria-historial']=role==='admin'||document.getElementById('u-sp-feria-historial')?.checked!==false;
+  }
   DB.users.push({
     id:uid(),nombre,username:user,password:pass,role,activo:true,
     modulos,deleteMods,editMods,
@@ -3964,7 +4156,8 @@ function crearUsuarioNuevo(){
       eliminar:puedeEliminar,
       imprimir:true,
       pdf:true,
-      deleteMods,editMods
+      deleteMods,editMods,
+      ...feriaPerms
     }
   });
   sDB('users');
@@ -4033,65 +4226,113 @@ function eliminarUsuario(i){
 function editarUsuario(i){
   const u=DB.users[i];
   const roles=DB.config.roles||[{id:'usuario',nombre:'Usuario'}];
-  const MODS=[
-    {id:'dashboard',label:'🏠 Inicio'},{id:'informes',label:'📊 Informe Mensual'},{id:'consultas',label:'🔍 Consultas'},
-    {id:'suplidores',label:'🏭 Suplidores'},{id:'inventario',label:'🚗 Registro Vehículo'},
-    {id:'gastosVeh',label:'💸 Gastos Vehículo'},{id:'cxp',label:'📑 Cuentas por Pagar'},
-    {id:'clientes',label:'👤 Clientes'},{id:'ventas',label:'💰 Ventas'},
-    {id:'cxc',label:'📬 Cuentas por Cobrar'},{id:'gastos',label:'🏢 Gastos Empresa'},
-    {id:'nomina',label:'👷 Nómina'},{id:'caja',label:'💳 Caja'},
-    {id:'cotizaciones',label:'📋 Cotizaciones'},{id:'autorizaciones',label:'📝 Autorización Compra'},
-    {id:'seguros',label:'🛡️ Seguros'},{id:'feria',label:'🎪 Vendedores (Feria)',subperms:[
-      {id:'feria-vendedor',label:'📱 Vista Vendedor'},
-      {id:'feria-extras',label:'⚙️ Configurar Extras'},
-      {id:'feria-historial',label:'📋 Historial'}
-    ]},{id:'facturaExterna',label:'🧾 Facturas Externas'},{id:'alertas',label:'🔔 Alertas'},{id:'verSaldoCaja',label:'💰 Ver Saldo Caja'},{id:'chat',label:'💬 Chat Interno'},
-    {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
-    {id:'prestamos',label:'🏛️ Préstamos'},
-  ];
   const mods=u.modulos||[];
   const perms=u.permisos||{};
-  openModal('Editar Usuario: '+escHtml(u.nombre),`
-    <div class="form-row c2">
-      <div class="form-field"><label class="required">Nombre</label><input type="text" id="u-nombre" value="${escHtml(u.nombre)}"></div>
-      <div class="form-field"><label class="required">Usuario</label><input type="text" id="u-user" value="${escHtml(u.username)}"></div>
-    </div>
-    <div class="form-row c2">
-      <div class="form-field"><label>Nueva Contraseña</label><input type="password" id="u-pass" placeholder="Dejar en blanco para mantener"></div>
-      <div class="form-field"><label>Rol</label>
-        <select id="u-role">
-          <option value="admin" ${u.role==='admin'?'selected':''}>Administrador</option>
-          ${roles.map(r=>`<option value="${escHtml(r.id)}" ${u.role===r.id?'selected':''}>${escHtml(r.nombre)}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="form-field"><label>Módulos con Acceso</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
-        ${MODS.map(m=>`
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;cursor:pointer;padding:6px;border:1px solid var(--gray3);border-radius:6px">
-            <input type="checkbox" id="u-mod-${m.id}" ${mods.includes(m.id)||u.role==='admin'?'checked':''} style="width:15px;height:15px;accent-color:var(--blue)">
-            ${m.label}
-          </label>`).join('')}
-      </div>
-    </div>
-    <div style="margin-top:12px;padding:10px;background:var(--gray2);border-radius:8px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--blue)">🔐 Permisos de Acción:</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px;background:#fff;border-radius:6px;border:1px solid var(--gray3)"><input type="checkbox" id="u-perm-editar" ${perms.editar||u.role==='admin'?'checked':''} style="accent-color:var(--blue)"> ✏️ Editar</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px;background:#fff;border-radius:6px;border:1px solid var(--gray3)"><input type="checkbox" id="u-perm-eliminar" ${perms.eliminar||u.role==='admin'?'checked':''} style="accent-color:var(--red)"> 🗑 Eliminar</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px;background:#fff;border-radius:6px;border:1px solid var(--gray3)"><input type="checkbox" id="u-perm-imprimir" ${perms.imprimir||u.role==='admin'?'checked':''} style="accent-color:var(--green)"> 🖨️ Imprimir</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px;background:#fff;border-radius:6px;border:1px solid var(--gray3)"><input type="checkbox" id="u-perm-pdf" ${perms.pdf||u.role==='admin'?'checked':''} style="accent-color:var(--amber)"> 📄 PDF</label>
-      </div>
-      <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--gray);text-transform:uppercase">✏️ Permisos de Editar por módulo:</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px">
-        ${[{k:'editarVentas',l:'Ventas'},{k:'editarClientes',l:'Clientes'},{k:'editarSuplidores',l:'Suplidores'},{k:'editarGastos',l:'Gastos'},{k:'editarNomina',l:'Nómina'},{k:'editarGastosVeh',l:'Gastos Vehículo'},{k:'editarCobros',l:'CxC Cobros'},{k:'editarCxp',l:'CxP Pagos'},{k:'editarVehiculos',l:'Vehículos'},{k:'editarCaja',l:'Caja'},{k:'editarCotizaciones',l:'Cotizaciones'},{k:'editarAutorizaciones',l:'Autorizaciones'},{k:'editarSeguros',l:'Seguros'},{k:'editarFacturas',l:'Facturas Ext.'}].map(p=>`<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#eff6ff;border-radius:5px;border:1px solid #bfdbfe"><input type="checkbox" id="u-perm-${p.k}" ${(perms[p.k]||u.role==='admin')?'checked':''} style="accent-color:var(--blue)"> ${p.l}</label>`).join('')}
-      </div>
-      <div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--gray);text-transform:uppercase">🗑 Permisos de Borrar por módulo:</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
-        ${[{k:'borrarVentas',l:'Ventas'},{k:'borrarClientes',l:'Clientes'},{k:'borrarSuplidores',l:'Suplidores'},{k:'borrarGastos',l:'Gastos'},{k:'borrarNomina',l:'Nómina'},{k:'borrarGastosVeh',l:'Gastos Vehículo'},{k:'borrarCobros',l:'CxC Cobros'},{k:'borrarCxp',l:'CxP Pagos'},{k:'borrarVehiculos',l:'Vehículos'},{k:'borrarCaja',l:'Caja'},{k:'borrarCotizaciones',l:'Cotizaciones'},{k:'borrarAutorizaciones',l:'Autorizaciones'},{k:'borrarSeguros',l:'Seguros'},{k:'borrarFacturas',l:'Facturas Ext.'}].map(p=>`<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#fff1f2;border-radius:5px;border:1px solid #fecdd3"><input type="checkbox" id="u-perm-${p.k}" ${(perms[p.k]||u.role==='admin')?'checked':''} style="accent-color:var(--red)"> ${p.l}</label>`).join('')}
-      </div>
-    </div>`,
-    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario(${i})">💾 Actualizar</button>`);
+
+  // Build module checkboxes using pure string concatenation (no nested backticks)
+  let modHtml='';
+  MODS_PERMS.forEach(function(m){
+    const isChecked=mods.includes(m.id)||u.role==='admin';
+    const hasSub=m.subperms&&m.subperms.length>0;
+    modHtml+='<div style="border:1px solid var(--gray3);border-radius:6px;padding:6px">'
+      +'<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'
+      +'<input type="checkbox" id="u-mod-'+m.id+'" '+(isChecked?'checked ':'')+' style="width:15px;height:15px;accent-color:var(--blue)" onchange="toggleModSubperms(\''+m.id+'\',this.checked)">'
+      +escHtml(m.label)
+      +'</label>';
+    if(hasSub){
+      modHtml+='<div id="u-subperms-'+m.id+'" style="display:flex;flex-direction:column;gap:4px;margin-top:6px;padding-left:12px;border-left:2px solid var(--blue3)">';
+      m.subperms.forEach(function(sp){
+        const spChecked=perms[sp.id]!==false;
+        modHtml+='<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;color:var(--gray)">'
+          +'<input type="checkbox" id="u-sp-'+sp.id+'" '+(spChecked?'checked ':'')+' style="accent-color:var(--blue);width:12px;height:12px">'
+          +escHtml(sp.label)+'</label>';
+      });
+      modHtml+='</div>';
+    }
+    modHtml+='</div>';
+  });
+
+  // Build action perms checkboxes
+  const AP=[
+    {k:'editar',l:'✏️ Editar'},{k:'eliminar',l:'🗑 Eliminar'},
+    {k:'imprimir',l:'🖨️ Imprimir'},{k:'pdf',l:'📄 PDF'}
+  ];
+  let apHtml='';
+  AP.forEach(function(p){
+    const chk=perms[p.k]||u.role==='admin';
+    apHtml+='<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px;background:#fff;border-radius:6px;border:1px solid var(--gray3)">'
+      +'<input type="checkbox" id="u-perm-'+p.k+'" '+(chk?'checked ':'')+' style="accent-color:var(--blue)"> '+p.l+'</label>';
+  });
+
+  // Edit perms
+  const EDITAR=[
+    {k:'editarVentas',l:'Ventas'},{k:'editarClientes',l:'Clientes'},
+    {k:'editarSuplidores',l:'Suplidores'},{k:'editarGastos',l:'Gastos'},
+    {k:'editarNomina',l:'Nómina'},{k:'editarGastosVeh',l:'Gastos Vehículo'},
+    {k:'editarCobros',l:'CxC Cobros'},{k:'editarCxp',l:'CxP Pagos'},
+    {k:'editarVehiculos',l:'Vehículos'},{k:'editarCaja',l:'Caja'},
+    {k:'editarCotizaciones',l:'Cotizaciones'},{k:'editarAutorizaciones',l:'Autorizaciones'},
+    {k:'editarSeguros',l:'Seguros'},{k:'editarFacturas',l:'Facturas Ext.'}
+  ];
+  let editHtml='';
+  EDITAR.forEach(function(p){
+    const chk=perms[p.k]||u.role==='admin';
+    editHtml+='<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#eff6ff;border-radius:5px;border:1px solid #bfdbfe">'
+      +'<input type="checkbox" id="u-perm-'+p.k+'" '+(chk?'checked ':'')+' style="accent-color:var(--blue)"> '+escHtml(p.l)+'</label>';
+  });
+
+  // Delete perms
+  const BORRAR=[
+    {k:'borrarVentas',l:'Ventas'},{k:'borrarClientes',l:'Clientes'},
+    {k:'borrarSuplidores',l:'Suplidores'},{k:'borrarGastos',l:'Gastos'},
+    {k:'borrarNomina',l:'Nómina'},{k:'borrarGastosVeh',l:'Gastos Vehículo'},
+    {k:'borrarCobros',l:'CxC Cobros'},{k:'borrarCxp',l:'CxP Pagos'},
+    {k:'borrarVehiculos',l:'Vehículos'},{k:'borrarCaja',l:'Caja'},
+    {k:'borrarCotizaciones',l:'Cotizaciones'},{k:'borrarAutorizaciones',l:'Autorizaciones'},
+    {k:'borrarSeguros',l:'Seguros'},{k:'borrarFacturas',l:'Facturas Ext.'}
+  ];
+  let borrarHtml='';
+  BORRAR.forEach(function(p){
+    const chk=perms[p.k]||u.role==='admin';
+    borrarHtml+='<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 6px;background:#fff1f2;border-radius:5px;border:1px solid #fecdd3">'
+      +'<input type="checkbox" id="u-perm-'+p.k+'" '+(chk?'checked ':'')+' style="accent-color:var(--red)"> '+escHtml(p.l)+'</label>';
+  });
+
+  const rolesHtml=roles.map(function(r){
+    return '<option value="'+escHtml(r.id)+'" '+(u.role===r.id?'selected':'')+'>'+escHtml(r.nombre)+'</option>';
+  }).join('');
+
+  openModal('🔑 Permisos: '+escHtml(u.nombre),
+    '<div class="form-row c2">'
+    +'<div class="form-field"><label>Nombre</label><input type="text" id="u-nombre" value="'+escHtml(u.nombre)+'"></div>'
+    +'<div class="form-field"><label>Usuario</label><input type="text" id="u-user" value="'+escHtml(u.username)+'"></div>'
+    +'</div>'
+    +'<div class="form-row c2">'
+    +'<div class="form-field"><label>Nueva Contraseña</label><input type="password" id="u-pass" placeholder="Dejar en blanco para mantener"></div>'
+    +'<div class="form-field"><label>Rol</label><select id="u-role">'
+    +'<option value="admin" '+(u.role==='admin'?'selected':'')+'>Administrador</option>'
+    +rolesHtml+'</select></div>'
+    +'</div>'
+    +'<div class="form-field">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+    +'<label style="margin:0">Módulos con Acceso</label>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button type="button" onclick="_modTodos(\'u-\')" style="padding:3px 10px;font-size:11px;background:var(--blue3);color:var(--blue);border:1px solid var(--blue);border-radius:5px;cursor:pointer;font-weight:600">✅ Todos</button>'
+    +'<button type="button" onclick="_modLimpiar(\'u-\')" style="padding:3px 10px;font-size:11px;background:var(--red2);color:var(--red);border:1px solid var(--red);border-radius:5px;cursor:pointer;font-weight:600">✕ Limpiar</button>'
+    +'</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+modHtml+'</div>'
+    +'</div>'
+    +'<div style="margin-top:12px;padding:10px;background:var(--gray2);border-radius:8px">'
+    +'<div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--blue)">🔐 Permisos de Acción</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">'+apHtml+'</div>'
+    +'<div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--gray);text-transform:uppercase">✏️ Permisos de Editar por módulo</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px">'+editHtml+'</div>'
+    +'<div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--gray);text-transform:uppercase">🗑 Permisos de Borrar por módulo</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">'+borrarHtml+'</div>'
+    +'</div>',
+    '<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>'
+    +'<button class="btn btn-primary" onclick="guardarUsuario('+i+')">💾 Actualizar</button>'
+  );
 }
 
 function nuevoEmpleado(){
@@ -4137,21 +4378,39 @@ function guardarUsuario(idx){
   if(!nombre||!user||(!pass&&idx===undefined)){toast('Complete todos los campos','error');return;}
   if(idx===undefined&&DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
   const MODS_IDS=['dashboard','informes','consultas','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','cuentas','cumpleanos','prestamos'];
-  const nuevosMods=MODS.filter(m=>{const el=document.getElementById('nu-mod-'+m.id)||document.getElementById('u-mod-'+m.id);return el&&el.checked;}).map(m=>m.id);
+  // Collect module permissions (handle both u-mod- and nu-mod- prefixes)
+  const nuevosMods=MODS_PERMS.filter(function(m){
+    const el=document.getElementById('u-mod-'+m.id)||document.getElementById('nu-mod-'+m.id);
+    return el&&el.checked;
+  }).map(function(m){return m.id;});
+  // Collect all perms
   const nuevosPerms={};
-  MODS.forEach(m=>{
-    const el=document.getElementById('nu-mod-'+m.id)||document.getElementById('u-mod-'+m.id);
+  // Module access perms
+  MODS_PERMS.forEach(function(m){
+    const el=document.getElementById('u-mod-'+m.id)||document.getElementById('nu-mod-'+m.id);
     if(el&&el.checked){
       nuevosPerms[m.id]=true;
-      if(m.subperms)m.subperms.forEach(sp=>{
-        const sel=document.getElementById('u-sp-'+sp.id);
-        nuevosPerms[sp.id]=sel?sel.checked:true;
-      });
+      // Sub-perms (e.g. feria sub-sections)
+      if(m.subperms){
+        m.subperms.forEach(function(sp){
+          const sel=document.getElementById('u-sp-'+sp.id);
+          nuevosPerms[sp.id]=sel?sel.checked:true;
+        });
+      }
     }
   });
-  const permKeys=['editar','eliminar','imprimir','pdf','editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina','editarGastosVeh','editarCobros','editarCxp','editarVehiculos','editarCaja','editarCotizaciones','editarAutorizaciones','editarSeguros','editarFacturas','borrarVentas','borrarClientes','borrarSuplidores','borrarGastos','borrarNomina','borrarGastosVeh','borrarCobros','borrarCxp','borrarVehiculos','borrarCaja','borrarCotizaciones','borrarAutorizaciones','borrarSeguros','borrarFacturas'];
-  // Sub-perms already collected above; also merge any direct perm checkboxes
-  if(typeof permKeys!=='undefined')permKeys.forEach(k=>{const el=document.getElementById('u-perm-'+k);if(el)nuevosPerms[k]=el.checked;});
+  // Action perms (editar, eliminar, imprimir, pdf + module-specific)
+  const permKeys=['editar','eliminar','imprimir','pdf',
+    'editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina',
+    'editarGastosVeh','editarCobros','editarCxp','editarVehiculos','editarCaja',
+    'editarCotizaciones','editarAutorizaciones','editarSeguros','editarFacturas',
+    'borrarVentas','borrarClientes','borrarSuplidores','borrarGastos','borrarNomina',
+    'borrarGastosVeh','borrarCobros','borrarCxp','borrarVehiculos','borrarCaja',
+    'borrarCotizaciones','borrarAutorizaciones','borrarSeguros','borrarFacturas'];
+  permKeys.forEach(function(k){
+    const el=document.getElementById('u-perm-'+k);
+    if(el)nuevosPerms[k]=el.checked;
+  });
   if(idx!==undefined){DB.users[idx].nombre=nombre;DB.users[idx].username=user;DB.users[idx].role=document.getElementById('u-role').value;if(pass)DB.users[idx].password=pass;DB.users[idx].modulos=nuevosMods;DB.users[idx].permisos=nuevosPerms;if(currentUser.id===DB.users[idx].id){currentUser=DB.users[idx];}}
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
   sDB('users');
