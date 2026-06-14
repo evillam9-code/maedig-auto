@@ -4169,7 +4169,15 @@ function crearUsuarioNuevo(){
       ...feriaPerms
     }
   });
+  window._savingUsers=true;
   sDB('users');
+  if(typeof fbGuardar==='function'){
+    fbGuardar('users').then(()=>{
+      setTimeout(()=>{window._savingUsers=false;},1000);
+    }).catch(()=>{window._savingUsers=false;});
+  } else {
+    setTimeout(()=>{window._savingUsers=false;},1000);
+  }
   toast('Usuario creado ✓','success');
   limpiarFormUsuario();
   renderUsuarios();
@@ -4422,9 +4430,16 @@ function guardarUsuario(idx){
   });
   if(idx!==undefined){DB.users[idx].nombre=nombre;DB.users[idx].username=user;DB.users[idx].role=document.getElementById('u-role').value;if(pass)DB.users[idx].password=pass;DB.users[idx].modulos=nuevosMods;DB.users[idx].permisos=nuevosPerms;if(currentUser.id===DB.users[idx].id){currentUser=DB.users[idx];}}
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
+  window._savingUsers=true;
   sDB('users');
-  // Forzar guardado en Firebase directamente
-  if(typeof fbGuardar==='function')fbGuardar('users').catch(()=>{});
+  // Forzar guardado en Firebase y liberar flag al terminar
+  if(typeof fbGuardar==='function'){
+    fbGuardar('users').then(()=>{
+      setTimeout(()=>{window._savingUsers=false;},1000);
+    }).catch(()=>{window._savingUsers=false;});
+  } else {
+    setTimeout(()=>{window._savingUsers=false;},1000);
+  }
   logBit('usuarios','Creó usuario','');closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
   // Aplicar permisos de navegación inmediatamente (ocultar/mostrar módulos en sidebar)
   aplicarPermisosNav();
@@ -5096,9 +5111,15 @@ function guardarPermisosUsuarioConfig(i){
     DB.users[i].permisos={editar:puedeEditar,eliminar:puedeEliminar,imprimir:puedeImprimir};
     if(currentUser.id===u.id){currentUser=DB.users[i];}
   }
+  window._savingUsers=true;
   sDB('users');
-  // Forzar guardado en Firebase directamente
-  if(typeof fbGuardar==='function')fbGuardar('users').catch(()=>{});
+  if(typeof fbGuardar==='function'){
+    fbGuardar('users').then(()=>{
+      setTimeout(()=>{window._savingUsers=false;},1000);
+    }).catch(()=>{window._savingUsers=false;});
+  } else {
+    setTimeout(()=>{window._savingUsers=false;},1000);
+  }
   toast(`Usuario ${escHtml(u.nombre)} actualizado ✓`,'success');
   // Aplicar permisos de navegación inmediatamente (ocultar/mostrar módulos en sidebar)
   aplicarPermisosNav();
@@ -5535,9 +5556,15 @@ function guardarMisNotificaciones(){
   if(idx!==-1){
     DB.users[idx].alertasPermitidas=seleccionadas;
     currentUser.alertasPermitidas=seleccionadas;
+    window._savingUsers=true;
     sDB('users');
-    // Forzar guardado en Firebase directamente
-    if(typeof fbGuardar==='function')fbGuardar('users').catch(()=>{});
+    if(typeof fbGuardar==='function'){
+      fbGuardar('users').then(()=>{
+        setTimeout(()=>{window._savingUsers=false;},1000);
+      }).catch(()=>{window._savingUsers=false;});
+    } else {
+      setTimeout(()=>{window._savingUsers=false;},1000);
+    }
     toast('Notificaciones guardadas ✓','success');
   }
 }
@@ -12698,6 +12725,8 @@ function fbActivarListeners(){
         const val=JSON.parse(snap.data().valor);
         if(val===null)return;
         if(key==='users'&&Array.isArray(val)){
+          // Skip if we're currently saving users (avoid race condition)
+          if(window._savingUsers){return;}
           const merged=[...val];
           (DB.users||[]).forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
           DB.users=merged.length>0?merged:DB.users;
