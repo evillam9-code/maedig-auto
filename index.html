@@ -4414,7 +4414,8 @@ function guardarUsuario(idx){
   if(idx!==undefined){DB.users[idx].nombre=nombre;DB.users[idx].username=user;DB.users[idx].role=document.getElementById('u-role').value;if(pass)DB.users[idx].password=pass;DB.users[idx].modulos=nuevosMods;DB.users[idx].permisos=nuevosPerms;if(currentUser.id===DB.users[idx].id){currentUser=DB.users[idx];}}
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
   sDB('users');
-  if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
+  // Forzar guardado en Firebase directamente
+  if(typeof fbGuardar==='function')fbGuardar('users').catch(()=>{});
   logBit('usuarios','Creó usuario','');closeModal();toast('Usuario guardado ✓','success');renderUsuarios();
   // Aplicar permisos de navegación inmediatamente (ocultar/mostrar módulos en sidebar)
   aplicarPermisosNav();
@@ -5087,8 +5088,9 @@ function guardarPermisosUsuarioConfig(i){
     if(currentUser.id===u.id){currentUser=DB.users[i];}
   }
   sDB('users');
+  // Forzar guardado en Firebase directamente
+  if(typeof fbGuardar==='function')fbGuardar('users').catch(()=>{});
   toast(`Usuario ${escHtml(u.nombre)} actualizado ✓`,'success');
-  if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
   // Aplicar permisos de navegación inmediatamente (ocultar/mostrar módulos en sidebar)
   aplicarPermisosNav();
   // Re-renderizar página activa para reflejar permisos inmediatamente
@@ -5525,8 +5527,9 @@ function guardarMisNotificaciones(){
     DB.users[idx].alertasPermitidas=seleccionadas;
     currentUser.alertasPermitidas=seleccionadas;
     sDB('users');
-    if(typeof fbGuardar==='function'&&window._fbActivo)fbGuardar('users').catch(()=>{});
-    toast('Notificaciones guardadas \u2713','success');
+    // Forzar guardado en Firebase directamente
+    if(typeof fbGuardar==='function')fbGuardar('users').catch(()=>{});
+    toast('Notificaciones guardadas ✓','success');
   }
 }
 function agregarRolConfig(){
@@ -12476,9 +12479,18 @@ window.sDB = function(key){
     // Firebase no conectado — guardar en localStorage y mostrar aviso suave
     if(dot)dot.style.background='#f59e0b';
     if(txt)txt.textContent='Sin Firebase';
-    // Solo mostrar aviso si no está ya visible
     if(!document.getElementById('fb-aviso-banner'))_mostrarAvisoFirebase();
-    return; // datos guardados en localStorage, se sincronizarán cuando vuelva
+    // Intentar guardar en Firebase de todos modos (puede que esté disponible)
+    if(typeof fbGuardar==='function'){
+      fbGuardar(key).then(()=>{
+        window._fbActivo=true;
+        if(dot)dot.style.background='#22c55e';
+        if(txt)txt.textContent='✓ Guardado';
+      }).catch(()=>{
+        // Sin Firebase confirmado — solo localStorage
+      });
+    }
+    return;
   }
   if(dot)dot.style.background='#f59e0b';
   if(txt)txt.textContent='Guardando...';
