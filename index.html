@@ -905,16 +905,12 @@ function renderFeria(){
   if(!DB.feria)DB.feria={extras:{},ventas:[]};
   if(!DB.feria.extras)DB.feria.extras={};
   const esAdmin=currentUser?.role==='admin';
-  // Sub-permisos de feria: verificar EXPLÍCITAMENTE en permisos[]
-  // No usar canDo() porque roles como 'dueño' lo bypassean siempre
-  const _feriaPerms=currentUser?.permisos||{};
-  const _feriaModOk=esAdmin||_feriaPerms['feria']===true||currentUser?.modulos?.includes('feria');
-  // Si la clave no existe en permisos, se asume true (compatibilidad hacia atrás)
-  // Si la clave existe y es false → denegar
-  const puedeVendedor=esAdmin||(_feriaModOk&&_feriaPerms['feria-vendedor']!==false);
-  // feria-extras: true if not explicitly set to false (backward compat)
-  const puedeConfig=esAdmin||(_feriaModOk&&_feriaPerms['feria-extras']!==false&&(_feriaPerms['feria-extras']===true||_feriaPerms['feria-extras']===undefined));
-  const puedeHistorial=esAdmin||(_feriaModOk&&_feriaPerms['feria-historial']!==false);
+  // Permisos de feria: simples permisos de acción (como editar/eliminar)
+  const _fp=currentUser?.permisos||{};
+  // Por defecto acceso completo (si nunca se configuró), se niega solo si es false
+  const puedeVendedor=esAdmin||_fp['feria-vendedor']!==false;
+  const puedeConfig=esAdmin||_fp['feria-extras']!==false;
+  const puedeHistorial=esAdmin||_fp['feria-historial']!==false;
   const ventas=DB.feria.ventas||[];
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const totalVentas=ventas.reduce((a,v)=>a+parseFloat(v.precio||0)*(v.moneda==='USD'?tasa:1),0);
@@ -1189,10 +1185,9 @@ function renderFeria(){
   setTimeout(()=>{
     const esAdmin2=currentUser?.role==='admin';
     const _fp2=currentUser?.permisos||{};
-    const _fmOk2=esAdmin2||_fp2['feria']===true||currentUser?.modulos?.includes('feria');
-    const pV=esAdmin2||(_fmOk2&&_fp2['feria-vendedor']!==false);
-    const pC=esAdmin2||(_fmOk2&&_fp2['feria-extras']!==false&&(_fp2['feria-extras']===true||_fp2['feria-extras']===undefined));
-    const pH=esAdmin2||(_fmOk2&&_fp2['feria-historial']!==false);
+    const pV=esAdmin2||_fp2['feria-vendedor']!==false;
+    const pC=esAdmin2||_fp2['feria-extras']!==false;
+    const pH=esAdmin2||_fp2['feria-historial']!==false;
     if(pV)feriaShowTab('vendedor');
     else if(pC)feriaShowTab('extras');
     else if(pH)feriaShowTab('historial');
@@ -1781,6 +1776,8 @@ function guardarCambioContrasena(){
   toast('Contraseña actualizada correctamente ✓','success');
 }
 function doLogout(){
+  window._usersLoaded=false;
+  window._savingUsers=false;
   if(currentUser){
     logBit('Sesión','Cerró sesión','—');
     try{const p=JSON.parse(localStorage.getItem('maedig_presencia')||'{}');delete p[currentUser.id];localStorage.setItem('maedig_presencia',JSON.stringify(p));}catch{}
@@ -3951,11 +3948,7 @@ const MODS_PERMS=[
   {id:'nomina',label:'👷 Nómina'},{id:'caja',label:'💳 Caja'},
   {id:'cotizaciones',label:'📋 Cotizaciones'},{id:'autorizaciones',label:'📝 Autorizaciones'},
   {id:'seguros',label:'🛡️ Seguros'},
-  {id:'feria',label:'🎪 Vendedores (Feria)',subperms:[
-    {id:'feria-vendedor',label:'📱 Vista Vendedor'},
-    {id:'feria-extras',label:'⚙️ Config. Extras'},
-    {id:'feria-historial',label:'📋 Historial'}
-  ]},
+  {id:'feria',label:'🎪 Vendedores (Feria)'},
   {id:'facturaExterna',label:'🧾 Facturas'},{id:'alertas',label:'🔔 Alertas'},
   {id:'verSaldoCaja',label:'💰 Saldo Caja'},{id:'chat',label:'💬 Chat'},
   {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
@@ -4002,7 +3995,7 @@ function renderUsuarios(){
     {id:'usuarios',label:'Usuarios'},{id:'config',label:'Configuración'},
     {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
     {id:'prestamos',label:'🏛️ Préstamos'},
-    {id:'feria',label:'🎪 Vendedores (Feria)',subperms:[{id:'feria-vendedor',label:'📱 Vista Vendedor'},{id:'feria-extras',label:'⚙️ Config. Extras'},{id:'feria-historial',label:'📋 Historial'}]},
+    {id:'feria',label:'🎪 Vendedores (Feria)'},
   ];
   const BORRAR=[
     {id:'ventas',label:'Ventas'},{id:'clientes',label:'Clientes'},
@@ -4146,7 +4139,11 @@ function crearUsuarioNuevo(){
   const MODS_IDS=['dashboard','informes','consultas','inventario','gastosVeh','cxp','clientes','ventas','cxc','suplidores','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config','cuentas','cumpleanos','prestamos'];
   const DEL_IDS=['ventas','clientes','suplidores','gastos','nomina','gastosVeh','cxc','cxp','inventario','caja','cotizaciones','autorizaciones','seguros','facturaExterna'];
   const modulos=role==='admin'?MODS_IDS:MODS_IDS.filter(id=>document.getElementById('nu-mod-'+id)?.checked);
-  const puedeEliminar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-del-'+id)?.checked);
+  // Feria perms: default true for new users (can be restricted later)
+  const feriaVendedor=role==='admin'||true;
+  const feriaExtras=role==='admin'||true;
+  const feriaHistorial=role==='admin'||true;
+    const puedeEliminar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-del-'+id)?.checked);
   const puedeEditar=role==='admin'||DEL_IDS.some(id=>document.getElementById('nu-edit-'+id)?.checked);
   const deleteMods=role==='admin'?DEL_IDS:DEL_IDS.filter(id=>document.getElementById('nu-del-'+id)?.checked);
   const editMods=role==='admin'?DEL_IDS:DEL_IDS.filter(id=>document.getElementById('nu-edit-'+id)?.checked);
@@ -4165,8 +4162,10 @@ function crearUsuarioNuevo(){
       eliminar:puedeEliminar,
       imprimir:true,
       pdf:true,
-      deleteMods,editMods,
-      ...feriaPerms
+      'feria-vendedor':true,
+      'feria-extras':true,
+      'feria-historial':true,
+      deleteMods,editMods
     }
   });
   window._savingUsers=true;
@@ -4272,7 +4271,9 @@ function editarUsuario(i){
   // Build action perms checkboxes
   const AP=[
     {k:'editar',l:'✏️ Editar'},{k:'eliminar',l:'🗑 Eliminar'},
-    {k:'imprimir',l:'🖨️ Imprimir'},{k:'pdf',l:'📄 PDF'}
+    {k:'imprimir',l:'🖨️ Imprimir'},{k:'pdf',l:'📄 PDF'},
+    {k:'feria-vendedor',l:'📱 Vista Vendedor'},{k:'feria-extras',l:'⚙️ Config. Extras'},
+    {k:'feria-historial',l:'📋 Historial Feria'}
   ];
   let apHtml='';
   AP.forEach(function(p){
@@ -4418,6 +4419,7 @@ function guardarUsuario(idx){
   });
   // Action perms (editar, eliminar, imprimir, pdf + module-specific)
   const permKeys=['editar','eliminar','imprimir','pdf',
+    'feria-vendedor','feria-extras','feria-historial',
     'editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina',
     'editarGastosVeh','editarCobros','editarCxp','editarVehiculos','editarCaja',
     'editarCotizaciones','editarAutorizaciones','editarSeguros','editarFacturas',
@@ -4428,8 +4430,18 @@ function guardarUsuario(idx){
     const el=document.getElementById('u-perm-'+k);
     if(el)nuevosPerms[k]=el.checked;
   });
-  if(idx!==undefined){DB.users[idx].nombre=nombre;DB.users[idx].username=user;DB.users[idx].role=document.getElementById('u-role').value;if(pass)DB.users[idx].password=pass;DB.users[idx].modulos=nuevosMods;DB.users[idx].permisos=nuevosPerms;if(currentUser.id===DB.users[idx].id){currentUser=DB.users[idx];}}
-  else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
+  if(idx!==undefined){
+    // Update in-memory directly (don't wait for Firebase listener)
+    DB.users[idx].nombre=nombre;
+    DB.users[idx].username=user;
+    DB.users[idx].role=document.getElementById('u-role').value;
+    if(pass)DB.users[idx].password=pass;
+    DB.users[idx].modulos=nuevosMods;
+    DB.users[idx].permisos=nuevosPerms;
+    if(currentUser.id===DB.users[idx].id){currentUser=Object.assign({},DB.users[idx]);}
+  } else {
+    DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
+  }
   window._savingUsers=true;
   sDB('users');
   // Forzar guardado en Firebase y liberar flag al terminar
@@ -12725,8 +12737,11 @@ function fbActivarListeners(){
         const val=JSON.parse(snap.data().valor);
         if(val===null)return;
         if(key==='users'&&Array.isArray(val)){
-          // Skip if we're currently saving users (avoid race condition)
-          if(window._savingUsers){return;}
+          // Skip listener updates for users - only load once on login
+          // Changes are saved directly via fbGuardar and applied to DB.users locally
+          if(window._usersLoaded&&window._savingUsers){return;}
+          if(window._usersLoaded){return;} // Don't overwrite after initial load
+          window._usersLoaded=true;
           const merged=[...val];
           (DB.users||[]).forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
           DB.users=merged.length>0?merged:DB.users;
