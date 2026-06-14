@@ -34,6 +34,25 @@ body{font-family:'Outfit',sans-serif;background:var(--gray2);color:var(--navy);f
 .wc-sub{font-size:16px;color:#94a3b8;margin-bottom:4px}
 .wc-user{font-size:20px;color:#60a5fa;font-weight:700;margin-top:12px}
 .wc-bar{width:220px;height:3px;background:#1e293b;border-radius:2px;margin:32px auto 0;overflow:hidden}
+
+/* Config accordion */
+.cfg-acc{border:1.5px solid var(--gray3);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.cfg-acc-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;background:var(--gray2);user-select:none;transition:background .15s}
+.cfg-acc-hdr:hover{background:var(--gray3)}
+.cfg-acc-title{font-size:14px;font-weight:700;color:var(--navy)}
+.cfg-acc-ico{font-size:13px;color:var(--gray);transition:transform .2s}
+.cfg-acc-body{padding:0 16px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease}
+.cfg-acc-body.open{padding:14px 16px;max-height:5000px}
+
+
+/* Nav Groups */
+.nav-group-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 7px 12px;cursor:pointer;user-select:none;margin-top:4px}
+.nav-group-hdr:hover .nav-group-label{color:#fff}
+.nav-group-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;transition:color .15s}
+.nav-group-ico{font-size:10px;color:#475569;transition:transform .2s}
+.nav-group-items{overflow:hidden;transition:max-height .25s ease}
+.nav-group-items.collapsed{max-height:0!important}
+
 .wc-fill{height:100%;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:2px;animation:wBar 2s ease forwards}
 @keyframes wBar{from{width:0}to{width:100%}}
 .btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.4)}
@@ -285,34 +304,9 @@ select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
     <div class="nav-item" onclick="showPage('informes')" id="nav-informes"><span class="ico">📊</span>Informe Mensual</div>
     <div class="nav-item" onclick="showPage('consultas')" id="nav-consultas"><span class="ico">🔍</span>Consultas</div>
     <div class="nav-item" onclick="showPage('informeSemanal')" id="nav-informeSemanal" style="display:none"><span class="ico">📄</span>Informe Semanal</div>
-    <div class="sb-sec">VEHÍCULOS</div>
-    <div class="nav-item" onclick="showPage('suplidores')" id="nav-suplidores"><span class="ico">🏭</span>Suplidores</div>
-    <div class="nav-item" onclick="showPage('inventario')" id="nav-inventario"><span class="ico">🚗</span>Registro de Vehículo</div>
-    <div class="nav-item" onclick="showPage('gastosVeh')" id="nav-gastosVeh"><span class="ico">💸</span>Gastos de Vehículo</div>
-    <div class="nav-item" onclick="showPage('cxp')" id="nav-cxp"><span class="ico">📑</span>Cuentas por Pagar</div>
-    <div class="sb-sec">CLIENTES</div>
-    <div class="nav-item" onclick="showPage('clientes')" id="nav-clientes"><span class="ico">👤</span>Clientes</div>
-    <div class="nav-item" onclick="showPage('ventas')" id="nav-ventas"><span class="ico">💰</span>Ventas</div>
-    <div class="nav-item" onclick="showPage('cxc')" id="nav-cxc"><span class="ico">📬</span>Cuentas por Cobrar</div>
-    <div class="nav-item" onclick="showPage('feria')" id="nav-feria"><span class="ico">🎪</span>Vendedores (Feria)</div>
-    <div class="sb-sec">FINANZAS</div>
-    <div class="nav-item" onclick="showPage('gastos')" id="nav-gastos"><span class="ico">🏢</span>Gastos Empresa</div>
-    <div class="nav-item" onclick="showPage('nomina')" id="nav-nomina"><span class="ico">👷</span>Nómina</div>
-    <div class="nav-item" onclick="showPage('caja')" id="nav-caja"><span class="ico">💳</span>Caja</div>
-    <div class="sb-sec">OTROS</div>
-    <div class="nav-item" onclick="showPage('cotizaciones')" id="nav-cotizaciones"><span class="ico">📋</span>Cotizaciones</div>
-    <div class="nav-item" onclick="showPage('autorizaciones')" id="nav-autorizaciones"><span class="ico">📝</span>Autorización Compra</div>
-    <div class="nav-item" onclick="showPage('seguros')" id="nav-seguros"><span class="ico">🛡️</span>Seguros</div>
-    <div class="nav-item" onclick="showPage('facturaExterna')" id="nav-facturaExterna"><span class="ico">🧾</span>Facturas Externas</div>
-    <div class="nav-item" onclick="showPage('chat')" id="nav-chat"><span class="ico">💬</span>Chat Interno <span id="chat-badge" style="display:none;background:#dc2626;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto">0</span></div>
-    <div class="sb-sec">SISTEMA</div>
-    <div class="nav-item" onclick="showPage('prestamos')" id="nav-prestamos"><span class="ico">🏛️</span>Préstamos</div>
-    <div class="nav-item" onclick="showPage('cuentas')" id="nav-cuentas"><span class="ico">🏦</span>Cuentas</div>
-    <div class="nav-item" onclick="showPage('cumpleanos')" id="nav-cumpleanos"><span class="ico">🎂</span>Cumpleaños</div>
-    <div class="nav-item" onclick="showPage('usuarios')" id="nav-usuarios"><span class="ico">👥</span>Usuarios</div>
-    <div class="nav-item" onclick="showPage('alertas')" id="nav-alertas"><span class="ico">🔔</span>Alertas del Sistema</div>
-    <div class="nav-item" onclick="showPage('config')" id="nav-config"><span class="ico">⚙️</span>Configuración</div>
-    <div style="margin-top:auto;border-top:1px solid var(--gray3)">
+    <!-- Nav groups rendered dynamically by renderNavGroups() -->
+    <div id="nav-groups-container"></div>
+        <div style="margin-top:auto;border-top:1px solid var(--gray3)">
       <div style="padding:10px 16px 6px;font-size:10px;color:#94a3b8;text-align:center;line-height:1.5">
         <div style="font-weight:600;color:#64748b">Desarrollado por</div>
         <div style="font-weight:800;color:#60a5fa">Edward Villa</div>
@@ -865,7 +859,8 @@ function aplicarPermisosNav(){
   // Informe Semanal solo para admin
   const nInfSem=document.getElementById('nav-informeSemanal');
   if(nInfSem)nInfSem.style.display=currentUser?.role==='admin'?'flex':'none';
-}
+
+  renderNavGroups();}
 /* ═══════════════════════════════════════════
    BITÁCORA DE ACTIVIDAD — máx 200 entradas
 ═══════════════════════════════════════════ */
@@ -908,207 +903,70 @@ function logBit(modulo,accion,detalle){
 
 function renderFeria(){
   if(!DB.feria)DB.feria={extras:{},ventas:[]};
+  if(!DB.feria.extras)DB.feria.extras={};
   const esAdmin=currentUser?.role==='admin';
-  const puedeConfig=esAdmin||canDo('editar');
+  const puedeConfig=esAdmin||canDo('feria-extras');
+  const puedeVendedor=esAdmin||canDo('feria-vendedor')||(currentUser?.permisos&&currentUser.permisos['feria-vendedor']!==false);
+  const puedeHistorial=esAdmin||canDo('feria-historial')||(currentUser?.permisos&&currentUser.permisos['feria-historial']!==false);
   const ventas=DB.feria.ventas||[];
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const totalVentas=ventas.reduce((a,v)=>a+parseFloat(v.precio||0)*(v.moneda==='USD'?tasa:1),0);
-
-  // Vehículos disponibles para la feria (ACTIVO y ADUANA)
   const vehDisp=DB.vehiculos.filter(v=>v.status==='ACTIVO'||v.status==='ADUANA');
 
-  document.getElementById('page-feria').innerHTML=`
-    <div class="page-header">
-      <div><h1>🎪 Vendedores (Feria)</h1>
-        <p>${ventas.length} venta(s) registrada(s) — Total: ${fmt(totalVentas)}</p>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-secondary btn-sm" onclick="exportarFeriaPDF()">📄 Exportar PDF</button>
-      </div>
-    </div>
+  // Build vehicle list for admin tab using string concat (avoids nested backtick issues)
+  const vehListHtml=vehDisp.map(v=>{
+    const ex=(DB.feria.extras||{})[v.id]||{};
+    return '<div id="feria-adm-'+v.id+'" onclick="feriaSelAdmin(\\\''+v.id+'\\\',this)"'
+      +' style="background:#f8fafc;border:1.5px solid var(--gray3);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:.15s">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:2px">'+escHtml(v.codigo)+'</div>'
+      +'<div style="font-size:14px;font-weight:700;color:var(--navy)">'+escHtml(v.marca)+' '+escHtml(v.modelo)+' '+(v.anio||'')
+      +' <span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px">'+v.status+'</span>'
+      +(ex.precioFeria?' <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:4px">✓ Configurado</span>':'')
+      +'</div></div>';
+  }).join('')||'<div style="color:var(--gray);padding:12px">No hay vehículos disponibles</div>';
 
-    <!-- TABS -->
-    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--gray3)">
-      <button onclick="feriaShowTab('vendedor')" id="feria-tab-vendedor"
-        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid var(--blue);color:var(--blue)">
-        📱 Vista Vendedor
-      </button>
-      ${puedeConfig?`<button onclick="feriaShowTab('extras')" id="feria-tab-extras"
-        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">
-        ⚙️ Configurar Extras
-      </button>`:''}
-      <button onclick="feriaShowTab('historial')" id="feria-tab-historial"
-        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">
-        📋 Historial (${ventas.length})
-      </button>
-    </div>
+  // Build historial rows using string concat
+  const histRows=ventas.length?ventas.slice().reverse().map(v=>{
+    const cot=v.cotizacionId?DB.cotizaciones.find(c=>c.id===v.cotizacionId):null;
+    const vObj=DB.vehiculos.find(x=>x.id===v.vehiculoId);
+    const vid=escHtml(v.id);
+    const cotid=cot?escHtml(cot.id):'';
+    return '<tr>'
+      +'<td style="font-size:12px">'+fmtDate(v.fecha)+'</td>'
+      +'<td style="font-weight:600">'+escHtml(v.vendedor||'—')+'</td>'
+      +'<td style="font-weight:700">'+escHtml(v.cliente||'—')+'</td>'
+      +'<td style="font-size:12px">'+escHtml(vObj?vObj.codigo+' '+vObj.marca+' '+vObj.modelo:v.vehiculo||'—')+'</td>'
+      +'<td style="font-weight:700;color:var(--green)">'+(v.moneda==='USD'?'$'+parseFloat(v.precio||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(v.precio||0))+'</td>'
+      +'<td>'+(cot
+        ?'<button class="btn btn-secondary btn-sm" data-cotid="'+cotid+'" onclick="imprimirCotizacionFeria(this.dataset.cotid)">🖨️ Imprimir</button>'
+        :'<button class="btn btn-primary btn-sm" data-vid="'+vid+'" onclick="crearCotizacionDesdeFeria(this.dataset.vid)">📋 Crear</button>')+'</td>'
+      +'<td>'+(currentUser?.role==='admin'||canDo('eliminar')
+        ?'<button class="btn btn-red btn-sm" data-vid="'+vid+'" onclick="eliminarVentaFeria(this.dataset.vid)">🗑</button>'
+        :'')+'</td>'
+      +'</tr>';
+  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray)">Sin ventas registradas en feria</td></tr>';
 
-    <!-- ── VISTA VENDEDOR ── -->
-    <div id="feria-panel-vendedor">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-        <div class="card" style="margin-bottom:0">
-          <div class="form-field" style="margin-bottom:0">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray)">🔍 Seleccionar Vehículo</label>
-            <select id="feria-veh-sel" onchange="feriaCargarVehiculo(this.value)" style="margin-top:6px">
-              <option value="">-- Seleccionar del inventario --</option>
-              ${vehDisp.map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio||''}</option>`).join('')}
-            </select>
-            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;color:#166534;text-align:center;margin-top:8px">
-              📢 Tasa oficial: RD$ ${parseFloat(DB.config.tasaCambio||60).toFixed(2)}
-            </div>
+  const extrasTab=puedeConfig?`
+      <div style="display:grid;grid-template-columns:240px 1fr;gap:14px;align-items:start">
+        <!-- Lista de vehículos a la izquierda -->
+        <div class="card" style="margin-bottom:0;padding:10px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px;padding:0 4px">Vehículos disponibles</div>
+          <div id="feria-admin-veh-list">
+            ${vehDisp.map(v=>{
+              const ex=(DB.feria.extras||{})[v.id]||{};
+              return '<div id="feria-adm-'+v.id+'" data-vid="'+v.id+'" onclick="feriaSelAdmin(this.dataset.vid,this)"'
+                +' style="border-radius:8px;padding:10px;margin-bottom:6px;cursor:pointer;border:1.5px solid var(--gray3);transition:.15s">'
+                +'<div style="font-size:10px;font-weight:700;color:var(--blue)">'+escHtml(v.codigo)+'</div>'
+                +'<div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.3">'+escHtml(v.marca)+' '+escHtml(v.modelo)+'</div>'
+                +'<div style="font-size:11px;color:var(--gray)">'+(v.anio||'')+' · '+v.status+'</div>'
+                +(ex.precioFeria?'<div style="font-size:10px;font-weight:700;color:var(--green);margin-top:3px">✓ Configurado</div>':'')
+                +'</div>';
+            }).join('')||'<div style="color:var(--gray);padding:8px;font-size:12px">Sin vehículos</div>'}
           </div>
         </div>
-        <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;gap:8px">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray)">📊 Resumen Feria</div>
-          <div style="display:flex;justify-content:space-between;font-size:13px"><span>Total ventas</span><strong>${ventas.length}</strong></div>
-          <div style="display:flex;justify-content:space-between;font-size:13px"><span>Monto total</span><strong style="color:var(--green)">${fmt(totalVentas)}</strong></div>
-          <div style="display:flex;justify-content:space-between;font-size:13px"><span>Cotizaciones</span><strong>${ventas.filter(v=>v.cotizacionId).length}</strong></div>
-        </div>
-      </div>
-
-      <!-- Panel del vehículo seleccionado -->
-      <div id="feria-car-panel" style="display:none">
-        <!-- Info vehículo -->
-        <div class="card" style="margin-bottom:14px">
-          <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px" id="feria-v-code"></div>
-          <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:12px" id="feria-v-title"></div>
-
-          <!-- Precio especial de feria -->
-          <div id="feria-price-box" style="background:#059669;color:#fff;padding:16px;border-radius:10px;text-align:center;margin-bottom:10px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.85">Precio especial de feria</div>
-            <div style="font-size:28px;font-weight:800;margin:6px 0" id="feria-v-price">—</div>
-            <div style="display:flex;justify-content:center;gap:8px;margin-top:6px">
-              <button id="feria-sw-usd" onclick="feriaSetMoneda('USD')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#fff;color:#059669">USD ($)</button>
-              <button id="feria-sw-dop" onclick="feriaSetMoneda('DOP')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:rgba(255,255,255,.25);color:#fff">DOP (RD$)</button>
-            </div>
-          </div>
-
-          <!-- Mínimo autorizado -->
-          <div id="feria-min-box" style="display:none;justify-content:space-between;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;font-size:13px;font-weight:700;color:#c2410c;margin-bottom:12px">
-            <span>⚠️ Mínimo autorizado</span>
-            <span id="feria-v-min"></span>
-          </div>
-
-          <!-- Grid técnico -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px" id="feria-tech-grid" style="display:none">
-            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px">
-              <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">🛣️ Millas</div>
-              <div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-millas">—</div>
-            </div>
-            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px">
-              <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">🔩 Motorización</div>
-              <div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-motor">—</div>
-            </div>
-            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px">
-              <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">⚙️ Tracción</div>
-              <div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-traccion">—</div>
-            </div>
-            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px">
-              <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">⛽ Combustible</div>
-              <div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-combustible">—</div>
-            </div>
-          </div>
-
-          <!-- Campos extra libres configurados por admin -->
-          <div id="feria-extra-view" style="display:none;margin-bottom:12px"></div>
-
-          <!-- Carfax accordion -->
-          <div onclick="feriaToggleAcc('carfax')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">
-            🛡️ Historial Carfax <span id="ico-carfax">▼</span>
-          </div>
-          <div id="feria-carfax" style="display:none;padding-bottom:10px;font-size:12px;color:var(--gray);line-height:1.6" id="feria-carfax-content"></div>
-
-          <!-- Ventajas accordion -->
-          <div onclick="feriaToggleAcc('ventajas')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">
-            💎 Ventajas comerciales <span id="ico-ventajas">▼</span>
-          </div>
-          <div id="feria-ventajas" style="display:none;padding-bottom:10px" id="feria-ventajas-content"></div>
-
-          <!-- Beneficios -->
-          <div id="feria-beneficios-wrap" style="display:none;border-top:1px solid var(--gray3);padding-top:12px;margin-top:4px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px">🎁 Beneficios incluidos en feria</div>
-            <div id="feria-beneficios-list"></div>
-          </div>
-        </div>
-
-        <!-- Datos del trámite -->
-        <div class="card">
-          <div class="card-title">📝 Datos del trámite</div>
-          <div class="form-row c2">
-            <div class="form-field">
-              <label class="required">Nombre del Cliente</label>
-              <input type="text" id="feria-cli-nombre" placeholder="Ej: María González">
-            </div>
-            <div class="form-field">
-              <label>Teléfono</label>
-              <input type="text" id="feria-cli-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)">
-            </div>
-          </div>
-          <div class="form-row c2">
-            <div class="form-field">
-              <label>Banco del Cliente</label>
-              <select id="feria-banco-sel">
-                <option value="">-- Seleccione el banco --</option>
-                ${(DB.config.bancos||['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro']).map(b=>`<option>${escHtml(b)}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-field">
-              <label>Tipo Documento</label>
-              <select id="feria-cli-tipodoc" onchange="onTipoDocChange('feria-cli-tipodoc','feria-cli-doc')">
-                <option value="Cédula">Cédula</option>
-                <option value="RNC">RNC</option>
-                <option value="Pasaporte">Pasaporte</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-field">
-            <label>Número Documento</label>
-            <input type="text" id="feria-cli-doc" maxlength="13" placeholder="000-0000000-0" oninput="fmtDocInput('feria-cli-tipodoc','feria-cli-doc')">
-          </div>
-          <div class="form-field">
-            <label>📷 Documento del cliente</label>
-            <div id="feria-doc-box" onclick="document.getElementById('feria-foto-inp').click()"
-              style="border:2px dashed #94a3b8;background:#f8fafc;padding:18px;text-align:center;border-radius:8px;cursor:pointer">
-              <div style="font-size:28px;margin-bottom:6px">🪪</div>
-              <div style="font-size:13px;font-weight:600;color:#475569" id="feria-foto-txt">Capturar / adjuntar cédula</div>
-              <input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">
-            </div>
-          </div>
-          <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:4px" onclick="feriaGenerarCotizacion()">
-            📄 Generar cotización
-          </button>
-        </div>
-      </div>
-
-      <div id="feria-empty" style="text-align:center;padding:48px 10px;color:var(--gray)">
-        <div style="font-size:40px;margin-bottom:12px">🎪</div>
-        <div style="font-size:15px;font-weight:600">Selecciona un vehículo para comenzar</div>
-        <div style="font-size:13px;margin-top:4px">El vendedor elige el vehículo y genera la cotización</div>
-      </div>
-    </div>
-
-    <!-- ── CONFIGURAR EXTRAS (solo admin/con permiso) ── -->
-    <div id="feria-panel-extras" style="display:none">
-      ${puedeConfig?`
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-title">Seleccionar vehículo a configurar</div>
-        <div id="feria-admin-veh-list">
-          ${vehDisp.map(v=>{
-            const ex=(DB.feria?.extras||{})[v.id]||{};
-            return `<div class="veh-item" id="feria-adm-${v.id}" onclick="feriaSelAdmin('${v.id}',this)"
-              style="background:#f8fafc;border:1.5px solid var(--gray3);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:.15s">
-              <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:2px">${escHtml(v.codigo)}</div>
-              <div style="font-size:14px;font-weight:700;color:var(--navy)">${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio||''}
-                <span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px">${v.status}</span>
-                ${ex.precioFeria?`<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:4px">✓ Configurado</span>`:''}
-              </div>
-            </div>`;
-          }).join('')||'<div style="color:var(--gray);padding:12px">No hay vehículos disponibles</div>'}
-        </div>
-      </div>
-
-      <div id="feria-admin-form" style="display:none">
-        <div class="card">
+        <!-- Formulario a la derecha -->
+        <div id="feria-admin-form" style="display:none">
+          <div class="card" style="margin-bottom:0">
           <div class="card-title" id="feria-admin-title">⚙️ Extras de feria</div>
           <div class="form-row c2">
             <div class="form-field">
@@ -1142,67 +1000,186 @@ function renderFeria(){
           </div>
           <div class="form-field">
             <label>💎 Ventajas comerciales</label>
-            <textarea id="fa-ventajas" rows="3" placeholder="Ej: Excelente valor de reventa en el mercado dominicano..."></textarea>
+            <textarea id="fa-ventajas" rows="3" placeholder="Ej: Excelente valor de reventa..."></textarea>
           </div>
           <div class="form-field">
             <label>🛡️ Historial Carfax</label>
-            <textarea id="fa-carfax" rows="3" placeholder="Ej: Título limpio, sin accidentes, 1 solo dueño..."></textarea>
+            <textarea id="fa-carfax" rows="3" placeholder="Ej: Título limpio, sin accidentes..."></textarea>
           </div>
-
-          <!-- Beneficios -->
           <div class="form-field">
             <label>🎁 Beneficios de feria</label>
             <div id="fa-beneficios"></div>
             <button type="button" onclick="feriaAddBeneficio()" style="width:100%;padding:8px;border:1.5px dashed #94a3b8;background:none;border-radius:8px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;margin-top:6px">+ Agregar beneficio</button>
           </div>
-
-          <!-- Campos adicionales libres -->
           <div class="form-field">
             <label>📋 Campos adicionales libres</label>
             <div id="fa-extras"></div>
             <button type="button" onclick="feriaAddCampoExtra()" style="width:100%;padding:8px;border:1.5px dashed #94a3b8;background:none;border-radius:8px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;margin-top:6px">+ Agregar campo extra</button>
           </div>
-
           <div class="btn-row">
             <button class="btn btn-primary" onclick="feriaGuardarExtras()">💾 Guardar extras de feria</button>
             <button class="btn btn-secondary" onclick="feriaShowTab('vendedor')">📱 Ver en vista vendedor</button>
           </div>
         </div>
-      </div>`:'<div class="card"><div style="text-align:center;padding:32px;color:var(--gray)">No tienes permiso para configurar extras</div></div>'}
+        </div>
+      </div>`
+    :'<div class="card"><div style="text-align:center;padding:32px;color:var(--gray)">No tienes permiso para configurar extras</div></div>';
+
+  document.getElementById('page-feria').innerHTML=`
+    <div class="page-header">
+      <div><h1>🎪 Vendedores (Feria)</h1>
+        <p>${ventas.length} venta(s) registrada(s) — Total: ${fmt(totalVentas)}</p>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="exportarFeriaPDF()">📄 Exportar PDF</button>
+      </div>
     </div>
 
-    <!-- ── HISTORIAL DE VENTAS ── -->
+    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--gray3)">
+      ${puedeVendedor?`<button onclick="feriaShowTab('vendedor')" id="feria-tab-vendedor"
+        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid var(--blue);color:var(--blue)">
+        📱 Vista Vendedor
+      </button>`:''}
+      ${puedeConfig?`<button onclick="feriaShowTab('extras')" id="feria-tab-extras"
+        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">
+        ⚙️ Configurar Extras
+      </button>`:''}
+      ${puedeHistorial?`<button onclick="feriaShowTab('historial')" id="feria-tab-historial"
+        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">
+        📋 Historial (${ventas.length})
+      </button>`:''}
+    </div>
+
+    <!-- VISTA VENDEDOR -->
+    <div id="feria-panel-vendedor">
+      <div class="card" style="margin-bottom:14px">
+        <div class="form-field" style="margin-bottom:0">
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray)">🔍 Seleccionar Vehículo</label>
+          <select id="feria-veh-sel" onchange="feriaCargarVehiculo(this.value)" style="margin-top:6px">
+            <option value="">-- Seleccionar del inventario --</option>
+            ${vehDisp.map(v=>`<option value="${v.id}">${escHtml(v.codigo)} — ${escHtml(v.marca)} ${escHtml(v.modelo)} ${v.anio||''}</option>`).join('')}
+          </select>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;color:#166534;text-align:center;margin-top:8px">
+            📢 Tasa oficial: RD$ ${parseFloat(DB.config.tasaCambio||60).toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      <div id="feria-car-panel" style="display:none">
+        <div class="card" style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px" id="feria-v-code"></div>
+          <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:12px" id="feria-v-title"></div>
+          <div id="feria-price-box" style="background:#059669;color:#fff;padding:16px;border-radius:10px;text-align:center;margin-bottom:10px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.85">Precio especial de feria</div>
+            <div style="font-size:28px;font-weight:800;margin:6px 0" id="feria-v-price">—</div>
+            <div style="display:flex;justify-content:center;gap:8px;margin-top:6px">
+              <button id="feria-sw-usd" onclick="feriaSetMoneda('USD')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#fff;color:#059669">USD ($)</button>
+              <button id="feria-sw-dop" onclick="feriaSetMoneda('DOP')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:rgba(255,255,255,.25);color:#fff">DOP (RD$)</button>
+            </div>
+          </div>
+          <div id="feria-min-box" style="display:none;justify-content:space-between;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;font-size:13px;font-weight:700;color:#c2410c;margin-bottom:12px">
+            <span>⚠️ Mínimo autorizado</span><span id="feria-v-min"></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px" id="feria-tech-grid">
+            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">🛣️ Millas</div><div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-millas">—</div></div>
+            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">🔩 Motorización</div><div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-motor">—</div></div>
+            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">⚙️ Tracción</div><div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-traccion">—</div></div>
+            <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">⛽ Combustible</div><div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-combustible">—</div></div>
+          </div>
+          <div id="feria-extra-view" style="display:none;margin-bottom:12px"></div>
+          <div onclick="feriaToggleAcc('carfax')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">🛡️ Historial Carfax <span id="ico-carfax">▼</span></div>
+          <div id="feria-carfax" style="display:none;padding-bottom:10px;font-size:12px;color:var(--gray);line-height:1.6"></div>
+          <div onclick="feriaToggleAcc('ventajas')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">💎 Ventajas comerciales <span id="ico-ventajas">▼</span></div>
+          <div id="feria-ventajas" style="display:none;padding-bottom:10px"></div>
+          <div id="feria-beneficios-wrap" style="display:none;border-top:1px solid var(--gray3);padding-top:12px;margin-top:4px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px">🎁 Beneficios incluidos en feria</div>
+            <div id="feria-beneficios-list"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📝 Datos del trámite</div>
+          <div class="form-row c2">
+            <div class="form-field"><label class="required">Nombre del Cliente</label><input type="text" id="feria-cli-nombre" placeholder="Ej: María González"></div>
+            <div class="form-field"><label>Teléfono</label><input type="text" id="feria-cli-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div>
+          </div>
+          <div class="form-row c2">
+            <div class="form-field"><label>Banco del Cliente</label>
+              <select id="feria-banco-sel">
+                <option value="">-- Seleccione el banco --</option>
+                ${(DB.config.bancos||['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro']).map(b=>`<option>${escHtml(b)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-field"><label>Tipo Documento</label>
+              <select id="feria-cli-tipodoc" onchange="onTipoDocChange('feria-cli-tipodoc','feria-cli-doc')">
+                <option value="Cédula">Cédula</option><option value="RNC">RNC</option><option value="Pasaporte">Pasaporte</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-field"><label>Número Documento</label><input type="text" id="feria-cli-doc" maxlength="13" placeholder="000-0000000-0" oninput="fmtDocInput('feria-cli-tipodoc','feria-cli-doc')"></div>
+          <div class="form-field"><label>📷 Documento del cliente</label>
+            <div id="feria-doc-box" onclick="document.getElementById('feria-foto-inp').click()" style="border:2px dashed #94a3b8;background:#f8fafc;padding:18px;text-align:center;border-radius:8px;cursor:pointer">
+              <div style="font-size:28px;margin-bottom:6px">🪪</div>
+              <div style="font-size:13px;font-weight:600;color:#475569" id="feria-foto-txt">Capturar / adjuntar cédula</div>
+              <input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:4px" onclick="feriaGenerarCotizacion()">📄 Generar cotización</button>
+        </div>
+      </div>
+
+      <!-- Resumen debajo del vehículo seleccionado (visible siempre) -->
+      <div class="card" style="margin-top:14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">📊 Resumen de feria — hoy</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div style="background:var(--blue3);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--blue)">${ventas.length}</div>
+            <div style="font-size:11px;color:var(--blue);font-weight:600">Total ventas</div>
+          </div>
+          <div style="background:var(--green2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:16px;font-weight:800;color:var(--green)">${fmt(totalVentas)}</div>
+            <div style="font-size:11px;color:var(--green);font-weight:600">Monto total</div>
+          </div>
+          <div style="background:var(--gray2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--navy)">${ventas.filter(v=>v.cotizacionId).length}</div>
+            <div style="font-size:11px;color:var(--gray);font-weight:600">Cotizaciones</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="feria-empty" style="text-align:center;padding:48px 10px;color:var(--gray)">
+        <div style="font-size:40px;margin-bottom:12px">🎪</div>
+        <div style="font-size:15px;font-weight:600">Selecciona un vehículo para comenzar</div>
+        <div style="font-size:13px;margin-top:4px">El vendedor elige el vehículo y genera la cotización</div>
+      </div>
+    </div>
+
+    <!-- CONFIGURAR EXTRAS -->
+    <div id="feria-panel-extras" style="display:none">${extrasTab}</div>
+
+    <!-- HISTORIAL -->
     <div id="feria-panel-historial" style="display:none">
       <div class="card">
         <div class="search-wrap"><input class="search-input" placeholder="Buscar por cliente, vehículo, vendedor..." oninput="filterTable('feria-hist-tbl',this.value)"></div>
         <div class="table-wrap"><table id="feria-hist-tbl">
-          <thead><tr>
-            <th>Fecha</th><th>Vendedor</th><th>Cliente</th><th>Vehículo</th><th>Precio</th><th>Cotización</th><th>Acciones</th>
-          </tr></thead>
-          <tbody>${ventas.length?ventas.slice().reverse().map(v=>{
-            const cot=v.cotizacionId?DB.cotizaciones.find(c=>c.id===v.cotizacionId):null;
-            const vObj=DB.vehiculos.find(x=>x.id===v.vehiculoId);
-            return `<tr>
-              <td style="font-size:12px">${fmtDate(v.fecha)}</td>
-              <td style="font-weight:600">${escHtml(v.vendedor||'—')}</td>
-              <td style="font-weight:700">${escHtml(v.cliente||'—')}</td>
-              <td style="font-size:12px">${escHtml(vObj?vObj.codigo+' '+vObj.marca+' '+vObj.modelo:v.vehiculo||'—')}</td>
-              <td style="font-weight:700;color:var(--green)">${v.moneda==='USD'?'$'+parseFloat(v.precio||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(v.precio||0)}</td>
-              <td>${cot?`<button class="btn btn-secondary btn-sm" onclick="imprimirCotizacionFeria('${cot.id}')">🖨️ Imprimir</button>`:`<button class="btn btn-primary btn-sm" onclick="crearCotizacionDesdeFeria('${v.id}')">📋 Crear</button>`}</td>
-              <td><div style="display:flex;gap:4px">
-                ${(currentUser?.role==='admin'||canDo('eliminar'))?`<button class="btn btn-red btn-sm" onclick="eliminarVentaFeria('${v.id}')">🗑</button>`:''}
-              </div></td>
-            </tr>`;
-          }).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray)">Sin ventas registradas en feria</td></tr>'}
-          </tbody>
+          <thead><tr><th>Fecha</th><th>Vendedor</th><th>Cliente</th><th>Vehículo</th><th>Precio</th><th>Cotización</th><th>Acciones</th></tr></thead>
+          <tbody>${histRows}</tbody>
         </table></div>
       </div>
     </div>`;
 
-  // Estado activo: vehiculo seleccionado en vendedor
-  window._feriaVehActivo = null;
-  window._feriaMoneda = 'USD';
-  window._feriaAdminVehId = null;
+  window._feriaVehActivo=null;
+  window._feriaMoneda='USD';
+  window._feriaAdminVehId=null;
+  // Show first available tab
+  setTimeout(()=>{
+    const esAdmin2=currentUser?.role==='admin';
+    const pV=esAdmin2||canDo('feria-vendedor')||(currentUser?.permisos&&currentUser.permisos['feria-vendedor']!==false);
+    const pC=esAdmin2||canDo('feria-extras');
+    const pH=esAdmin2||canDo('feria-historial')||(currentUser?.permisos&&currentUser.permisos['feria-historial']!==false);
+    if(pV)feriaShowTab('vendedor');
+    else if(pC)feriaShowTab('extras');
+    else if(pH)feriaShowTab('historial');
+  },50);
 }
 
 function feriaShowTab(tab){
@@ -1413,9 +1390,9 @@ function feriaGenerarCotizacion(){
 function feriaSelAdmin(vid, el){
   window._feriaAdminVehId=vid;
   document.querySelectorAll('[id^="feria-adm-"]').forEach(x=>{
-    x.style.borderColor='var(--gray3)';x.style.background='#f8fafc';
+    x.style.borderColor='var(--gray3)';x.style.background='';x.style.boxShadow='';
   });
-  if(el){el.style.borderColor='var(--blue)';el.style.background='#eff6ff';}
+  if(el){el.style.borderColor='var(--blue)';el.style.background='#eff6ff';el.style.boxShadow='0 0 0 3px rgba(37,99,235,.12)';}
 
   const v=DB.vehiculos.find(x=>x.id===vid);
   const ex=(DB.feria?.extras||{})[vid]||{};
@@ -3820,6 +3797,11 @@ function renderInformes(){
 }
 
 // ══ USUARIOS ══
+function toggleModSubperms(modId, checked){
+  const wrap=document.getElementById('u-subperms-'+modId);
+  if(wrap)wrap.style.display=checked?'flex':'none';
+}
+
 function renderUsuarios(){
   if(currentUser?.role!=='admin'){
     document.getElementById('page-usuarios').innerHTML='<div style="text-align:center;padding:48px;color:var(--gray)">🔒 Solo el administrador puede gestionar usuarios</div>';
@@ -3870,11 +3852,22 @@ function renderUsuarios(){
       <div style="margin-bottom:12px">
         <div style="font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">MÓDULOS PERMITIDOS</div>
         <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
-          ${MODS.map(m=>`
-            <label style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;cursor:pointer;padding:8px 4px;border:1.5px solid var(--gray3);border-radius:8px;text-align:center;transition:.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--gray3)'">
-              <input type="checkbox" id="nu-mod-${m.id}" style="width:16px;height:16px;accent-color:var(--blue);margin-bottom:2px">
+          ${MODS.map(m=>{
+      const hasSub=m.subperms&&m.subperms.length;
+      return `<div style="display:flex;flex-direction:column;align-items:center">
+            <label style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;cursor:pointer;padding:8px 4px;border:1.5px solid var(--gray3);border-radius:8px;text-align:center;transition:.15s;width:100%" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--gray3)'">
+              <input type="checkbox" id="nu-mod-${m.id}" style="width:16px;height:16px;accent-color:var(--blue);margin-bottom:2px"
+                onchange="toggleModSubperms('${m.id}',this.checked)">
               ${escHtml(m.label)}
-            </label>`).join('')}
+            </label>
+            ${hasSub?`<div id="u-subperms-${m.id}" style="display:none;flex-direction:column;gap:2px;margin-top:4px;width:100%;padding:0 2px">
+              ${m.subperms.map(sp=>`<label style="display:flex;align-items:center;gap:5px;font-size:10px;cursor:pointer;color:var(--gray)">
+                <input type="checkbox" id="u-sp-${sp.id}" checked style="accent-color:var(--blue);width:11px;height:11px">
+                ${sp.label}
+              </label>`).join('')}
+            </div>`:''}
+          </div>`;
+    }).join('')}
         </div>
       </div>
 
@@ -4048,7 +4041,11 @@ function editarUsuario(i){
     {id:'cxc',label:'📬 Cuentas por Cobrar'},{id:'gastos',label:'🏢 Gastos Empresa'},
     {id:'nomina',label:'👷 Nómina'},{id:'caja',label:'💳 Caja'},
     {id:'cotizaciones',label:'📋 Cotizaciones'},{id:'autorizaciones',label:'📝 Autorización Compra'},
-    {id:'seguros',label:'🛡️ Seguros'},{id:'feria',label:'🎪 Vendedores (Feria)'},{id:'facturaExterna',label:'🧾 Facturas Externas'},{id:'alertas',label:'🔔 Alertas'},{id:'verSaldoCaja',label:'💰 Ver Saldo Caja'},{id:'chat',label:'💬 Chat Interno'},
+    {id:'seguros',label:'🛡️ Seguros'},{id:'feria',label:'🎪 Vendedores (Feria)',subperms:[
+      {id:'feria-vendedor',label:'📱 Vista Vendedor'},
+      {id:'feria-extras',label:'⚙️ Configurar Extras'},
+      {id:'feria-historial',label:'📋 Historial'}
+    ]},{id:'facturaExterna',label:'🧾 Facturas Externas'},{id:'alertas',label:'🔔 Alertas'},{id:'verSaldoCaja',label:'💰 Ver Saldo Caja'},{id:'chat',label:'💬 Chat Interno'},
     {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
     {id:'prestamos',label:'🏛️ Préstamos'},
   ];
@@ -4140,9 +4137,21 @@ function guardarUsuario(idx){
   if(!nombre||!user||(!pass&&idx===undefined)){toast('Complete todos los campos','error');return;}
   if(idx===undefined&&DB.users.find(u=>u.username===user)){toast('El usuario ya existe','error');return;}
   const MODS_IDS=['dashboard','informes','consultas','suplidores','inventario','gastosVeh','cxp','clientes','ventas','cxc','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','cuentas','cumpleanos','prestamos'];
-  const nuevosMods=MODS_IDS.filter(m=>{const el=document.getElementById('u-mod-'+m);return el&&el.checked;});
+  const nuevosMods=MODS.filter(m=>{const el=document.getElementById('nu-mod-'+m.id)||document.getElementById('u-mod-'+m.id);return el&&el.checked;}).map(m=>m.id);
+  const nuevosPerms={};
+  MODS.forEach(m=>{
+    const el=document.getElementById('nu-mod-'+m.id)||document.getElementById('u-mod-'+m.id);
+    if(el&&el.checked){
+      nuevosPerms[m.id]=true;
+      if(m.subperms)m.subperms.forEach(sp=>{
+        const sel=document.getElementById('u-sp-'+sp.id);
+        nuevosPerms[sp.id]=sel?sel.checked:true;
+      });
+    }
+  });
   const permKeys=['editar','eliminar','imprimir','pdf','editarVentas','editarClientes','editarSuplidores','editarGastos','editarNomina','editarGastosVeh','editarCobros','editarCxp','editarVehiculos','editarCaja','editarCotizaciones','editarAutorizaciones','editarSeguros','editarFacturas','borrarVentas','borrarClientes','borrarSuplidores','borrarGastos','borrarNomina','borrarGastosVeh','borrarCobros','borrarCxp','borrarVehiculos','borrarCaja','borrarCotizaciones','borrarAutorizaciones','borrarSeguros','borrarFacturas'];
-  const nuevosPerms={};permKeys.forEach(k=>{const el=document.getElementById('u-perm-'+k);if(el)nuevosPerms[k]=el.checked;});
+  // Sub-perms already collected above; also merge any direct perm checkboxes
+  if(typeof permKeys!=='undefined')permKeys.forEach(k=>{const el=document.getElementById('u-perm-'+k);if(el)nuevosPerms[k]=el.checked;});
   if(idx!==undefined){DB.users[idx].nombre=nombre;DB.users[idx].username=user;DB.users[idx].role=document.getElementById('u-role').value;if(pass)DB.users[idx].password=pass;DB.users[idx].modulos=nuevosMods;DB.users[idx].permisos=nuevosPerms;if(currentUser.id===DB.users[idx].id){currentUser=DB.users[idx];}}
   else DB.users.push({id:uid(),nombre,username:user,password:pass,role:document.getElementById('u-role').value,activo:true,modulos:nuevosMods,permisos:nuevosPerms});
   sDB('users');
@@ -4837,6 +4846,96 @@ function guardarPermisosUsuarioConfig(i){
   }
 }
 
+function cfgToggle(id){
+  const body=document.getElementById('cfg-body-'+id);
+  const ico=document.getElementById('cfg-ico-'+id);
+  if(!body)return;
+  const open=body.classList.toggle('open');
+  if(ico)ico.style.transform=open?'rotate(180deg)':'rotate(0deg)';
+  if(open&&id==='menu-orden')setTimeout(renderNavConfigEditor,50);
+}
+function cfgOpenAll(){document.querySelectorAll('.cfg-acc-body').forEach(b=>{b.classList.add('open');const ico=b.previousElementSibling&&b.previousElementSibling.querySelector('.cfg-acc-ico');if(ico)ico.style.transform='rotate(180deg)';})}
+function cfgCloseAll(){document.querySelectorAll('.cfg-acc-body').forEach(b=>{b.classList.remove('open');const ico=b.previousElementSibling&&b.previousElementSibling.querySelector('.cfg-acc-ico');if(ico)ico.style.transform='rotate(0deg)';})}
+
+// ══ MENÚ LATERAL — GRUPOS CONFIGURABLES ══════════════════════════════════════
+const NAV_MODULES_DEFAULT=[{"id": "dashboard", "label": "Inicio", "ico": "🏠", "group": "principal", "fixed": true}, {"id": "informes", "label": "Informe Mensual", "ico": "📊", "group": "principal", "fixed": true}, {"id": "consultas", "label": "Consultas", "ico": "🔍", "group": "principal", "fixed": true}, {"id": "suplidores", "label": "Suplidores", "ico": "🏭", "group": "vehiculos"}, {"id": "inventario", "label": "Registro de Vehículo", "ico": "🚗", "group": "vehiculos"}, {"id": "gastosVeh", "label": "Gastos de Vehículo", "ico": "💸", "group": "vehiculos"}, {"id": "cxp", "label": "Cuentas por Pagar", "ico": "📑", "group": "vehiculos"}, {"id": "clientes", "label": "Clientes", "ico": "👤", "group": "clientes"}, {"id": "ventas", "label": "Ventas", "ico": "💰", "group": "clientes"}, {"id": "cxc", "label": "Cuentas por Cobrar", "ico": "📬", "group": "clientes"}, {"id": "feria", "label": "Vendedores (Feria)", "ico": "🎪", "group": "clientes"}, {"id": "gastos", "label": "Gastos Empresa", "ico": "🏢", "group": "finanzas"}, {"id": "nomina", "label": "Nómina", "ico": "👷", "group": "finanzas"}, {"id": "caja", "label": "Caja", "ico": "💳", "group": "finanzas"}, {"id": "cotizaciones", "label": "Cotizaciones", "ico": "📋", "group": "otros"}, {"id": "autorizaciones", "label": "Autorización Compra", "ico": "📝", "group": "otros"}, {"id": "seguros", "label": "Seguros", "ico": "🛡️", "group": "otros"}, {"id": "facturaExterna", "label": "Facturas Externas", "ico": "🧾", "group": "otros"}, {"id": "chat", "label": "Chat Interno", "ico": "💬", "group": "otros"}, {"id": "prestamos", "label": "Préstamos", "ico": "🏛️", "group": "sistema"}, {"id": "cuentas", "label": "Cuentas", "ico": "🏦", "group": "sistema"}, {"id": "cumpleanos", "label": "Cumpleaños", "ico": "🎂", "group": "sistema"}, {"id": "usuarios", "label": "Usuarios", "ico": "👥", "group": "sistema"}, {"id": "alertas", "label": "Alertas del Sistema", "ico": "🔔", "group": "sistema"}, {"id": "config", "label": "Configuración", "ico": "⚙️", "group": "sistema"}];
+const NAV_GROUPS_DEFAULT=[{"id": "vehiculos", "label": "Vehículos", "ico": "🚗"}, {"id": "clientes", "label": "Clientes", "ico": "👤"}, {"id": "finanzas", "label": "Finanzas", "ico": "💳"}, {"id": "otros", "label": "Otros", "ico": "📂"}, {"id": "sistema", "label": "Sistema", "ico": "⚙️"}];
+
+function getNavConfig(){
+  const cfg=DB.config.navConfig||{};
+  return {
+    groups: cfg.groups || NAV_GROUPS_DEFAULT,
+    modules: cfg.modules || NAV_MODULES_DEFAULT,
+    collapsed: cfg.collapsed || {}
+  };
+}
+
+function saveNavConfig(cfg){
+  if(!DB.config.navConfig)DB.config.navConfig={};
+  DB.config.navConfig=cfg;
+  sDB('config');
+}
+
+function renderNavGroups(){
+  const container=document.getElementById('nav-groups-container');
+  if(!container)return;
+  const cfg=getNavConfig();
+  const groups=cfg.groups;
+  const modules=cfg.modules;
+  const collapsed=cfg.collapsed;
+
+  let html='';
+  groups.forEach(g=>{
+    const mods=modules.filter(m=>m.group===g.id&&!m.fixed);
+    if(!mods.length)return;
+    // Check if user has access to at least one module in this group
+    const visibleMods=mods.filter(m=>_navModuloVisible(m.id));
+    if(!visibleMods.length)return;
+    const isCollapsed=collapsed[g.id];
+    const maxH=isCollapsed?'0':''+visibleMods.length*42+'px';
+    html+=`<div class="nav-group-hdr" onclick="navGroupToggle('${g.id}')">
+      <span class="nav-group-label">${g.ico} ${g.label}</span>
+      <span class="nav-group-ico" id="navg-ico-${g.id}" style="transform:${isCollapsed?'rotate(-90deg)':'rotate(0deg)'}">▾</span>
+    </div>
+    <div class="nav-group-items${isCollapsed?' collapsed':''}" id="navg-${g.id}" style="max-height:${maxH}">`;
+    visibleMods.forEach(m=>{
+      const extraStyle=m.id==='chat'?'':m.id==='informeSemanal'?' style="display:none"':'';
+      html+=`<div class="nav-item" onclick="showPage('${m.id}')" id="nav-${m.id}"${extraStyle}><span class="ico">${m.ico}</span>${m.label}`;
+      if(m.id==='chat')html+=` <span id="chat-badge" style="display:none;background:#dc2626;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto">0</span>`;
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+function navGroupToggle(gid){
+  const cfg=getNavConfig();
+  cfg.collapsed[gid]=!cfg.collapsed[gid];
+  saveNavConfig(cfg);
+  const el=document.getElementById('navg-'+gid);
+  const ico=document.getElementById('navg-ico-'+gid);
+  if(!el)return;
+  if(cfg.collapsed[gid]){
+    el.style.maxHeight=el.scrollHeight+'px';
+    requestAnimationFrame(()=>{el.style.maxHeight='0';el.classList.add('collapsed');});
+    if(ico)ico.style.transform='rotate(-90deg)';
+  } else {
+    el.classList.remove('collapsed');
+    el.style.maxHeight=el.scrollHeight+'px';
+    setTimeout(()=>{el.style.maxHeight='';}  ,300);
+    if(ico)ico.style.transform='rotate(0deg)';
+  }
+}
+
+function _navModuloVisible(id){
+  if(!currentUser)return false;
+  if(currentUser.role==='admin')return true;
+  const perms=currentUser.permisos||{};
+  return perms[id]===true||perms[id]==='true';
+}
+// ═════════════════════════════════════════════════════════════════════════════
+
 function renderConfig(){
   const c=DB.config;
   const esAdmin=currentUser?.role==='admin';
@@ -4854,8 +4953,7 @@ function renderConfig(){
   // Si el admin no tiene alertasPermitidas, ve todas por defecto
   const misAlertas=currentUser?.alertasPermitidas||ALERT_TYPES_ALL.map(a=>a.id);
   const misNotifHTML=`
-    <div class="card">
-      <div class="card-title">🔔 Mis Notificaciones al Entrar</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('notif')"><span class="cfg-acc-title">🔔 Mis Notificaciones al Entrar</span><span class="cfg-acc-ico" id="cfg-ico-notif" style="transform:rotate(180deg)">▼</span></div><div class="cfg-acc-body open" id="cfg-body-notif">
       <p style="font-size:13px;color:var(--gray);margin-bottom:14px">Selecciona cuáles alertas quieres ver al iniciar sesión. Si desactivas una, el popup ya no aparecerá.</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
         ${ALERT_TYPES_ALL.map(a=>`
@@ -4873,7 +4971,7 @@ function renderConfig(){
           document.querySelectorAll('[id^=mn-]').forEach(c=>c.checked=false);
         ">🔕 Desactivar todas</button>
       </div>
-    </div>`;
+    </div></div>`;
   // Si Firebase activo pero aún no cargó, mostrar aviso
   const fbPendiente=window._fbActivo&&!window._fbCargado;
   document.getElementById('page-config').innerHTML=`
@@ -4886,8 +4984,7 @@ function renderConfig(){
     </div>
     ${fbPendiente?'<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#92400e;display:flex;align-items:center;gap:8px"><span>⏳</span> Sincronizando con Firebase... Los datos se actualizarán en unos segundos.</div>':''}
     ${misNotifHTML}
-    <div class="card">
-      <div class="card-title">🏢 Información del Negocio</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('negocio')"><span class="cfg-acc-title">🏢 Información del Negocio</span><span class="cfg-acc-ico" id="cfg-ico-negocio" style="transform:rotate(180deg)">▼</span></div><div class="cfg-acc-body open" id="cfg-body-negocio">
       <div class="form-row c2">
         <div class="form-field" style="grid-column:span 2">
           <label>Nombre del Negocio</label>
@@ -4920,26 +5017,23 @@ function renderConfig(){
         
       </div>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarInfoNegocio()">💾 Guardar</button></div>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-title">👥 Propietarios de Vehículos</div>
+    </div></div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('propietarios')"><span class="cfg-acc-title">👥 Propietarios de Vehículos</span><span class="cfg-acc-ico" id="cfg-ico-propietarios" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-propietarios">
       <div id="cf-props-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
         ${(c.propietarios||[]).map((p,i)=>`<div style="display:flex;gap:6px"><input type="text" value="${escHtml(p)}" id="cf-prop-${i}" style="flex:1"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button></div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarPropConfig()">➕ Agregar Propietario</button>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarPropietarios()">💾 Guardar</button></div>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-title">💳 Cuentas de la Empresa <span style="font-size:11px;font-weight:400;color:var(--gray)">(Para cotizaciones)</span></div>
+    </div></div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('cuentas-emp')"><span class="cfg-acc-title">💳 Cuentas de la Empresa (Para cotizaciones)</span><span class="cfg-acc-ico" id="cfg-ico-cuentas-emp" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-cuentas-emp">
       <div id="cf-cuentas-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
         ${(c.cuentas||['Caja General']).map((ct,i)=>`<div style="display:flex;gap:6px"><input type="text" value="${escHtml(ct)}" id="cf-cuenta-${i}" style="flex:1"><button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">🗑</button></div>`).join('')}
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarCuentaConfig()">➕ Agregar Cuenta</button>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarCuentasEmpresa()">💾 Guardar</button></div>
-    </div>
+    </div></div>
     <!-- COLORES DEL SISTEMA -->
-    <div class="card">
-      <div class="card-title">🎨 Colores del Sistema</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('colores')"><span class="cfg-acc-title">🎨 Colores del Sistema</span><span class="cfg-acc-ico" id="cfg-ico-colores" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-colores">
       <p style="font-size:13px;color:var(--gray);margin-bottom:16px">Personaliza todos los colores del programa incluyendo la pantalla de inicio y el menú.</p>
       
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px;border-bottom:1px solid var(--gray3);padding-bottom:4px">🎨 Colores Principales del Sistema</div>
@@ -5017,10 +5111,9 @@ function renderConfig(){
         <button class="btn btn-secondary" onclick="resetColores()">🔄 Restablecer Todo</button>
         <button class="btn btn-green" onclick="guardarColores()">💾 Guardar Colores</button>
       </div>
-    </div>
+    </div></div>
     <!-- COMPAÑÍAS DE SEGUROS -->
-    <div class="card">
-      <div class="card-title">🛡️ Compañías de Seguros</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('companias')"><span class="cfg-acc-title">🛡️ Compañías de Seguros</span><span class="cfg-acc-ico" id="cfg-ico-companias" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-companias">
       <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Lista de compañías disponibles en el módulo de Seguros.</p>
       <div id="cf-seguros-list">
         ${(DB.config.companiasSeguro||['Universal','Mapfre BHD','Reservas','Patria','Atlantica','HUMANO','Otra']).map((s,i)=>`
@@ -5031,13 +5124,12 @@ function renderConfig(){
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarSeguroConfig()">➕ Agregar Compañía</button>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarSegurosConfig()">💾 Guardar</button></div>
-    </div>
+    </div></div>
 
     ${currentUser?.role==='admin'?`<div class="btn-row" style="margin-top:8px;justify-content:flex-end"><button class="btn btn-secondary" onclick="confirmarResetDatos()" style="color:var(--red);border:1.5px solid var(--red)">🗑 Limpiar Todos los Datos</button></div>`:''}
 
     <!-- ROLES DE USUARIOS -->
-    <div class="card">
-      <div class="card-title">👥 Roles de Usuarios</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('roles')"><span class="cfg-acc-title">👥 Roles de Usuarios</span><span class="cfg-acc-ico" id="cfg-ico-roles" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-roles">
       <p style="font-size:13px;color:var(--gray);margin-bottom:12px">El administrador puede crear los roles que se asignarán a los usuarios del sistema.</p>
       <div id="cf-roles-list">
         ${(DB.config.roles||[{id:'usuario',nombre:'Usuario'}]).map((r,i)=>`
@@ -5049,11 +5141,10 @@ function renderConfig(){
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarRolConfig()">➕ Agregar Rol</button>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarRoles()">💾 Guardar</button></div>
-    </div>
+    </div></div>
 
     <!-- TIPOS DE GASTO DE VEHÍCULO -->
-    <div class="card">
-      <div class="card-title">💸 Tipos de Gasto de Vehículo</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('tipos-gasto')"><span class="cfg-acc-title">💸 Tipos de Gasto de Vehículo</span><span class="cfg-acc-ico" id="cfg-ico-tipos-gasto" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-tipos-gasto">
       <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Categorías de gastos que aparecerán al registrar un gasto de vehículo.</p>
       <div id="cf-tgv-list">
         ${(DB.config.tiposGastoVeh||['Compra Vehículo','Aduana','Flete','Otros']).map((t,i)=>`
@@ -5064,11 +5155,10 @@ function renderConfig(){
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarTipoGastoVehConfig()">➕ Agregar Tipo</button>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarTiposGastoVeh()">💾 Guardar</button></div>
-    </div>
+    </div></div>
 
     <!-- CATEGORÍAS DE GASTOS DE EMPRESA -->
-    <div class="card">
-      <div class="card-title">🏢 Categorías de Gastos de Empresa</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('cats-gasto')"><span class="cfg-acc-title">🏢 Categorías de Gastos de Empresa</span><span class="cfg-acc-ico" id="cfg-ico-cats-gasto" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-cats-gasto">
       <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Categorías para clasificar los gastos operativos de la empresa.</p>
       <div id="cf-catg-list">
         ${(DB.config.categoriasGastos||['Alquiler','Servicios','Otros']).map((t,i)=>`
@@ -5079,24 +5169,11 @@ function renderConfig(){
       </div>
       <button class="btn btn-secondary btn-sm" onclick="agregarCatGastoConfig()">➕ Agregar Categoría</button>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarCategoriasGastos()">💾 Guardar</button></div>
-    </div>
+    </div></div>
 
-    <!-- BANCOS Y CUENTAS — administrado desde módulo Cuentas -->
-    <div class="card">
-      <div class="card-title">🏦 Bancos y Cuentas Bancarias</div>
-      <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--blue3);border-radius:10px">
-        <span style="font-size:36px">🏦</span>
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--navy)">Las cuentas bancarias se gestionan en el módulo <strong>Cuentas</strong></div>
-          <div style="font-size:12px;color:var(--gray);margin-top:4px">Tienes <strong>${(DB.config.bancoCuentas||[]).length}</strong> banco(s) y <strong>${(DB.config.bancoCuentas||[]).reduce((a,b)=>a+(b.cuentas||[]).length,0)}</strong> cuenta(s) registradas.</div>
-        </div>
-        <button class="btn btn-primary btn-sm" style="margin-left:auto;flex-shrink:0" onclick="closeModal&&closeModal();showPage('cuentas')">→ Ir a Cuentas</button>
-      </div>
-    </div>
 
     <!-- CAMPOS REQUERIDOS POR MÓDULO -->
-    <div class="card">
-      <div class="card-title">📋 Campos Requeridos por Módulo</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('campos-req')"><span class="cfg-acc-title">📋 Campos Requeridos por Módulo</span><span class="cfg-acc-ico" id="cfg-ico-campos-req" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-campos-req">
       <p style="font-size:13px;color:var(--gray);margin-bottom:14px">Activa los campos que quieres hacer obligatorios en cada módulo. El sistema mostrará un error si el usuario intenta guardar sin llenarlos.</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
         ${Object.entries(CAMPOS_MODULOS).map(([mod,campos])=>{
@@ -5117,37 +5194,19 @@ function renderConfig(){
         <button class="btn btn-primary" onclick="guardarCamposRequeridos()">💾 Guardar Campos Requeridos</button>
         <button class="btn btn-secondary btn-sm" onclick="resetCamposRequeridos()">🔄 Desactivar todos</button>
       </div>
-    </div>
+    </div></div>
 
     <!-- ORDEN DEL MENÚ -->
-    <div class="card">
-      <div class="card-title">🗂️ Orden del Menú Lateral</div>
-      <p style="font-size:13px;color:var(--gray);margin-bottom:14px">Personaliza el orden en que aparecen los módulos en el menú. Usa los botones ↑↓ para mover. El cambio se aplica inmediatamente.</p>
-      <div id="menu-orden-list" style="max-height:420px;overflow-y:auto">
-        ${(()=>{
-          const orden=DB.config.menuOrden&&DB.config.menuOrden.length?DB.config.menuOrden:MENU_DEFS.map(m=>m.id);
-          return orden.map((id,i)=>{
-            const def=MENU_DEFS.find(m=>m.id===id);
-            if(!def)return '';
-            return `<div class="menu-orden-row" data-id="${id}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${i%2===0?'var(--gray2)':'#fff'};border-radius:6px;margin-bottom:4px;border:1px solid var(--gray3)">
-              <span style="font-size:16px">${def.ico}</span>
-              <span style="flex:1;font-size:13px;font-weight:600">${def.label}</span>
-              <span style="font-size:10px;background:var(--blue3);color:var(--blue);padding:2px 7px;border-radius:10px;font-weight:700">${def.sec}</span>
-              <button class="btn btn-sm" style="padding:3px 8px;background:#fff;border:1px solid var(--gray3)" onclick="moverMenuOrden('${id}',-1)" title="Subir">↑</button>
-              <button class="btn btn-sm" style="padding:3px 8px;background:#fff;border:1px solid var(--gray3)" onclick="moverMenuOrden('${id}',1)" title="Bajar">↓</button>
-            </div>`;
-          }).join('');
-        })()}
-      </div>
-      <div class="btn-row" style="margin-top:12px">
-        <button class="btn btn-primary" onclick="guardarOrdenMenu()">💾 Guardar Orden</button>
-        <button class="btn btn-secondary btn-sm" onclick="resetOrdenMenu()">🔄 Restablecer orden original</button>
-      </div>
-    </div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('menu-orden')"><span class="cfg-acc-title">🗂️ Orden del Menú Lateral</span><span class="cfg-acc-ico" id="cfg-ico-menu-orden" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-menu-orden">
+      <div style="font-size:13px;color:var(--gray);margin-bottom:14px">Define los grupos del menú lateral. Puedes renombrar grupos y mover módulos entre ellos. Los cambios aplican para todos los usuarios inmediatamente.</div>
+      <div id="cfg-nav-groups"></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-primary" onclick="guardarNavConfig()">💾 Guardar estructura del menú</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetNavConfig()">🔄 Restaurar por defecto</button>
+      </div></div></div>
 
     <!-- RESPONSABLE Y OBSERVACIÓN RECIBO -->
-    <div class="card">
-      <div class="card-title">📄 Datos del Recibo</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('recibo')"><span class="cfg-acc-title">📄 Datos del Recibo</span><span class="cfg-acc-ico" id="cfg-ico-recibo" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-recibo">
       <div class="form-row c2">
         <div class="form-field"><label>Responsable / Dueño de la Empresa</label>
           <input type="text" id="cf-responsable" value="${escHtml(c.responsable||'')}" placeholder="Nombre del responsable o dueño">
@@ -5157,12 +5216,11 @@ function renderConfig(){
         </div>
       </div>
       <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" onclick="guardarDatosRecibo()">💾 Guardar</button></div>
-    </div>
+    </div></div>
 
     </div>
     <!-- GESTIÓN USUARIOS DESDE CONFIG -->
-    <div class="card">
-      <div class="card-title">👥 Gestión de Usuarios y Permisos</div>
+    <div class="cfg-acc"><div class="cfg-acc-hdr" onclick="cfgToggle('usuarios-config')"><span class="cfg-acc-title">👥 Gestión de Usuarios y Permisos</span><span class="cfg-acc-ico" id="cfg-ico-usuarios-config" style="transform:rotate(0deg)">▼</span></div><div class="cfg-acc-body" id="cfg-body-usuarios-config">
       <p style="font-size:13px;color:var(--gray);margin-bottom:12px">El administrador puede editar módulos, permisos y alertas de cada usuario. Los cambios se guardan de inmediato.</p>
       <div style="display:flex;flex-direction:column;gap:12px">
         ${DB.users.map((u,ui)=>{
@@ -5192,7 +5250,7 @@ function renderConfig(){
             +'</div>';
         }).join('')}
       </div>
-    </div>
+    </div></div>
 
     </div>`;
 }
@@ -5624,6 +5682,89 @@ function guardarDatosRecibo(){
   sDB('config');
   toast('✅ Datos del recibo guardados','success');
 }
+function renderNavConfigEditor(){
+  const container=document.getElementById('cfg-nav-groups');
+  if(!container)return;
+  const cfg=getNavConfig();
+  const groups=cfg.groups;
+  const modules=cfg.modules;
+  const modLabels=Object.fromEntries(NAV_MODULES_DEFAULT.map(m=>[m.id,{label:m.label,ico:m.ico}]));
+
+  let html='';
+  groups.forEach((g,gi)=>{
+    const mods=modules.filter(m=>m.group===g.id&&!m.fixed);
+    html+=`<div style="background:var(--gray2);border:1.5px solid var(--gray3);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">${g.ico}</span>
+        <input type="text" value="${escHtml(g.label)}" data-gid="${g.id}" class="cfg-nav-group-name"
+          style="flex:1;padding:6px 10px;border:1.5px solid var(--gray3);border-radius:6px;font-size:13px;font-weight:700;background:#fff">
+        <div style="display:flex;gap:4px">
+          ${gi>0?`<button onclick="navGroupMoveUp('${g.id}')" style="padding:4px 8px;background:#fff;border:1.5px solid var(--gray3);border-radius:6px;cursor:pointer;font-size:12px" title="Subir grupo">↑</button>`:''}
+          ${gi<groups.length-1?`<button onclick="navGroupMoveDown('${g.id}')" style="padding:4px 8px;background:#fff;border:1.5px solid var(--gray3);border-radius:6px;cursor:pointer;font-size:12px" title="Bajar grupo">↓</button>`:''}
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">Módulos en este grupo:</div>
+      <div style="display:flex;flex-direction:column;gap:4px" id="cfg-nav-mods-${g.id}">
+        ${mods.map((m,mi)=>{
+          const ml=modLabels[m.id]||{label:m.id,ico:'📄'};
+          return `<div style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--gray3);border-radius:6px;padding:6px 10px">
+            <span>${ml.ico}</span>
+            <span style="flex:1;font-size:13px">${escHtml(ml.label)}</span>
+            <select data-mid="${m.id}" class="cfg-nav-mod-group" onchange="navModMoveToGroup('${m.id}',this.value)"
+              style="padding:4px 8px;border:1.5px solid var(--gray3);border-radius:6px;font-size:11px;background:#fff">
+              ${groups.map(gg=>`<option value="${gg.id}" ${gg.id===g.id?'selected':''}>${escHtml(gg.label)}</option>`).join('')}
+            </select>
+          </div>`;
+        }).join('')}
+        ${mods.length===0?`<div style="font-size:12px;color:var(--gray);padding:6px;text-align:center">— Sin módulos —</div>`:''}
+      </div>
+    </div>`;
+  });
+  container.innerHTML=html;
+}
+
+function navModMoveToGroup(mid,newGroup){
+  const cfg=getNavConfig();
+  const mod=cfg.modules.find(m=>m.id===mid);
+  if(mod)mod.group=newGroup;
+  renderNavConfigEditor();
+}
+
+function navGroupMoveUp(gid){
+  const cfg=getNavConfig();
+  const i=cfg.groups.findIndex(g=>g.id===gid);
+  if(i<=0)return;
+  [cfg.groups[i-1],cfg.groups[i]]=[cfg.groups[i],cfg.groups[i-1]];
+  renderNavConfigEditor();
+}
+
+function navGroupMoveDown(gid){
+  const cfg=getNavConfig();
+  const i=cfg.groups.findIndex(g=>g.id===gid);
+  if(i<0||i>=cfg.groups.length-1)return;
+  [cfg.groups[i],cfg.groups[i+1]]=[cfg.groups[i+1],cfg.groups[i]];
+  renderNavConfigEditor();
+}
+
+function guardarNavConfig(){
+  const cfg=getNavConfig();
+  // Read group name edits
+  document.querySelectorAll('.cfg-nav-group-name').forEach(inp=>{
+    const gid=inp.dataset.gid;
+    const g=cfg.groups.find(x=>x.id===gid);
+    if(g)g.label=inp.value.trim()||g.label;
+  });
+  saveNavConfig(cfg);
+  renderNavGroups();
+  toast('✅ Estructura del menú guardada','success');
+}
+
+function resetNavConfig(){
+  openModal('Restaurar menú','<p>¿Restaurar la estructura del menú por defecto? Se perderán los cambios.</p>',
+    '<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>'
+    +'<button class="btn btn-red" onclick="DB.config.navConfig={};sDB(\'config\');renderNavGroups();closeModal();toast(\'Menú restaurado\',\'success\')">🔄 Restaurar</button>');
+}
+
 function guardarConfig(){
   DB.config.empresa=document.getElementById('cf-empresa').value.trim();
   DB.config.telefono=document.getElementById('cf-tel').value;
