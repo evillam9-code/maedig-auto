@@ -905,9 +905,16 @@ function renderFeria(){
   if(!DB.feria)DB.feria={extras:{},ventas:[]};
   if(!DB.feria.extras)DB.feria.extras={};
   const esAdmin=currentUser?.role==='admin';
-  const puedeConfig=esAdmin||canDo('feria-extras');
-  const puedeVendedor=esAdmin||canDo('feria-vendedor')||(currentUser?.permisos&&currentUser.permisos['feria-vendedor']!==false);
-  const puedeHistorial=esAdmin||canDo('feria-historial')||(currentUser?.permisos&&currentUser.permisos['feria-historial']!==false);
+  // Sub-permisos de feria: verificar EXPLÍCITAMENTE en permisos[]
+  // No usar canDo() porque roles como 'dueño' lo bypassean siempre
+  const _feriaPerms=currentUser?.permisos||{};
+  const _feriaModOk=esAdmin||_feriaPerms['feria']===true||currentUser?.modulos?.includes('feria');
+  // Si la clave no existe en permisos, se asume true (compatibilidad hacia atrás)
+  // Si la clave existe y es false → denegar
+  const puedeVendedor=esAdmin||(_feriaModOk&&_feriaPerms['feria-vendedor']!==false);
+  // feria-extras: true if not explicitly set to false (backward compat)
+  const puedeConfig=esAdmin||(_feriaModOk&&_feriaPerms['feria-extras']!==false&&(_feriaPerms['feria-extras']===true||_feriaPerms['feria-extras']===undefined));
+  const puedeHistorial=esAdmin||(_feriaModOk&&_feriaPerms['feria-historial']!==false);
   const ventas=DB.feria.ventas||[];
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const totalVentas=ventas.reduce((a,v)=>a+parseFloat(v.precio||0)*(v.moneda==='USD'?tasa:1),0);
@@ -1181,9 +1188,11 @@ function renderFeria(){
   // Show first available tab
   setTimeout(()=>{
     const esAdmin2=currentUser?.role==='admin';
-    const pV=esAdmin2||canDo('feria-vendedor')||(currentUser?.permisos&&currentUser.permisos['feria-vendedor']!==false);
-    const pC=esAdmin2||canDo('feria-extras');
-    const pH=esAdmin2||canDo('feria-historial')||(currentUser?.permisos&&currentUser.permisos['feria-historial']!==false);
+    const _fp2=currentUser?.permisos||{};
+    const _fmOk2=esAdmin2||_fp2['feria']===true||currentUser?.modulos?.includes('feria');
+    const pV=esAdmin2||(_fmOk2&&_fp2['feria-vendedor']!==false);
+    const pC=esAdmin2||(_fmOk2&&_fp2['feria-extras']!==false&&(_fp2['feria-extras']===true||_fp2['feria-extras']===undefined));
+    const pH=esAdmin2||(_fmOk2&&_fp2['feria-historial']!==false);
     if(pV)feriaShowTab('vendedor');
     else if(pC)feriaShowTab('extras');
     else if(pH)feriaShowTab('historial');
@@ -3942,7 +3951,7 @@ const MODS_PERMS=[
   {id:'nomina',label:'👷 Nómina'},{id:'caja',label:'💳 Caja'},
   {id:'cotizaciones',label:'📋 Cotizaciones'},{id:'autorizaciones',label:'📝 Autorizaciones'},
   {id:'seguros',label:'🛡️ Seguros'},
-  {id:'feria',label:'🎪 Feria',subperms:[
+  {id:'feria',label:'🎪 Vendedores (Feria)',subperms:[
     {id:'feria-vendedor',label:'📱 Vista Vendedor'},
     {id:'feria-extras',label:'⚙️ Config. Extras'},
     {id:'feria-historial',label:'📋 Historial'}
@@ -3993,7 +4002,7 @@ function renderUsuarios(){
     {id:'usuarios',label:'Usuarios'},{id:'config',label:'Configuración'},
     {id:'cuentas',label:'🏦 Cuentas'},{id:'cumpleanos',label:'🎂 Cumpleaños'},
     {id:'prestamos',label:'🏛️ Préstamos'},
-    {id:'feria',label:'🎪 Feria',subperms:[{id:'feria-vendedor',label:'📱 Vista Vendedor'},{id:'feria-extras',label:'⚙️ Config. Extras'},{id:'feria-historial',label:'📋 Historial'}]},
+    {id:'feria',label:'🎪 Vendedores (Feria)',subperms:[{id:'feria-vendedor',label:'📱 Vista Vendedor'},{id:'feria-extras',label:'⚙️ Config. Extras'},{id:'feria-historial',label:'📋 Historial'}]},
   ];
   const BORRAR=[
     {id:'ventas',label:'Ventas'},{id:'clientes',label:'Clientes'},
