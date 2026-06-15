@@ -12553,14 +12553,12 @@ window._fbActivo = false;
 window._fbCargado = false;
 // sDB: guarda en localStorage como caché Y en Firebase (obligatorio)
 window.sDB = function(key){
-  try { _sDB_orig(key); } catch(e){}  // localStorage como caché de lectura
+  try { _sDB_orig(key); } catch(e){}
   const dot=document.getElementById('fb-dot');
   const txt=document.getElementById('fb-text');
-  // Marcar que estamos guardando esta key para que el listener no reescriba
-  if(!window._savingKeys)window._savingKeys={};
-  window._savingKeys[key]=true;
-  clearTimeout(window._savingKeyTimer);
-  window._savingKeyTimer=setTimeout(()=>{window._savingKeys={};},3000);
+  // Registrar timestamp de cuando guardamos (para ignorar el eco del listener)
+  if(!window._savedAt)window._savedAt={};
+  window._savedAt[key]=Date.now();
 
   if(!window._fbActivo){
     if(dot)dot.style.background='#f59e0b';
@@ -12570,11 +12568,8 @@ window.sDB = function(key){
       fbGuardar(key).then(()=>{
         window._fbActivo=true;
         if(dot)dot.style.background='#22c55e';
-        if(txt)txt.textContent='✓ Guardado';
-        setTimeout(()=>{if(window._savingKeys)delete window._savingKeys[key];},1000);
-      }).catch(()=>{
-        if(window._savingKeys)delete window._savingKeys[key];
-      });
+        if(txt)txt.textContent='✓ Firebase';
+      }).catch(()=>{});
     }
     return;
   }
@@ -12582,12 +12577,10 @@ window.sDB = function(key){
   if(txt)txt.textContent='Guardando...';
   fbGuardar(key).then(()=>{
     if(dot)dot.style.background='#22c55e';
-    if(txt)txt.textContent='✓ Guardado';
-    setTimeout(()=>{if(window._savingKeys)delete window._savingKeys[key];},1000);
+    if(txt)txt.textContent='✓ Firebase';
   }).catch(()=>{
     if(dot)dot.style.background='#ef4444';
-    if(txt)txt.textContent='Error al guardar';
-    if(window._savingKeys)delete window._savingKeys[key];
+    if(txt)txt.textContent='Error';
     _mostrarErrorFirebase();
   });
 };
@@ -12777,11 +12770,10 @@ function fbActivarListeners(){
         const val=JSON.parse(snap.data().valor);
         if(val===null)return;
         if(key==='users'&&Array.isArray(val)){
-          // Skip listener updates for users - only load once on login
-          // Changes are saved directly via fbGuardar and applied to DB.users locally
-          if(window._usersLoaded&&window._savingUsers){return;}
-          if(window._usersLoaded){return;} // Don't overwrite after initial load
-          window._usersLoaded=true;
+          // Solo ignorar eco propio (2 segundos después de guardar)
+          const savedAtU=window._savedAt&&window._savedAt['users']||0;
+          if((Date.now()-savedAtU)<2000){return;}
+          if(!window._usersLoaded){window._usersLoaded=true;}
           const merged=[...val];
           (DB.users||[]).forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
           DB.users=merged.length>0?merged:DB.users;
@@ -12797,8 +12789,6 @@ function fbActivarListeners(){
           if(typeof actualizarLogoSidebar==='function')actualizarLogoSidebar();
           if(typeof aplicarColoresSistema==='function'&&DB.config.colores)aplicarColoresSistema();
         } else {
-          // Don't overwrite if we're currently saving this key
-          if(window._savingKeys&&window._savingKeys[key]){return;}
           DB[key]=val;
         }
         const activePage=document.querySelector('.page.active');
@@ -12823,12 +12813,11 @@ function fbActivarListeners(){
           informes:()=>typeof renderInformes==='function'&&renderInformes(),
           cumpleanos:()=>typeof renderCumpleanos==='function'&&renderCumpleanos(),
         };
-        // Re-renderizar solo si NO estamos guardando esta key (evita race condition)
         if(renderMap[pid]){
-          if(window._savingKeys&&window._savingKeys[key]){
-            // Skip re-render while we're saving this key
-            return;
-          }
+          // Solo saltar re-render si guardamos hace menos de 2 segundos (eco propio)
+          const savedAt=window._savedAt&&window._savedAt[key]||0;
+          const ecoPropio=(Date.now()-savedAt)<2000;
+          if(ecoPropio){return;} // ignorar eco de nuestro propio guardado
           clearTimeout(window._renderTimeout);
           window._renderTimeout=setTimeout(renderMap[pid],300);
         }
