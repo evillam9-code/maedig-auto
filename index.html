@@ -901,6 +901,57 @@ function logBit(modulo,accion,detalle){
 //  MÓDULO VENDEDORES (FERIA) — Vista Vendedor + Configurar Extras
 // ══════════════════════════════════════════════════════════════
 
+function feriaRefreshSilente(){
+  // Actualiza datos de feria en tiempo real sin resetear el estado del vendedor
+  // Si hay un vehículo seleccionado, recarga su panel con datos nuevos
+  const sel=document.getElementById('feria-veh-sel');
+  const vid=sel?sel.value:'';
+  const panel=document.getElementById('feria-car-panel');
+
+  // Re-calcular contador de ventas en el header
+  const ventas=DB.feria&&DB.feria.ventas||[];
+  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const totalVentas=ventas.reduce((a,v)=>a+parseFloat(v.precio||0)*(v.moneda==='USD'?tasa:1),0);
+  const subtitleEl=document.querySelector('#page-feria .page-header p');
+  if(subtitleEl)subtitleEl.textContent=ventas.length+' venta(s) registrada(s) — Total: '+fmt(totalVentas);
+
+  // Si hay un vehículo seleccionado en la Vista Vendedor, refrescar su panel
+  if(vid&&panel&&panel.style.display!=='none'){
+    feriaCargarVehiculo(vid);
+    // Restaurar el valor del selector (feriaCargarVehiculo no lo toca)
+    if(sel)sel.value=vid;
+  }
+
+  // Si estamos en Historial, actualizar el contador
+  const histTab=document.getElementById('feria-tab-historial');
+  if(histTab)histTab.textContent='📋 Historial ('+ventas.length+')';
+
+  // Si estamos viendo Historial activo, refrescar la tabla
+  const histPanel=document.getElementById('feria-panel-historial');
+  if(histPanel&&histPanel.style.display!=='none'){
+    const tbody=histPanel.querySelector('tbody');
+    if(tbody){
+      tbody.innerHTML=ventas.length?ventas.slice().reverse().map(v=>{
+        const cot=v.cotizacionId?DB.cotizaciones.find(c=>c.id===v.cotizacionId):null;
+        const vObj=DB.vehiculos.find(x=>x.id===v.vehiculoId);
+        return '<tr>'
+          +'<td style="font-size:12px">'+fmtDate(v.fecha)+'</td>'
+          +'<td style="font-weight:600">'+escHtml(v.vendedor||'—')+'</td>'
+          +'<td style="font-weight:700">'+escHtml(v.cliente||'—')+'</td>'
+          +'<td style="font-size:12px">'+escHtml(vObj?vObj.codigo+' '+vObj.marca+' '+vObj.modelo:v.vehiculo||'—')+'</td>'
+          +'<td style="font-weight:700;color:var(--green)">'+(v.moneda==='USD'?'$'+parseFloat(v.precio||0).toLocaleString('en-US',{minimumFractionDigits:2})+' USD':fmt(v.precio||0))+'</td>'
+          +'<td>'+(cot
+            ?'<button class="btn btn-secondary btn-sm" data-cotid="'+escHtml(cot.id)+'" onclick="imprimirCotizacionFeria(this.dataset.cotid)">🖨️ Imprimir</button>'
+            :'<button class="btn btn-primary btn-sm" data-vid="'+escHtml(v.id)+'" onclick="crearCotizacionDesdeFeria(this.dataset.vid)">📋 Crear</button>')+'</td>'
+          +'<td>'+(currentUser?.role==='admin'||canDo('eliminar')
+            ?'<button class="btn btn-red btn-sm" data-vid="'+escHtml(v.id)+'" onclick="eliminarVentaFeria(this.dataset.vid)">🗑</button>'
+            :'')+'</td>'
+          +'</tr>';
+      }).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray)">Sin ventas registradas en feria</td></tr>';
+    }
+  }
+}
+
 function renderFeria(){
   if(!DB.feria)DB.feria={extras:{},ventas:[]};
   if(!DB.feria.extras)DB.feria.extras={};
@@ -12770,9 +12821,6 @@ function fbActivarListeners(){
         const val=JSON.parse(snap.data().valor);
         if(val===null)return;
         if(key==='users'&&Array.isArray(val)){
-          // Solo ignorar eco propio (2 segundos después de guardar)
-          const savedAtU=window._savedAt&&window._savedAt['users']||0;
-          if((Date.now()-savedAtU)<2000){return;}
           if(!window._usersLoaded){window._usersLoaded=true;}
           const merged=[...val];
           (DB.users||[]).forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
@@ -12809,15 +12857,12 @@ function fbActivarListeners(){
           cotizaciones:()=>typeof renderCotizaciones==='function'&&renderCotizaciones(),
           autorizaciones:()=>typeof renderAutorizaciones==='function'&&renderAutorizaciones(),
           usuarios:()=>typeof renderUsuarios==='function'&&renderUsuarios(),
-          config:()=>typeof renderConfig==='function'&&renderConfig(),
           informes:()=>typeof renderInformes==='function'&&renderInformes(),
           cumpleanos:()=>typeof renderCumpleanos==='function'&&renderCumpleanos(),
+          // Feria: refresh inteligente - actualiza datos sin resetear el vendedor
+          feria:()=>typeof feriaRefreshSilente==='function'&&feriaRefreshSilente(),
         };
         if(renderMap[pid]){
-          // Solo saltar re-render si guardamos hace menos de 2 segundos (eco propio)
-          const savedAt=window._savedAt&&window._savedAt[key]||0;
-          const ecoPropio=(Date.now()-savedAt)<2000;
-          if(ecoPropio){return;} // ignorar eco de nuestro propio guardado
           clearTimeout(window._renderTimeout);
           window._renderTimeout=setTimeout(renderMap[pid],300);
         }
