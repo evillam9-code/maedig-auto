@@ -1206,7 +1206,6 @@ function feriaShowTab(tab){
 
 function feriaSeleccionarVehModal(vid){
   if(!vid){
-    // Reset
     const empty=document.getElementById('feria-empty');
     const panel=document.getElementById('feria-car-panel');
     if(empty)empty.style.display='block';
@@ -1216,49 +1215,73 @@ function feriaSeleccionarVehModal(vid){
   }
   const v=DB.vehiculos.find(x=>x.id===vid);
   if(!v)return;
-  const ex=(DB.feria?.extras||{})[vid]||{};
+  const ex=(DB.feria&&DB.feria.extras&&DB.feria.extras[vid])||{};
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const precioUSD=parseFloat(ex.precioFeria||0);
-  const precioRD=precioUSD?'RD$ '+(precioUSD*tasa).toLocaleString('es-DO',{maximumFractionDigits:0}):'—';
 
-  openModal('🚗 '+escHtml(v.codigo)+' — '+escHtml(v.marca+' '+v.modelo+(v.anio?' '+v.anio:'')),`
-    <div style="text-align:center;margin-bottom:14px">
-      <div style="font-size:11px;color:var(--gray);margin-bottom:4px">${escHtml(v.color||'')} · ${v.status}</div>
-      ${precioUSD?`
-      <div style="background:#059669;color:#fff;padding:14px;border-radius:10px;margin:10px 0">
-        <div style="font-size:10px;text-transform:uppercase;opacity:.85">Precio especial de feria</div>
-        <div style="font-size:24px;font-weight:800;margin:4px 0">$${precioUSD.toLocaleString('en-US',{minimumFractionDigits:2})} USD</div>
-        <div style="font-size:12px;opacity:.9">≈ ${precioRD}</div>
-      </div>
-      ${ex.min?`<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;color:#c2410c;margin-bottom:10px;text-align:center">⚠️ Mínimo: $${parseFloat(ex.min).toLocaleString('en-US')} USD</div>`:''}
-      `:'<div style="background:var(--gray2);border-radius:8px;padding:12px;margin:10px 0;color:var(--gray);font-size:13px">Sin precio de feria configurado</div>'}
-      ${ex.beneficios&&ex.beneficios.length?`
-      <div style="text-align:left;margin-top:10px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:6px">🎁 Beneficios incluidos</div>
-        ${ex.beneficios.map(b=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gray3);font-size:13px"><span style="color:#059669">✓</span>'+escHtml(b)+'</div>').join('')}
-      </div>`:''}
-    </div>
-    <div class="form-row c2">
-      <div class="form-field"><label class="required">Nombre del Cliente</label><input type="text" id="fvm-cli-nombre" placeholder="Ej: María González"></div>
-      <div class="form-field"><label>Teléfono</label><input type="text" id="fvm-cli-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div>
-    </div>
-    <div class="form-row c2">
-      <div class="form-field"><label>Banco del Cliente</label>
-        <select id="fvm-banco"><option value="">-- Seleccione --</option>
-          ${(DB.config.bancos||['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro']).map(b=>`<option>${escHtml(b)}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-field"><label>Tipo Documento</label>
-        <select id="fvm-tipodoc" onchange="onTipoDocChange('fvm-tipodoc','fvm-doc')">
-          <option value="Cédula">Cédula</option><option value="RNC">RNC</option><option value="Pasaporte">Pasaporte</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-field"><label>Número Documento</label>
-      <input type="text" id="fvm-doc" maxlength="13" placeholder="000-0000000-0" oninput="fmtDocInput('fvm-tipodoc','fvm-doc')">
-    </div>`,
-    `<button class="btn btn-secondary" onclick="closeModal();document.getElementById('feria-veh-sel').value=''">Cancelar</button>
-     <button class="btn btn-primary" onclick="feriaGenerarCotizacionModal('${vid}')">📄 Generar Cotización</button>`
+  // Build modal content using string concat (no nested backticks)
+  let body='';
+
+  // ── Datos del vehículo del sistema (SIEMPRE visibles) ──
+  body+='<div style="background:var(--gray2);border-radius:10px;padding:12px;margin-bottom:12px">';
+  body+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  body+='<div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Color</div>';
+  body+='<div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(v.color||'—')+'</div></div>';
+  body+='<div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Estado</div>';
+  body+='<div style="font-size:13px;font-weight:600;color:var(--navy)">'+(v.status||'—')+'</div></div>';
+  if(v.millas){body+='<div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Millas</div>';
+    body+='<div style="font-size:13px;font-weight:600;color:var(--navy)">'+parseInt(v.millas).toLocaleString()+' mi</div></div>';}
+  if(v.vin){body+='<div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">VIN</div>';
+    body+='<div style="font-size:11px;font-family:monospace;color:var(--gray)">'+escHtml(v.vin)+'</div></div>';}
+  if(ex.motor){body+='<div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Motorización</div>';
+    body+='<div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(ex.motor)+'</div></div>';}
+  if(ex.traccion){body+='<div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Tracción</div>';
+    body+='<div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(ex.traccion)+'</div></div>';}
+  if(ex.consumo){body+='<div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase">Combustible</div>';
+    body+='<div style="font-size:13px;font-weight:600;color:var(--navy)">'+escHtml(ex.consumo)+'</div></div>';}
+  body+='</div></div>';
+
+  // ── Precio de feria (si está configurado) ──
+  if(precioUSD){
+    body+='<div style="background:#059669;color:#fff;padding:12px;border-radius:10px;margin-bottom:10px;text-align:center">';
+    body+='<div style="font-size:10px;text-transform:uppercase;opacity:.85">Precio especial de feria</div>';
+    body+='<div style="font-size:24px;font-weight:800;margin:4px 0">$'+precioUSD.toLocaleString('en-US',{minimumFractionDigits:2})+' USD</div>';
+    body+='<div style="font-size:12px;opacity:.9">≈ RD$ '+(precioUSD*tasa).toLocaleString('es-DO',{maximumFractionDigits:0})+'</div>';
+    body+='</div>';
+    if(ex.min){
+      body+='<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;color:#c2410c;margin-bottom:10px;text-align:center">';
+      body+='⚠️ Mínimo: $'+parseFloat(ex.min).toLocaleString('en-US')+' USD</div>';
+    }
+  }
+
+  // ── Beneficios ──
+  if(ex.beneficios&&ex.beneficios.length){
+    body+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:6px">🎁 Beneficios incluidos</div>';
+    ex.beneficios.forEach(function(b){
+      body+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gray3);font-size:13px"><span style="color:#059669">✓</span>'+escHtml(b)+'</div>';
+    });
+    body+='</div>';
+  }
+
+  // ── Formulario del cliente ──
+  const bancos=DB.config.bancos||['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro'];
+  body+='<div class="form-row c2">';
+  body+='<div class="form-field"><label class="required">Nombre del Cliente</label><input type="text" id="fvm-cli-nombre" placeholder="Ej: María González"></div>';
+  body+='<div class="form-field"><label>Teléfono</label><input type="text" id="fvm-cli-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div>';
+  body+='</div>';
+  body+='<div class="form-row c2">';
+  body+='<div class="form-field"><label>Banco del Cliente</label><select id="fvm-banco"><option value="">-- Seleccione --</option>';
+  bancos.forEach(function(b){body+='<option>'+escHtml(b)+'</option>';});
+  body+='</select></div>';
+  body+='<div class="form-field"><label>Tipo Documento</label><select id="fvm-tipodoc" onchange="onTipoDocChange(\'fvm-tipodoc\',\'fvm-doc\')"><option value="C\u00e9dula">C\u00e9dula</option><option value="RNC">RNC</option><option value="Pasaporte">Pasaporte</option></select></div>';
+  body+='</div>';
+  body+='<div class="form-field"><label>Número Documento</label><input type="text" id="fvm-doc" maxlength="13" placeholder="000-0000000-0"></div>';
+
+  openModal(
+    '🚗 '+escHtml(v.codigo)+' — '+escHtml(v.marca+' '+v.modelo+(v.anio?' '+v.anio:'')),
+    body,
+    '<button class="btn btn-secondary" onclick="closeModal();var s=document.getElementById(\'feria-veh-sel\');if(s)s.value=\'\'">Cancelar</button>'
+    +'<button class="btn btn-primary" onclick="feriaGenerarCotizacionModal(\''+vid+'\')">📄 Generar Cotización</button>'
   );
 }
 
