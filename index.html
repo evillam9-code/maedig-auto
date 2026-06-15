@@ -12812,7 +12812,7 @@ function _ejecutarBackupAuto(){
 function fbActivarListeners(){
   const keys=['config','config_logo','users','vehiculos','clientes','suplidores',
     'ventas','cotizaciones','caja','gastos','nomina','nominaPagos',
-    'gastosVehiculos','cxp','cxc','autorizaciones','cumpleanosMensajes'];
+    'gastosVehiculos','cxp','cxc','autorizaciones','cumpleanosMensajes','feria'];
   
   keys.forEach(key=>{
     _fbDB.collection(_fbCol).doc(key).onSnapshot(snap=>{
@@ -12906,7 +12906,7 @@ window.fbIniciar = async function(){
       _verificarBackupAdmin();
     } else {
       const keys=['config','users','vehiculos','clientes','suplidores','ventas','cotizaciones',
-        'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log'];
+        'caja','gastos','nomina','nominaPagos','gastosVehiculos','cxp','cxc','autorizaciones','seguros','facturasExternas','log','feria'];
       for(const k of keys) await fbGuardar(k);
       window._fbCargado=true;
       setStatus('#22c55e','✓ Firebase');
