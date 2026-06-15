@@ -1063,7 +1063,7 @@ function renderFeria(){
       <div class="card" style="margin-bottom:14px">
         <div class="form-field" style="margin-bottom:0">
           <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray)">🔍 Seleccionar Vehículo</label>
-          <select id="feria-veh-sel" onchange="feriaSeleccionarVehModal(this.value)" style="margin-top:6px;font-size:14px;padding:10px">
+          <select id="feria-veh-sel" onchange="feriaCargarVehiculo(this.value)" style="margin-top:6px;font-size:14px;padding:10px">
             <option value="">-- Seleccionar del inventario --</option>
             ${vehDisp.map(v=>{
               const ex=(DB.feria?.extras||{})[v.id]||{};
@@ -1084,8 +1084,8 @@ function renderFeria(){
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.85">Precio especial de feria</div>
             <div style="font-size:28px;font-weight:800;margin:6px 0" id="feria-v-price">—</div>
             <div style="display:flex;justify-content:center;gap:8px;margin-top:6px">
-              <button id="feria-sw-usd" onclick="feriaSetMoneda('USD')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#fff;color:#059669">USD ($)</button>
-              <button id="feria-sw-dop" onclick="feriaSetMoneda('DOP')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:rgba(255,255,255,.25);color:#fff">DOP (RD$)</button>
+              <button id="feria-sw-usd" onclick="feriaSetMoneda(\'USD\')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#fff;color:#059669">USD ($)</button>
+              <button id="feria-sw-dop" onclick="feriaSetMoneda(\'DOP\')" style="padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:rgba(255,255,255,.25);color:#fff">DOP (RD$)</button>
             </div>
           </div>
           <div id="feria-min-box" style="display:none;justify-content:space-between;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;font-size:13px;font-weight:700;color:#c2410c;margin-bottom:12px">
@@ -1098,9 +1098,9 @@ function renderFeria(){
             <div style="background:#f8fafc;border:1px solid var(--gray3);border-radius:8px;padding:10px"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:3px">⛽ Combustible</div><div style="font-size:13px;font-weight:700;color:var(--navy)" id="feria-v-combustible">—</div></div>
           </div>
           <div id="feria-extra-view" style="display:none;margin-bottom:12px"></div>
-          <div onclick="feriaToggleAcc('carfax')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">🛡️ Historial Carfax <span id="ico-carfax">▼</span></div>
+          <div onclick="feriaToggleAcc(\'carfax\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">🛡️ Historial Carfax <span id="ico-carfax">▼</span></div>
           <div id="feria-carfax" style="display:none;padding-bottom:10px;font-size:12px;color:var(--gray);line-height:1.6"></div>
-          <div onclick="feriaToggleAcc('ventajas')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">💎 Ventajas comerciales <span id="ico-ventajas">▼</span></div>
+          <div onclick="feriaToggleAcc(\'ventajas\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;border-top:1px solid var(--gray3)">💎 Ventajas comerciales <span id="ico-ventajas">▼</span></div>
           <div id="feria-ventajas" style="display:none;padding-bottom:10px"></div>
           <div id="feria-beneficios-wrap" style="display:none;border-top:1px solid var(--gray3);padding-top:12px;margin-top:4px">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px">🎁 Beneficios incluidos en feria</div>
@@ -1128,7 +1128,7 @@ function renderFeria(){
           </div>
           <div class="form-field"><label>Número Documento</label><input type="text" id="feria-cli-doc" maxlength="13" placeholder="000-0000000-0" oninput="fmtDocInput('feria-cli-tipodoc','feria-cli-doc')"></div>
           <div class="form-field"><label>📷 Documento del cliente</label>
-            <div id="feria-doc-box" onclick="document.getElementById('feria-foto-inp').click()" style="border:2px dashed #94a3b8;background:#f8fafc;padding:18px;text-align:center;border-radius:8px;cursor:pointer">
+            <div id="feria-doc-box" onclick="document.getElementById(\'feria-foto-inp\').click()" style="border:2px dashed #94a3b8;background:#f8fafc;padding:18px;text-align:center;border-radius:8px;cursor:pointer">
               <div style="font-size:28px;margin-bottom:6px">🪪</div>
               <div style="font-size:13px;font-weight:600;color:#475569" id="feria-foto-txt">Capturar / adjuntar cédula</div>
               <input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">
@@ -1348,86 +1348,105 @@ function feriaCargarVehiculo(vid){
   if(!v)return;
   window._feriaVehActivo=v;
   window._feriaMoneda='USD';
-  const ex=(DB.feria?.extras||{})[vid]||{};
+  const ex=(DB.feria&&DB.feria.extras&&DB.feria.extras[vid])||{};
+  const tasa=parseFloat(DB.config.tasaCambio||60);
+  const precioUSD=parseFloat(ex.precioFeria||0);
+  const minUSD=parseFloat(ex.min||0);
+  const bancos=DB.config.bancos||['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro'];
 
-  // Código y título
-  const codeEl=document.getElementById('feria-v-code');
-  const titleEl=document.getElementById('feria-v-title');
-  if(codeEl)codeEl.textContent=v.codigo;
-  if(titleEl)titleEl.textContent=v.marca+' '+v.modelo+(v.anio?' '+v.anio:'')+(v.color?' · '+v.color:'');
-
-  // Precio
-  feriaSetMoneda('USD');
-
-  // Mínimo
-  const minBox=document.getElementById('feria-min-box');
-  const minEl=document.getElementById('feria-v-min');
-  if(ex.min){
-    if(minBox)minBox.style.display='flex';
-    if(minEl)minEl.textContent='$'+parseFloat(ex.min).toLocaleString('en-US')+' USD';
-  } else {
-    if(minBox)minBox.style.display='none';
+  // Build price box HTML
+  let priceBox='';
+  if(precioUSD){
+    priceBox='<div id="feria-price-box" style="background:#059669;color:#fff;padding:20px;border-radius:12px;text-align:center;margin-bottom:10px">'
+      +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.85;margin-bottom:4px">PRECIO ESPECIAL DE FERIA</div>'
+      +'<div id="feria-v-price" style="font-size:32px;font-weight:900;margin:6px 0">$'+precioUSD.toLocaleString('en-US',{minimumFractionDigits:2})+' USD</div>'
+      +'<div style="display:flex;justify-content:center;gap:10px;margin-top:8px">'
+      +'<button id="feria-sw-usd" onclick="feriaSetMoneda(\'USD\')" style="padding:5px 18px;border-radius:20px;font-size:13px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#059669">USD ($)</button>'
+      +'<button id="feria-sw-dop" onclick="feriaSetMoneda(\'DOP\')" style="padding:5px 18px;border-radius:20px;font-size:13px;font-weight:700;border:none;cursor:pointer;background:rgba(255,255,255,.25);color:#fff">DOP (RD$)</button>'
+      +'</div></div>';
+    if(minUSD){
+      priceBox+='<div style="display:flex;justify-content:space-between;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;color:#c2410c;margin-bottom:10px">'
+        +'<span>⚠️ Mínimo Autorizado:</span><span>$'+minUSD.toLocaleString('en-US')+' USD</span></div>';
+    }
   }
 
-  // Grid técnico
-  const techGrid=document.getElementById('feria-tech-grid');
-  const hasTech=ex.motor||ex.traccion||ex.consumo||v.millas;
-  if(techGrid) techGrid.style.display=hasTech?'grid':'none';
-  const millasEl=document.getElementById('feria-v-millas');
-  const motorEl=document.getElementById('feria-v-motor');
-  const traccionEl=document.getElementById('feria-v-traccion');
-  const combustEl=document.getElementById('feria-v-combustible');
-  if(millasEl)millasEl.textContent=v.millas?v.millas.toLocaleString()+' mi':'—';
-  if(motorEl)motorEl.textContent=ex.motor||'—';
-  if(traccionEl)traccionEl.textContent=ex.traccion||'—';
-  if(combustEl)combustEl.textContent=ex.consumo||v.combustible||'—';
-
-  // Campos extra libres
-  const extraView=document.getElementById('feria-extra-view');
-  if(extraView){
-    if(ex.extras&&ex.extras.length){
-      extraView.style.display='block';
-      extraView.innerHTML='<div style="border-top:1px solid var(--gray3);padding-top:10px">'
-        +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:8px">📋 Información adicional</div>'
-        +ex.extras.filter(x=>x.nombre).map(x=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--gray3);font-size:12px"><span style="color:var(--gray)">${escHtml(x.nombre)}</span><span style="font-weight:600">${escHtml(x.valor)}</span></div>`).join('')
+  // Build tech grid
+  const techItems=[
+    {ico:'🛣️',label:'KILOMETRAJE',val:v.millas?parseInt(v.millas).toLocaleString()+' Mi':'—'},
+    {ico:'🔩',label:'MOTORIZACIÓN',val:ex.motor||'—'},
+    {ico:'⚙️',label:'TRACCIÓN / EJE',val:ex.traccion||'—'},
+    {ico:'⛽',label:'COMBUSTIBLE',val:ex.consumo||v.combustible||'—'},
+  ];
+  const techGrid='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+    +techItems.map(function(t){
+      return '<div style="background:#fff;border:1px solid var(--gray3);border-radius:10px;padding:12px">'
+        +'<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:4px">'+t.ico+' '+t.label+'</div>'
+        +'<div style="font-size:14px;font-weight:800;color:var(--blue)">'+escHtml(t.val)+'</div>'
         +'</div>';
-    } else {
-      extraView.style.display='none';
-    }
-  }
+    }).join('')
+    +'</div>';
 
-  // Carfax
-  const carfaxEl=document.getElementById('feria-carfax');
-  if(carfaxEl){
-    if(ex.carfax){
-      const lines=ex.carfax.split('. ').filter(Boolean);
-      carfaxEl.innerHTML=lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--gray3);font-size:12px;color:var(--gray)">${escHtml(l)}</div>`).join('');
-    } else {
-      carfaxEl.innerHTML='<div style="font-size:12px;color:var(--gray);padding:6px">Sin información registrada</div>';
-    }
-  }
-
-  // Ventajas
-  const ventajasEl=document.getElementById('feria-ventajas');
-  if(ventajasEl){
-    let html='';
-    if(ex.rival)html+=`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--gray3);font-size:12px"><span style="color:var(--gray)">Rival directo</span><span style="font-weight:600">${escHtml(ex.rival)}</span></div>`;
-    if(ex.ventajas){
-      const vlines=ex.ventajas.split('. ').filter(Boolean);
-      html+=vlines.map(l=>`<div style="padding:5px 0;border-bottom:1px dashed var(--gray3);font-size:12px;color:var(--gray)">${escHtml(l)}</div>`).join('');
-    }
-    ventajasEl.innerHTML=html||'<div style="font-size:12px;color:var(--gray);padding:6px">Sin ventajas registradas</div>';
-  }
-
-  // Beneficios
-  const benefWrap=document.getElementById('feria-beneficios-wrap');
-  const benefList=document.getElementById('feria-beneficios-list');
+  // Benefits
+  let benefHtml='';
   if(ex.beneficios&&ex.beneficios.length){
-    if(benefWrap)benefWrap.style.display='block';
-    if(benefList)benefList.innerHTML=ex.beneficios.map(b=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray3);font-size:13px"><span style="color:#059669;font-size:16px;flex-shrink:0">✓</span>${escHtml(b)}</div>`).join('');
-  } else {
-    if(benefWrap)benefWrap.style.display='none';
+    benefHtml='<div style="margin-bottom:16px">'
+      +'<div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:10px">🎁 BENEFICIOS INCLUIDOS EN FERIA</div>'
+      +'<div style="border:2px dashed var(--blue3);border-radius:10px;padding:12px">'
+      +ex.beneficios.map(function(b){
+        return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray3)">'
+          +'<span style="color:#059669;font-size:16px;flex-shrink:0">✓</span>'
+          +'<span style="font-size:13px;font-weight:600">'+escHtml(b)+'</span></div>';
+      }).join('')
+      +'</div></div>';
   }
+
+  // Extra fields
+  let extraHtml='';
+  if(ex.extras&&ex.extras.length){
+    extraHtml='<div style="margin-bottom:12px;background:var(--gray2);border-radius:8px;padding:10px">'
+      +ex.extras.filter(x=>x.nombre).map(function(x){
+        return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--gray3);font-size:12px">'
+          +'<span style="color:var(--gray)">'+escHtml(x.nombre)+'</span>'
+          +'<span style="font-weight:600">'+escHtml(x.valor)+'</span></div>';
+      }).join('')
+      +'</div>';
+  }
+
+  // Banks select options
+  const bancoOpts='<option value="">-- Seleccione el Banco del Cliente --</option>'
+    +bancos.map(function(b){return '<option>'+escHtml(b)+'</option>';}).join('');
+
+  panel.innerHTML=''
+    +'<div class="card" style="margin-bottom:14px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px">'+escHtml(v.codigo)+'</div>'
+    +'<div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:14px">'+escHtml(v.marca+' '+v.modelo+' '+v.anio)+'</div>'
+    +priceBox
+    +techGrid
+    +(ex.carfax?'<div onclick="feriaToggleAcc(\'carfax\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:14px;font-weight:700;cursor:pointer;border-top:1px solid var(--gray3)">🛡️ Historial Carfax Completo <span id="ico-carfax">▼</span></div>'
+      +'<div id="feria-carfax" style="display:none;padding-bottom:12px;font-size:13px;color:var(--gray);line-height:1.6">'+escHtml(ex.carfax)+'</div>':'')
+    +(ex.ventajas?'<div onclick="feriaToggleAcc(\'ventajas\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:14px;font-weight:700;cursor:pointer;border-top:1px solid var(--gray3)">💎 Ventajas Comerciales <span id="ico-ventajas">▼</span></div>'
+      +'<div id="feria-ventajas" style="display:none;padding-bottom:12px;font-size:13px;color:var(--gray)">'+escHtml(ex.ventajas)+'</div>':'')
+    +extraHtml
+    +benefHtml
+    +'</div>'
+    +'<div class="card">'
+    +'<div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gray);margin-bottom:14px">📝 DATOS DEL TRÁMITE</div>'
+    +'<div class="form-row c2">'
+    +'<div class="form-field"><label class="required">Nombre del Cliente</label><input type="text" id="feria-cli-nombre" placeholder="Ej: María González"></div>'
+    +'<div class="form-field"><label>Teléfono</label><input type="text" id="feria-cli-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div>'
+    +'</div>'
+    +'<div class="form-field"><label>Banco del Cliente</label><select id="feria-banco-sel">'+bancoOpts+'</select></div>'
+    +'<div class="form-row c2">'
+    +'<div class="form-field"><label>Tipo Documento</label><select id="feria-cli-tipodoc"><option value="Cédula">Cédula</option><option value="RNC">RNC</option><option value="Pasaporte">Pasaporte</option></select></div>'
+    +'<div class="form-field"><label>Número Documento</label><input type="text" id="feria-cli-doc" maxlength="13" placeholder="000-0000000-0"></div>'
+    +'</div>'
+    +'<div class="form-field"><label>📷 Cédula del Cliente</label>'
+    +'<div onclick="document.getElementById(\'feria-foto-inp\').click()" style="border:2px dashed #94a3b8;background:#f8fafc;padding:16px;text-align:center;border-radius:8px;cursor:pointer">'
+    +'<div style="font-size:13px;font-weight:600;color:#475569" id="feria-foto-txt">📋 Capturar Cédula del Cliente (Frente)</div>'
+    +'<input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">'
+    +'</div></div>'
+    +'<button class="btn btn-primary" style="width:100%;padding:16px;font-size:16px;margin-top:8px;border-radius:10px" onclick="feriaGenerarCotizacion()">📄 Generar e Imprimir Cotización</button>'
+    +'</div>';
 
   if(empty)empty.style.display='none';
   if(panel)panel.style.display='block';
