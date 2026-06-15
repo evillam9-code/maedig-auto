@@ -426,7 +426,8 @@ let DB={
   chat:ls('chat')||{},
   presencia:ls('presencia')||{},
   cumpleanosMensajes:{},
-  bitacora:ls('bitacora')||[]
+  bitacora:ls('bitacora')||[],
+  feria:{extras:{},ventas:[]}
 };
 // ── Helper universal para abrir popups (evita página en blanco en Edge/Chrome) ──
 function openPopup(htmlContent, title){
@@ -1684,9 +1685,28 @@ function feriaGuardarExtras(){
   };
   sDB('feria');
   toast('✅ Extras guardados correctamente','success');
-  // Refresh the select options and re-select the vehicle
-  renderFeria();
-  setTimeout(()=>{feriaShowTab('extras');feriaSelAdmin(vid,null);},100);
+  // Refrescar solo el selector sin resetear toda la página
+  const adminSel=document.getElementById('feria-admin-veh-sel');
+  if(adminSel){
+    const v=DB.vehiculos.find(x=>x.id===vid);
+    const ex=DB.feria.extras[vid]||{};
+    // Update the option text to show ✓
+    const opt=[...adminSel.options].find(o=>o.value===vid);
+    if(opt&&v)opt.textContent=v.codigo+' — '+v.marca+' '+v.modelo+' '+(v.anio||'')+(ex.precioFeria?' ✓':' (sin configurar)');
+    adminSel.value=vid;
+  }
+  // Refrescar el preview debajo del selector
+  const preview=document.getElementById('feria-adm-preview');
+  if(preview){
+    const v=DB.vehiculos.find(x=>x.id===vid);
+    const ex=DB.feria.extras[vid]||{};
+    const codeEl=document.getElementById('feria-adm-prev-code');
+    const nameEl=document.getElementById('feria-adm-prev-name');
+    const statEl=document.getElementById('feria-adm-prev-status');
+    if(codeEl&&v)codeEl.textContent=v.codigo;
+    if(nameEl&&v)nameEl.textContent=v.marca+' '+v.modelo+(v.anio?' '+v.anio:'');
+    if(statEl)statEl.textContent=(v?v.status:'')+(ex.precioFeria?' · ✓ Precio: $'+parseFloat(ex.precioFeria).toLocaleString('en-US')+' USD':' · Sin precio configurado');
+  }
 }
 
 function _crearCotizacionFeria(venta){
@@ -12508,7 +12528,7 @@ const _fbCol = 'maedig';
 
 async function fbGuardar(key){
   try {
-    let val=DB[key]!==undefined?DB[key]:(key==='config'?{}:[]);
+    let val=DB[key]!==undefined?DB[key]:(key==='config'?{}:key==='feria'?{extras:{},ventas:[]}:[]);
     // Para config: guardar logoData separado para evitar límite de tamaño
     if(key==='config'&&typeof val==='object'&&val!==null){
       const logo=val.logoData||'';
@@ -12837,7 +12857,12 @@ function fbActivarListeners(){
           if(typeof actualizarLogoSidebar==='function')actualizarLogoSidebar();
           if(typeof aplicarColoresSistema==='function'&&DB.config.colores)aplicarColoresSistema();
         } else {
-          DB[key]=val;
+          // Para feria: asegurar que sea objeto {extras,ventas}
+          if(key==='feria'&&val&&typeof val==='object'&&!Array.isArray(val)){
+            DB.feria=val;
+          } else if(key!=='feria'){
+            DB[key]=val;
+          }
         }
         const activePage=document.querySelector('.page.active');
         if(!activePage)return;
