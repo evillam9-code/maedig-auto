@@ -12556,19 +12556,24 @@ window.sDB = function(key){
   try { _sDB_orig(key); } catch(e){}  // localStorage como caché de lectura
   const dot=document.getElementById('fb-dot');
   const txt=document.getElementById('fb-text');
+  // Marcar que estamos guardando esta key para que el listener no reescriba
+  if(!window._savingKeys)window._savingKeys={};
+  window._savingKeys[key]=true;
+  clearTimeout(window._savingKeyTimer);
+  window._savingKeyTimer=setTimeout(()=>{window._savingKeys={};},3000);
+
   if(!window._fbActivo){
-    // Firebase no conectado — guardar en localStorage y mostrar aviso suave
     if(dot)dot.style.background='#f59e0b';
     if(txt)txt.textContent='Sin Firebase';
     if(!document.getElementById('fb-aviso-banner'))_mostrarAvisoFirebase();
-    // Intentar guardar en Firebase de todos modos (puede que esté disponible)
     if(typeof fbGuardar==='function'){
       fbGuardar(key).then(()=>{
         window._fbActivo=true;
         if(dot)dot.style.background='#22c55e';
         if(txt)txt.textContent='✓ Guardado';
+        setTimeout(()=>{if(window._savingKeys)delete window._savingKeys[key];},1000);
       }).catch(()=>{
-        // Sin Firebase confirmado — solo localStorage
+        if(window._savingKeys)delete window._savingKeys[key];
       });
     }
     return;
@@ -12578,9 +12583,11 @@ window.sDB = function(key){
   fbGuardar(key).then(()=>{
     if(dot)dot.style.background='#22c55e';
     if(txt)txt.textContent='✓ Guardado';
+    setTimeout(()=>{if(window._savingKeys)delete window._savingKeys[key];},1000);
   }).catch(()=>{
     if(dot)dot.style.background='#ef4444';
     if(txt)txt.textContent='Error al guardar';
+    if(window._savingKeys)delete window._savingKeys[key];
     _mostrarErrorFirebase();
   });
 };
@@ -12790,6 +12797,8 @@ function fbActivarListeners(){
           if(typeof actualizarLogoSidebar==='function')actualizarLogoSidebar();
           if(typeof aplicarColoresSistema==='function'&&DB.config.colores)aplicarColoresSistema();
         } else {
+          // Don't overwrite if we're currently saving this key
+          if(window._savingKeys&&window._savingKeys[key]){return;}
           DB[key]=val;
         }
         const activePage=document.querySelector('.page.active');
@@ -12814,8 +12823,12 @@ function fbActivarListeners(){
           informes:()=>typeof renderInformes==='function'&&renderInformes(),
           cumpleanos:()=>typeof renderCumpleanos==='function'&&renderCumpleanos(),
         };
-        // Re-renderizar siempre que llegue cualquier cambio de Firebase en la página activa
+        // Re-renderizar solo si NO estamos guardando esta key (evita race condition)
         if(renderMap[pid]){
+          if(window._savingKeys&&window._savingKeys[key]){
+            // Skip re-render while we're saving this key
+            return;
+          }
           clearTimeout(window._renderTimeout);
           window._renderTimeout=setTimeout(renderMap[pid],300);
         }
