@@ -1044,18 +1044,9 @@ function renderFeria(){
     </div>
 
     <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--gray3)">
-      ${puedeVendedor?`<button onclick="feriaShowTab('vendedor')" id="feria-tab-vendedor"
-        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid var(--blue);color:var(--blue)">
-        📱 Vista Vendedor
-      </button>`:''}
-      ${puedeConfig?`<button onclick="feriaShowTab('extras')" id="feria-tab-extras"
-        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">
-        ⚙️ Configurar Extras
-      </button>`:''}
-      ${puedeHistorial?`<button onclick="feriaShowTab('historial')" id="feria-tab-historial"
-        style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">
-        📋 Historial (${ventas.length})
-      </button>`:''}
+      ${puedeVendedor?'<button onclick="feriaShowTab(\'vendedor\')" id="feria-tab-vendedor" style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid var(--blue);color:var(--blue)">📱 Vista Vendedor</button>':''}
+      ${puedeConfig?'<button onclick="feriaShowTab(\'extras\')" id="feria-tab-extras" style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">⚙️ Configurar Extras</button>':''}
+      ${puedeHistorial?'<button onclick="feriaShowTab(\'historial\')" id="feria-tab-historial" style="padding:10px 20px;border:none;background:none;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray)">📋 Historial ('+ventas.length+')</button>':''}
     </div>
 
     <!-- VISTA VENDEDOR -->
