@@ -651,7 +651,7 @@ function doLogin(){
     setTimeout(()=>{if(DB.config?.colores)aplicarColoresSistema();},1500);
     actualizarLogoSidebar();
     logBit('Sesión','Inició sesión','—');
-    showPage('dashboard');
+    showPage(paginaInicialPara(currentUser));
     // Avisos emergentes automáticos desactivados a pedido del usuario (mensajes de alertas al iniciar sesión)
     _iniciarPresenciaGlobal();
     setTimeout(_verificarBackupAdmin,2500);
@@ -693,6 +693,18 @@ function _getRolLabel(role){
   const roles=DB.config.roles||[];
   const r=roles.find(x=>x.id===role||x.nombre===role);
   return r?r.nombre:(role||'Usuario');
+}
+function paginaInicialPara(user){
+  if(!user)return 'dashboard';
+  if(user.role==='admin')return 'dashboard';
+  const mods=user.modulos||[];
+  // Orden de preferencia: módulos de trabajo primero, dashboard/informes/consultas al final
+  // (son los únicos que cualquier usuario puede ver siempre, así que no aportan si hay otra opción)
+  const ORDEN=['inventario','ventas','clientes','gastosVeh','cxp','cxc','caja','gastos','nomina',
+    'suplidores','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja',
+    'chat','cuentas','cumpleanos','prestamos','usuarios','config','consultas','informes','dashboard'];
+  const primero=ORDEN.find(id=>mods.includes(id));
+  return primero||'dashboard';
 }
 function canAccess(modId){
   if(!currentUser)return false;
@@ -4279,7 +4291,7 @@ function renderUsuarios(){
       </div>
       <div class="form-row c2" style="margin-bottom:16px">
         <div class="form-field"><label>ROL</label>
-          <select id="nu-role" style="width:100%">
+          <select id="nu-role" style="width:100%" onchange="sugerirModulosPorRol(this.value,'nu-')">
             <option value="admin">Administrador</option>
             ${roles.map(r=>`<option value="${escHtml(r.id)}">${escHtml(r.nombre)}</option>`).join('')}
           </select>
@@ -4389,6 +4401,31 @@ function limpiarFormUsuario(){
   ['nu-nombre','nu-user','nu-pass'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.querySelectorAll('[id^="nu-mod-"],[id^="nu-del-"],[id^="nu-edit-"]').forEach(cb=>cb.checked=false);
 }
+function sugerirModulosPorRol(roleId,prefijo){
+  if(!roleId||roleId==='admin')return;
+  // No pisar selecciones que el admin ya hizo a mano
+  const yaHayMarcados=Array.from(document.querySelectorAll('[id^="'+prefijo+'mod-"]')).some(cb=>cb.checked);
+  if(yaHayMarcados)return;
+  const roles=DB.config.roles||[];
+  const rolNombre=(roles.find(r=>r.id===roleId)?.nombre||roleId).toLowerCase();
+  const SUGERENCIAS={
+    vendedor:['dashboard','consultas','inventario','ventas','clientes','cotizaciones'],
+    secretaria:['dashboard','consultas','clientes','ventas','cxc','cxp','caja'],
+    asistente:['dashboard','consultas','inventario','gastosVeh'],
+    tecnico:['dashboard','consultas','inventario','gastosVeh'],
+    gerente:['dashboard','informes','consultas','inventario','gastosVeh','cxp','clientes','ventas','cxc','caja'],
+    'dueño':['dashboard','informes','consultas','inventario','gastosVeh','cxp','clientes','ventas','cxc','caja'],
+    dueno:['dashboard','informes','consultas','inventario','gastosVeh','cxp','clientes','ventas','cxc','caja']
+  };
+  const match=Object.keys(SUGERENCIAS).find(k=>rolNombre.includes(k));
+  if(!match)return;
+  let n=0;
+  SUGERENCIAS[match].forEach(id=>{
+    const cb=document.getElementById(prefijo+'mod-'+id);
+    if(cb){cb.checked=true;toggleModSubperms(id,true);n++;}
+  });
+  if(n>0)toast('💡 Se marcaron '+n+' módulo(s) típicos para este rol — puedes ajustarlos antes de guardar','success');
+}
 function crearUsuarioNuevo(){
   const nombre=document.getElementById('nu-nombre')?.value.trim();
   const user=document.getElementById('nu-user')?.value.trim();
@@ -4399,6 +4436,11 @@ function crearUsuarioNuevo(){
   const MODS_IDS=['dashboard','informes','consultas','inventario','gastosVeh','cxp','clientes','ventas','cxc','suplidores','gastos','nomina','caja','cotizaciones','autorizaciones','seguros','facturaExterna','alertas','verSaldoCaja','chat','usuarios','config','cuentas','cumpleanos','prestamos'];
   const DEL_IDS=['ventas','clientes','suplidores','gastos','nomina','gastosVeh','cxc','cxp','inventario','caja','cotizaciones','autorizaciones','seguros','facturaExterna'];
   const modulos=role==='admin'?MODS_IDS:MODS_IDS.filter(id=>document.getElementById('nu-mod-'+id)?.checked);
+  if(role!=='admin'&&modulos.length===0){
+    if(!confirm('⚠️ No marcaste ningún módulo en "MÓDULOS PERMITIDOS".\n\nEste usuario solo podrá ver la pantalla de Inicio y nada más.\n\n¿Quieres crearlo así de todas formas?\n\n(Presiona Cancelar para volver y marcar los módulos que necesita)')){
+      return;
+    }
+  }
   // Feria perms: default true for new users (can be restricted later)
   const feriaVendedor=role==='admin'||true;
   const feriaExtras=role==='admin'||true;
@@ -4690,6 +4732,12 @@ function guardarUsuario(idx){
     const el=document.getElementById('u-perm-'+k);
     if(el)nuevosPerms[k]=el.checked;
   });
+  const rolSeleccionado=document.getElementById('u-role').value;
+  if(rolSeleccionado!=='admin'&&nuevosMods.length===0){
+    if(!confirm('⚠️ No marcaste ningún módulo.\n\nEste usuario solo podrá ver la pantalla de Inicio y nada más.\n\n¿Quieres guardarlo así de todas formas?\n\n(Presiona Cancelar para volver y marcar los módulos que necesita)')){
+      return;
+    }
+  }
   if(idx!==undefined){
     // Update in-memory directly (don't wait for Firebase listener)
     DB.users[idx].nombre=nombre;
@@ -7074,16 +7122,45 @@ function gvehFiltroChasisInput(val){
   _gvehChasisTimer=setTimeout(()=>renderGastosVeh(),300);
 }
 
-function abrirHojaCostosVeh(){
-  // Si ya hay un vehículo elegido en el filtro de arriba, usarlo directo y solo pedir la tasa
+function abrirHojaCostosVeh(forzarSeleccion){
+  // 1) Si ya hay un vehículo elegido específicamente en el filtro de arriba, usarlo directo
   const filtroVehActual=document.getElementById('gveh-filtro-veh')?.value||'';
-  if(filtroVehActual){
-    const vSel=DB.vehiculos.find(x=>x.id===filtroVehActual);
+  let vehUnico=forzarSeleccion?null:(filtroVehActual||null);
+
+  // 2) Si no hay uno elegido, revisar la lista de gastos que está filtrada/visible en este momento:
+  //    si todos los registros visibles pertenecen a un único vehículo, usarlo sin preguntar.
+  if(!vehUnico&&!forzarSeleccion){
+    const filtroSup=document.getElementById('gveh-filtro-sup')?.value||'';
+    const filtroStatus=document.getElementById('gveh-filtro-status')?.value||'';
+    const filtroDesde=document.getElementById('gveh-filtro-desde')?.value||'';
+    const filtroHasta=document.getElementById('gveh-filtro-hasta')?.value||'';
+    const filtroChasis=document.getElementById('gveh-filtro-chasis')?.value?.toLowerCase()||'';
+    let gastosVisibles=DB.gastosVehiculos||[];
+    if(filtroSup)gastosVisibles=gastosVisibles.filter(g=>g.suplidor===filtroSup);
+    if(filtroStatus)gastosVisibles=gastosVisibles.filter(g=>(g.statusGasto||'PENDIENTE')===filtroStatus);
+    if(filtroDesde)gastosVisibles=gastosVisibles.filter(g=>g.fecha>=filtroDesde);
+    if(filtroHasta)gastosVisibles=gastosVisibles.filter(g=>g.fecha<=filtroHasta);
+    if(filtroChasis){
+      gastosVisibles=gastosVisibles.filter(g=>{
+        const v=DB.vehiculos.find(x=>x.id===g.vehiculoId);
+        const vin=(v?.vin||g.vin||'').toLowerCase();
+        const cod=(v?.codigo||g.codigo||'').toLowerCase();
+        const marca=(v?.marca||'').toLowerCase();
+        const modelo=(v?.modelo||'').toLowerCase();
+        return vin.includes(filtroChasis)||cod.includes(filtroChasis)||marca.includes(filtroChasis)||modelo.includes(filtroChasis);
+      });
+    }
+    const idsDistintos=[...new Set(gastosVisibles.map(g=>g.vehiculoId).filter(Boolean))];
+    if(idsDistintos.length===1)vehUnico=idsDistintos[0];
+  }
+
+  if(vehUnico){
+    const vSel=DB.vehiculos.find(x=>x.id===vehUnico);
     openModal('📄 Hoja de Costos — '+(vSel?vSel.codigo+' '+vSel.marca+' '+vSel.modelo:''),`
       <div class="form-field">
         <label>Tasa de cambio del día (RD$ x 1 USD)</label>
         <input type="number" id="hc-tasa" value="${DB.config.tasaCambio||60}" step="0.01" placeholder="60.00">
-        <input type="hidden" id="hc-veh" value="${filtroVehActual}">
+        <input type="hidden" id="hc-veh" value="${vehUnico}">
       </div>`,
       `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
        <button class="btn btn-secondary" onclick="closeModal();abrirHojaCostosVeh(true)">Elegir otro vehículo</button>
@@ -8528,6 +8605,7 @@ function editarVenta(vid){
 function guardarEditarVenta(vid){
   if(currentUser?.role!=='admin'&&!canDo('editar')){toast('No tienes permiso para editar cotizaciones','error');return;}
   const i=DB.ventas.findIndex(x=>x.id===vid);if(i<0)return;
+  const estadoOriginal=DB.ventas[i].estadoVenta||'VENDIDO'; // estado ANTES de esta edición, para no mover el vehículo si no cambió
   const estadoVenta=document.getElementById('ev-estado').value;
   // Si se eligió "Cancelar Venta", el vehículo vuelve a Activo y se elimina la venta (igual que al eliminarla)
   if(estadoVenta==='ACTIVO'){
@@ -8556,9 +8634,17 @@ function guardarEditarVenta(vid){
   // Actualizar CXC
   const ci=DB.cxc.findIndex(x=>x.ventaId===vid);
   if(ci>=0){DB.cxc[ci].saldo=pendiente;DB.cxc[ci].abonado=inicial;DB.cxc[ci].status=pendiente<=0?'SALDADO':inicial>0?'PARCIAL':'PENDIENTE';sDB('cxc');}
-  // Actualizar vehículo
-  const vi=DB.vehiculos.findIndex(x=>x.id===DB.ventas[i].vehiculoId);
-  if(vi>=0){DB.vehiculos[vi].status=estadoVenta==='VENDIDO'?'VENDIDO':'TRÁNSITO';if(fechaEntrega)DB.vehiculos[vi].fechaEntrega=fechaEntrega;sDB('vehiculos');}
+  // Actualizar vehículo — SOLO si cambiaste el campo "Estado" deliberadamente.
+  // Si solo editaste precio/fecha/banco/etc. sin tocar el Estado, el vehículo NO se mueve.
+  if(estadoVenta!==estadoOriginal){
+    const vi=DB.vehiculos.findIndex(x=>x.id===DB.ventas[i].vehiculoId);
+    if(vi>=0){DB.vehiculos[vi].status=estadoVenta==='VENDIDO'?'VENDIDO':'TRÁNSITO';sDB('vehiculos');}
+  }
+  // La fecha de entrega sí se guarda siempre que se indique, sin afectar el estado del vehículo
+  if(fechaEntrega){
+    const vi2=DB.vehiculos.findIndex(x=>x.id===DB.ventas[i].vehiculoId);
+    if(vi2>=0){DB.vehiculos[vi2].fechaEntrega=fechaEntrega;sDB('vehiculos');}
+  }
   // Verificar auto-vendido
   checkAutoVendido(vid);
   sDB('ventas');closeModal();toast('Venta actualizada ✓','success');renderVentas();
