@@ -3080,9 +3080,12 @@ function gastosVehiculo(vid){
         <div class="form-field" style="margin:0"><label style="font-size:10px">Descripción</label><input type="text" id="gv-desc" placeholder="Detalle"></div>
         <div class="form-field" style="margin:0"><label style="font-size:10px">Monto (RD$)</label><input type="text" id="gv-monto" placeholder="0.00" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" ></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
         <div class="form-field" style="margin:0"><label style="font-size:10px">Forma de Pago</label><select id="gv-forma"><option value="CONTADO">Contado</option><option value="CREDITO">Crédito</option></select></div>
-        <div class="form-field" style="margin:0"><label style="font-size:10px">Cuenta</label><select id="gv-cuenta">${(DB.config.cuentas||['Caja General']).map(c=>`<option>${escHtml(c)}</option>`).join('')}</select></div>
+        <div class="form-field" style="margin:0"><label style="font-size:10px">Banco</label><select id="gv-banco" onchange="actualizarCuentasGenerico('gv-banco','gv-cuenta')">${(DB.config.bancoCuentas||[]).length?(DB.config.bancoCuentas||[]).map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join(''):'<option value="">Sin bancos configurados</option>'}</select></div>
+        <div class="form-field" style="margin:0"><label style="font-size:10px">Cuenta</label><select id="gv-cuenta">${(()=>{const b=(DB.config.bancoCuentas||[])[0];return b&&b.cuentas&&b.cuentas.length?b.cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join(''):(DB.config.cuentas||['Caja General']).map(c=>`<option>${escHtml(c)}</option>`).join('');})()}</select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div class="form-field" style="margin:0"><label style="font-size:10px">Fecha</label><input type="date" id="gv-fecha" value="${today()}"></div>
         <div class="form-field" style="margin:0;display:flex;align-items:flex-end"><button class="btn btn-red btn-sm" style="width:100%" onclick="agregarGastoVeh('${vid}')">💾 Agregar</button></div>
       </div>
@@ -3108,9 +3111,9 @@ function agregarGastoVeh(vid){
   const monto=parseFloat(document.getElementById('gv-monto').value||0);
   if(!monto){toast('Ingresa el monto','error');return;}
   if(!DB.gastosVehiculos)DB.gastosVehiculos=[];
-  const g={id:uid(),vehiculoId:vid,fecha:document.getElementById('gv-fecha').value,tipo:document.getElementById('gv-tipo').value,descripcion:document.getElementById('gv-desc').value,monto,formaPago:document.getElementById('gv-forma').value,cuenta:document.getElementById('gv-cuenta').value};
+  const g={id:uid(),vehiculoId:vid,fecha:document.getElementById('gv-fecha').value,tipo:document.getElementById('gv-tipo').value,descripcion:document.getElementById('gv-desc').value,monto,formaPago:document.getElementById('gv-forma').value,banco:document.getElementById('gv-banco')?.value||'',cuenta:document.getElementById('gv-cuenta').value};
   DB.gastosVehiculos.push(g);
-  DB.caja.push({id:uid(),fecha:g.fecha,tipo:'SALIDA',categoria:'Gasto de Vehículo',descripcion:`Gasto [${DB.vehiculos.find(v=>v.id===vid)?.codigo||vid}]: ${g.tipo} — ${g.descripcion}`,monto,referencia:g.cuenta,responsable:currentUser?.nombre||''});
+  DB.caja.push({id:uid(),fecha:g.fecha,tipo:'SALIDA',categoria:'Gasto de Vehículo',descripcion:`Gasto [${DB.vehiculos.find(v=>v.id===vid)?.codigo||vid}]: ${g.tipo} — ${g.descripcion}`,monto,banco:g.banco,cuenta:g.cuenta,referencia:g.cuenta,responsable:currentUser?.nombre||''});
   sDB('gastosVehiculos');sDB('caja');toast('Gasto agregado ✓','success');gastosVehiculo(vid);
 }
 function eliminarGastoVeh(gid,vid){if(currentUser?.role!=='admin'&&!canDo('eliminar')){toast('No tienes permiso para eliminar','error');return;}DB.gastosVehiculos=(DB.gastosVehiculos||[]).filter(g=>g.id!==gid);sDB('gastosVehiculos');toast('Eliminado','success');gastosVehiculo(vid);}
@@ -3161,6 +3164,59 @@ function confirmarReasignarBancoCaja(){
   _reasignarCajaPendiente=null;
   closeModal();
   toast(n+' movimiento(s) asignados a '+banco+' ✓','success');
+  renderCaja();
+}
+function abrirReasignarTodoSinBanco(){
+  // Lista única de combinaciones cuenta+moneda que están sin banco
+  const grupos={};
+  DB.caja.forEach(c=>{
+    if(c.banco)return;
+    const cuenta=c.cuenta||'Sin cuenta';
+    const moneda=c.moneda||'RD$';
+    const key=cuenta+'||'+moneda;
+    if(!grupos[key])grupos[key]={cuenta,moneda,total:0};
+    grupos[key].total+=(c.tipo==='ENTRADA'?1:-1)*parseFloat(c.monto||0);
+  });
+  const lista=Object.values(grupos);
+  if(lista.length===0){toast('No hay movimientos sin banco','success');return;}
+  const bcs=DB.config.bancoCuentas||[];
+  const bancoOpts=bcs.map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')||'<option value="">Sin bancos configurados</option>';
+  openModal('🔧 Asignar TODAS las cuentas sin banco',`
+    <div style="background:var(--amber2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e">
+      ⚠️ Elige el banco correcto para cada cuenta. Todos los movimientos de esa cuenta se actualizarán al guardar.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto">
+      ${lista.map((g,i)=>`<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:8px;align-items:end;background:var(--gray2);padding:10px;border-radius:8px">
+        <div>
+          <div style="font-size:12px;font-weight:700">${escHtml(g.cuenta)}</div>
+          <div style="font-size:11px;color:var(--gray)">${g.moneda} · Saldo: ${g.moneda==='USD'?fmtUSD(g.total):fmt(g.total)}</div>
+        </div>
+        <select id="rt-banco-${i}" data-cuenta="${escHtml(g.cuenta)}" data-moneda="${escHtml(g.moneda)}">
+          <option value="">-- Sin asignar --</option>
+          ${bancoOpts}
+        </select>
+      </div>`).join('')}
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="confirmarReasignarTodoSinBanco(${lista.length})">💾 Asignar Todo</button>`);
+}
+function confirmarReasignarTodoSinBanco(n){
+  let totalMovs=0,totalCuentas=0;
+  for(let i=0;i<n;i++){
+    const sel=document.getElementById('rt-banco-'+i);
+    if(!sel||!sel.value)continue;
+    const banco=sel.value,cuenta=sel.dataset.cuenta,moneda=sel.dataset.moneda;
+    let movs=0;
+    DB.caja.forEach(c=>{
+      if(!c.banco&&(c.cuenta||'Sin cuenta')===cuenta&&(c.moneda||'RD$')===moneda){c.banco=banco;movs++;}
+    });
+    if(movs>0)totalCuentas++;
+    totalMovs+=movs;
+  }
+  if(totalMovs===0){toast('No seleccionaste ningún banco','error');return;}
+  sDB('caja');
+  closeModal();
+  toast(totalMovs+' movimiento(s) en '+totalCuentas+' cuenta(s) asignados ✓','success');
   renderCaja();
 }
 function actualizarTasaCaja(){
@@ -3247,9 +3303,12 @@ function renderCaja(){
     return `<div class="card" style="border-top:3px solid ${esSinBanco?'var(--amber)':'var(--blue)'};margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div class="card-title" style="margin:0;padding:0;border:none">${esSinBanco?'⚠️':'🏦'} ${escHtml(banco)}</div>
-        <div style="text-align:right;font-size:12px">
-          ${totRD!==0?`<span style="font-weight:700;color:${totRD>=0?'var(--green)':'var(--red)'}">${fmt(totRD)}</span>`:''}
-          ${totUSD!==0?`<span style="font-weight:700;color:${totUSD>=0?'var(--blue)':'var(--red)'};margin-left:8px">${fmtUSD(totUSD)}</span>`:''}
+        <div style="display:flex;align-items:center;gap:10px">
+          ${esSinBanco&&cuentas.length>1?`<button class="btn btn-amber btn-sm" style="font-size:11px" onclick="abrirReasignarTodoSinBanco()">🔧 Asignar TODAS a un banco</button>`:''}
+          <div style="text-align:right;font-size:12px">
+            ${totRD!==0?`<span style="font-weight:700;color:${totRD>=0?'var(--green)':'var(--red)'}">${fmt(totRD)}</span>`:''}
+            ${totUSD!==0?`<span style="font-weight:700;color:${totUSD>=0?'var(--blue)':'var(--red)'};margin-left:8px">${fmtUSD(totUSD)}</span>`:''}
+          </div>
         </div>
       </div>
       ${cuentasHTML}
@@ -8157,7 +8216,7 @@ function confirmarVenta(nf){
     sDB('vehiculos');
   }
   // Registrar en caja
-  DB.caja.push({id:uid(),fecha:venta.fecha,tipo:'ENTRADA',categoria:'Venta de Vehículo',descripcion:`Venta: ${v.codigo} ${v.marca} ${v.modelo}`,monto:inicial||precio,referencia:nf,cuenta,responsable:currentUser.nombre});
+  DB.caja.push({id:uid(),fecha:venta.fecha,tipo:'ENTRADA',categoria:'Venta de Vehículo',descripcion:`Venta: ${v.codigo} ${v.marca} ${v.modelo}`,monto:inicial||precio,moneda:monedaVenta,banco,cuenta,referencia:nf,responsable:currentUser.nombre});
   // Si hay pendiente → CxC automática
   if(pendiente>0){
     const abonadoInicial=inicial;
@@ -8230,7 +8289,7 @@ function confirmarVenta(nf){
   closeModal();
   // Imprimir recibo automáticamente
   imprimirFactura(venta.id);
-  logBit('ventas','Registró venta',`${_vRef?.codigo||''} ${_vRef?.marca||''} ${_vRef?.modelo||''}`);toast('Venta registrada ✓ — Generando recibo...','success');
+  logBit('ventas','Registró venta',`${v?.codigo||''} ${v?.marca||''} ${v?.modelo||''}`);toast('Venta registrada ✓ — Generando recibo...','success');
   renderVentas();
 }
 
@@ -10701,7 +10760,7 @@ function guardarCXCManual(){
   });
   if(abono>0)DB.caja.push({id:uid(),fecha,tipo:'ENTRADA',categoria:'CxC Manual',
     descripcion:'Abono CxC: '+concepto+' — '+cli?.nombre,
-    monto:abono,referencia:cuenta,responsable:currentUser.nombre});
+    monto:abono,moneda,banco,cuenta,referencia:cuenta,responsable:currentUser.nombre});
   sDB('cxc');sDB('caja');closeModal();
   toast('Cuenta por cobrar creada ✓','success');renderCXC();
 }
@@ -11718,7 +11777,7 @@ function guardarSeguro(id){
   if(abonado>0&&(!prev||prev.abonado<abonado)){
     DB.caja.push({id:uid(),fecha:today(),tipo:'SALIDA',categoria:'Seguro Vehículo',
       descripcion:'Abono seguro: '+comp+' — '+cliente+' — Póliza: '+(s.poliza||''),
-      monto:abonado-(prev?.abonado||0),referencia:s.cuenta,responsable:currentUser.nombre});
+      monto:abonado-(prev?.abonado||0),moneda:s.moneda,banco:s.banco,cuenta:s.cuenta,referencia:s.cuenta,responsable:currentUser.nombre});
     sDB('caja');
   }
   if(id){const i=DB.seguros.findIndex(x=>x.id===id);if(i>=0)DB.seguros[i]=s;}
@@ -11774,11 +11833,12 @@ function confirmarAbonoSeguro(id){
   DB.seguros[i].pendiente=Math.max(0,pendienteActual-monto);
   DB.seguros[i].status=DB.seguros[i].pendiente<=0?'PAGADO':'ABONADO';
   DB.seguros[i].cuenta=cuenta;
+  DB.seguros[i].banco=banco;
   if(!DB.seguros[i].pagos)DB.seguros[i].pagos=[];
-  DB.seguros[i].pagos.push({fecha,monto,cuenta,responsable:currentUser.nombre});
+  DB.seguros[i].pagos.push({fecha,monto,banco,cuenta,responsable:currentUser.nombre});
   DB.caja.push({id:uid(),fecha,tipo:'SALIDA',categoria:'Seguro Vehículo',
     descripcion:'Pago seguro: '+DB.seguros[i].compania+' — '+escHtml(DB.seguros[i].cliente||'')+(DB.seguros[i].poliza?' — Póliza: '+DB.seguros[i].poliza:''),
-    monto,referencia:cuenta,responsable:currentUser.nombre});
+    monto,moneda,banco,cuenta,referencia:cuenta,responsable:currentUser.nombre});
   sDB('seguros');sDB('caja');
   closeModal();
   toast(DB.seguros[i].pendiente<=0?'✅ Seguro pagado completamente':'💵 Abono registrado ✓','success');
