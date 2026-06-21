@@ -8155,9 +8155,10 @@ function confirmarEliminarVenta(id){
   DB.ventas=DB.ventas.filter(x=>x.id!==id);
   logBit('ventas','Eliminó venta',v?.factura||'');sDB('ventas');closeModal();toast('Venta eliminada','success');renderVentas();
 }
-function toggleVehRecibido(){
-  const cb=document.getElementById('sv-tiene-recibido');
-  const fields=document.getElementById('sv-recibido-fields');
+function toggleVehRecibido(prefijo){
+  prefijo=prefijo||'sv';
+  const cb=document.getElementById(prefijo+'-tiene-recibido');
+  const fields=document.getElementById(prefijo+'-recibido-fields');
   if(fields)fields.style.display=cb?.checked?'block':'none';
 }
 
@@ -8176,14 +8177,15 @@ function toggleTasaVenta(){
   if(wrap)wrap.style.display=moneda==='USD'?'block':'none';
 }
 // Wizard de titulación — selección de tipo
-function svSelTitulacion(tipo){
-  const btnEndoso=document.getElementById('sv-btn-endoso');
-  const btnTraspaso=document.getElementById('sv-btn-traspaso');
-  const btnSin=document.getElementById('sv-btn-sinTit');
-  const endosoWrap=document.getElementById('sv-endoso-wrap');
-  const traspasoWrap=document.getElementById('sv-traspaso-wrap');
-  const gestorWrap=document.getElementById('sv-gestor-wrap');
-  const tipoInput=document.getElementById('sv-tipo-transferencia');
+function svSelTitulacion(tipo,prefijo){
+  prefijo=prefijo||'sv';
+  const btnEndoso=document.getElementById(prefijo+'-btn-endoso');
+  const btnTraspaso=document.getElementById(prefijo+'-btn-traspaso');
+  const btnSin=document.getElementById(prefijo+'-btn-sinTit');
+  const endosoWrap=document.getElementById(prefijo+'-endoso-wrap');
+  const traspasoWrap=document.getElementById(prefijo+'-traspaso-wrap');
+  const gestorWrap=document.getElementById(prefijo+'-gestor-wrap');
+  const tipoInput=document.getElementById(prefijo+'-tipo-transferencia');
   const activeStyle='border:2px solid var(--blue);background:var(--blue);color:#fff';
   const inactiveStyle='border:2px solid var(--gray3);background:#fff;color:var(--navy)';
   // Reset botones
@@ -8203,7 +8205,7 @@ function svSelTitulacion(tipo){
     if(traspasoWrap)traspasoWrap.style.display='';
     if(gestorWrap)gestorWrap.style.display='';
     if(tipoInput)tipoInput.value='traspaso';
-    toggleTraspasoFields();
+    toggleTraspasoFields(prefijo);
   } else {
     if(btnSin)btnSin.style.cssText='flex:1;min-width:100px;padding:10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;'+activeStyle;
     if(endosoWrap)endosoWrap.style.display='none';
@@ -8213,16 +8215,17 @@ function svSelTitulacion(tipo){
   }
 }
 
-function toggleTraspasoFields(){
-  const tipo=document.getElementById('sv-tipo-transferencia')?.value;
-  const endosoWrap=document.getElementById('sv-endoso-wrap');
-  const traspasoWrap=document.getElementById('sv-traspaso-wrap');
+function toggleTraspasoFields(prefijo){
+  prefijo=prefijo||'sv';
+  const tipo=document.getElementById(prefijo+'-tipo-transferencia')?.value;
+  const endosoWrap=document.getElementById(prefijo+'-endoso-wrap');
+  const traspasoWrap=document.getElementById(prefijo+'-traspaso-wrap');
   if(endosoWrap)endosoWrap.style.display=tipo==='endoso'?'block':'none';
   if(traspasoWrap)traspasoWrap.style.display=tipo==='traspaso'?'block':'none';
   // Sub-toggle traspaso pagado/no pagado
-  const pagado=document.getElementById('sv-traspaso-pagado')?.value;
-  const infoCxc=document.getElementById('sv-traspaso-info-cxc');
-  const infoCxp=document.getElementById('sv-traspaso-info-cxp');
+  const pagado=document.getElementById(prefijo+'-traspaso-pagado')?.value;
+  const infoCxc=document.getElementById(prefijo+'-traspaso-info-cxc');
+  const infoCxp=document.getElementById(prefijo+'-traspaso-info-cxp');
   if(infoCxc)infoCxc.style.display=(tipo==='traspaso'&&pagado==='no')?'block':'none';
   if(infoCxp)infoCxp.style.display=(tipo==='traspaso'&&pagado==='si')?'block':'none';
 }
@@ -8599,36 +8602,112 @@ function editarVenta(vid){
         <input type="text" id="ev-pendiente" value="${fmtMoneyDisplay(v.pendiente||0)}" readonly style="background:#f8fafc;color:var(--red);font-weight:700">
       </div>
     </div>
-    <!-- Campos propios de edición: progreso de la venta y titulación. NO incluye estados de inventario (Activo/Aduana/EEUU) -->
-    <div style="background:var(--blue3);border-radius:8px;padding:12px;margin-top:8px">
-      <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">📋 Estado de la Venta y Titulación</div>
-      <div class="form-row c3" style="margin-bottom:0">
-        <div class="form-field" style="margin:0"><label>Estado</label>
-          <select id="ev-estado">
-            <option value="TRÁNSITO" ${v.estadoVenta==='TRÁNSITO'?'selected':''}>🔄 Tránsito</option>
-            <option value="VENDIDO" ${(v.estadoVenta||'VENDIDO')==='VENDIDO'?'selected':''}>✅ Vendido</option>
-            <option value="ACTIVO">🚫 Cancelar Venta (vehículo vuelve a Activo)</option>
-          </select>
+    <!-- Estado de la venta (propio de edición, no existe en Nueva Venta) -->
+    <div class="form-row c2">
+      <div class="form-field"><label>Estado</label>
+        <select id="ev-estado">
+          <option value="TRÁNSITO" ${v.estadoVenta==='TRÁNSITO'?'selected':''}>🔄 Tránsito</option>
+          <option value="VENDIDO" ${(v.estadoVenta||'VENDIDO')==='VENDIDO'?'selected':''}>✅ Vendido</option>
+          <option value="ACTIVO">🚫 Cancelar Venta (vehículo vuelve a Activo)</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Fecha Límite Documentos</label>
+        <input type="date" id="ev-fecha-lim-docs" value="${v.fechaLimDocs||''}">
+      </div>
+    </div>
+    <!-- WIZARD TITULACIÓN — mismo formato que Nueva Venta -->
+    <div style="background:var(--blue3);border-radius:8px;padding:12px;margin-top:8px" id="ev-titulacion-wrap">
+      <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">📋 Gestión de Titulación</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button type="button" id="ev-btn-endoso" onclick="svSelTitulacion('endoso','ev')"
+          style="flex:1;min-width:100px;padding:10px;border-radius:8px;border:2px solid var(--gray3);background:#fff;color:var(--navy);font-size:12px;font-weight:700;cursor:pointer">
+          📋 Endoso<div style="font-size:10px;font-weight:400;margin-top:2px">Empresa paga placa</div>
+        </button>
+        <button type="button" id="ev-btn-traspaso" onclick="svSelTitulacion('traspaso','ev')"
+          style="flex:1;min-width:100px;padding:10px;border-radius:8px;border:2px solid var(--gray3);background:#fff;color:var(--navy);font-size:12px;font-weight:700;cursor:pointer">
+          🔄 Traspaso<div style="font-size:10px;font-weight:400;margin-top:2px">Cliente paga matrícula</div>
+        </button>
+        <button type="button" id="ev-btn-sinTit" onclick="svSelTitulacion('sin','ev')"
+          style="flex:1;min-width:100px;padding:10px;border-radius:8px;border:2px solid var(--gray3);background:#fff;color:var(--navy);font-size:12px;font-weight:700;cursor:pointer">
+          ➖ Sin Titulación<div style="font-size:10px;font-weight:400;margin-top:2px">Solo venta directa</div>
+        </button>
+      </div>
+      <input type="hidden" id="ev-tipo-transferencia" value="${v.tipoTransferencia||''}">
+      <div id="ev-gestor-wrap" style="margin-bottom:10px">
+        <label style="font-size:10px;font-weight:700;color:var(--blue);display:block;margin-bottom:4px">👤 Gestor / Tramitador</label>
+        <select id="ev-gestor" style="width:100%;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm)">
+          <option value="">-- Sin gestor --</option>
+          ${DB.suplidores.map(s=>`<option value="${escHtml(s.empresa||s.nombre||'')}" ${(v.gestorTransf||'')===(s.empresa||s.nombre||'')?'selected':''}>${escHtml(s.empresa||s.nombre||'')}</option>`).join('')}
+        </select>
+      </div>
+      <div id="ev-endoso-wrap">
+        <div class="form-row c2" style="margin-bottom:8px">
+          <div class="form-field" style="margin:0">
+            <label style="font-size:10px;font-weight:700">💰 Costo del Endoso</label>
+            <input type="text" id="ev-endoso-monto" value="${fmtMoneyDisplay(v.montoEndoso||0)}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" placeholder="0.00">
+            <div style="font-size:10px;color:var(--blue);margin-top:2px">Solo se actualiza el monto guardado en la venta — no vuelve a crear el CXP al gestor</div>
+          </div>
+          <div class="form-field" style="margin:0">
+            <label style="font-size:10px;font-weight:700">📋 Fecha Emisión Placa Exhibición (DGII)</label>
+            <input type="date" id="ev-fecha-placa-exhibicion" value="${v.fechaPlacaExhibicion||''}">
+            <div style="font-size:10px;color:var(--amber);margin-top:2px">⚠️ Vence a los <strong>90 días</strong> desde esta fecha</div>
+          </div>
         </div>
-        <div class="form-field" style="margin:0"><label>Tipo Transferencia</label>
-          <select id="ev-tipo-transf">
-            <option value="" ${!v.tipoTransferencia?'selected':''}>Sin transferencia</option>
-            <option value="traspaso" ${v.tipoTransferencia==='traspaso'?'selected':''}>Traspaso</option>
-            <option value="endoso" ${v.tipoTransferencia==='endoso'?'selected':''}>Endoso</option>
-            <option value="placa_exhibicion" ${v.tipoTransferencia==='placa_exhibicion'?'selected':''}>Placa Exhibición</option>
-          </select>
+        <div class="form-row c2" style="margin-top:8px;margin-bottom:0">
+          <div class="form-field" style="margin:0">
+            <label style="font-size:10px;font-weight:700">📷 Foto Placa Exhibición (adjuntar)</label>
+            <input type="file" id="ev-foto-placa-exhibicion" accept=".jpg,.jpeg,.png" onchange="previewFoto('ev-foto-placa-exhibicion','ev-foto-placa-prev')">
+            <img id="ev-foto-placa-prev" style="${v.fotoPlacaExhibicion?'display:block':'display:none'};width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-top:4px;border:2px solid var(--amber)" ${v.fotoPlacaExhibicion?`src="${v.fotoPlacaExhibicion}"`:''}>
+          </div>
         </div>
-        <div class="form-field" style="margin:0"><label>Gestor de Transferencia</label>
-          <input type="text" id="ev-gestor" value="${escHtml(v.gestorTransf||'')}" placeholder="Nombre del gestor">
+      </div>
+      <div id="ev-traspaso-wrap" style="display:none">
+        <div class="form-row c2" style="margin-bottom:6px">
+          <div class="form-field" style="margin:0">
+            <label style="font-size:10px;font-weight:700">💰 Costo del Traspaso / Matrícula</label>
+            <input type="text" id="ev-traspaso-monto" value="${fmtMoneyDisplay(v.montoTraspaso||0)}" oninput="fmtMoneyInput(this)" onblur="fmtMoneyBlur(this)" onfocus="fmtMoneyFocus(this)" placeholder="0.00">
+          </div>
+          <div class="form-field" style="margin:0">
+            <label style="font-size:10px;font-weight:700">¿El cliente pagó el traspaso?</label>
+            <select id="ev-traspaso-pagado" onchange="toggleTraspasoFields('ev')" style="width:100%;padding:7px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm)">
+              <option value="si" ${v.traspasoPagadoCliente!==false?'selected':''}>✅ Sí, el cliente pagó</option>
+              <option value="no" ${v.traspasoPagadoCliente===false?'selected':''}>❌ No, quedó pendiente (CxC)</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
-    <div class="form-field"><label>Comentario / Notas</label>
-      <input type="text" id="ev-motivo" value="${escHtml(v.comentario||v.motivoTransito||'')}">
+    <!-- VEHÍCULO RECIBIDO COMO PARTE DE PAGO — mismo formato que Nueva Venta -->
+    <div style="background:var(--gray2);border-radius:8px;padding:12px;margin-top:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700">🔄 Vehículo Recibido como Parte de Pago</div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="ev-tiene-recibido" ${v.vehiculoRecibido?.vehiculo?'checked':''} onchange="toggleVehRecibido('ev')" style="width:16px;height:16px">
+          <span style="font-size:12px;font-weight:600">Incluir vehículo recibido</span>
+        </label>
+      </div>
+      <div id="ev-recibido-fields" style="display:${v.vehiculoRecibido?.vehiculo?'block':'none'}">
+        <div class="form-row c3" style="margin-bottom:8px">
+          <div class="form-field" style="margin:0"><label style="font-size:10px">Marca / Modelo</label><input type="text" id="ev-rec-vehiculo" value="${escHtml(v.vehiculoRecibido?.vehiculo||'')}" placeholder="Ej: Toyota Corolla 2018"></div>
+          <div class="form-field" style="margin:0"><label style="font-size:10px">Chasis / VIN</label><input type="text" id="ev-rec-vin" value="${escHtml(v.vehiculoRecibido?.vin||'')}" placeholder="Número de chasis o VIN" maxlength="17" style="text-transform:uppercase;font-family:monospace" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"></div>
+          <div class="form-field" style="margin:0"><label style="font-size:10px">Placa</label><input type="text" id="ev-rec-placa" value="${escHtml(v.vehiculoRecibido?.placa||'')}" placeholder="A000000" maxlength="7" style="text-transform:uppercase" oninput="fmtPlaca(this)"></div>
+        </div>
+        <div class="form-row c2" style="margin-bottom:0">
+          <div class="form-field" style="margin:0;grid-column:1/-1"><label style="font-size:10px">Adjuntar Matrícula</label>
+            <input type="file" id="ev-rec-matricula" accept=".jpg,.jpeg,.png" onchange="previewFoto('ev-rec-matricula','ev-rec-mat-prev')">
+            <img id="ev-rec-mat-prev" style="${v.vehiculoRecibido?.matricula?'display:block':'display:none'};width:100%;max-height:60px;object-fit:cover;border-radius:4px;margin-top:4px" ${v.vehiculoRecibido?.matricula?`src="${v.vehiculoRecibido.matricula}"`:''}>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-field" style="margin-top:10px"><label>💬 Comentario para la Factura</label>
+      <textarea id="ev-motivo" rows="2">${escHtml(v.comentario||v.motivoTransito||'')}</textarea>
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-sm" style="background:var(--green2);color:var(--green)" onclick="closeModal();imprimirFactura('${vid}')">🖨️ Imprimir</button>
      <button class="btn btn-primary" onclick="guardarEditarVenta('${vid}')">💾 Guardar Cambios</button>`);
+  // Activar visualmente el botón de titulación correcto según lo ya guardado
+  setTimeout(()=>{svSelTitulacion(v.tipoTransferencia||'sin','ev');},30);
 }
 
 function guardarEditarVenta(vid){
@@ -8657,8 +8736,34 @@ function guardarEditarVenta(vid){
   DB.ventas[i].cuenta=document.getElementById('ev-cuenta')?.value||DB.ventas[i].cuenta||'';
   DB.ventas[i].fecha=document.getElementById('ev-fecha').value;
   DB.ventas[i].fechaEntrega=fechaEntrega;
-  DB.ventas[i].tipoTransferencia=document.getElementById('ev-tipo-transf')?.value||'';
+  DB.ventas[i].fechaLimDocs=document.getElementById('ev-fecha-lim-docs')?.value||DB.ventas[i].fechaLimDocs||'';
+  const tipoTransferencia=document.getElementById('ev-tipo-transferencia')?.value||'';
+  DB.ventas[i].tipoTransferencia=tipoTransferencia;
   DB.ventas[i].gestorTransf=document.getElementById('ev-gestor')?.value.trim()||'';
+  // Montos de titulación: solo actualiza el dato guardado en la venta — NO vuelve a crear CXP al gestor
+  // (ese CXP ya se creó una vez al confirmar la venta original; aquí solo se corrige el monto/fecha si hubo un error de captura)
+  DB.ventas[i].montoEndoso=tipoTransferencia==='endoso'?parseFloat((document.getElementById('ev-endoso-monto')?.value||'0').replace(/,/g,'')):0;
+  DB.ventas[i].montoTraspaso=tipoTransferencia==='traspaso'?parseFloat((document.getElementById('ev-traspaso-monto')?.value||'0').replace(/,/g,'')):0;
+  DB.ventas[i].traspasoPagadoCliente=(document.getElementById('ev-traspaso-pagado')?.value||'si')==='si';
+  DB.ventas[i].fechaPlacaExhibicion=tipoTransferencia==='endoso'?(document.getElementById('ev-fecha-placa-exhibicion')?.value||''):'';
+  const fotoPlacaEl=document.getElementById('ev-foto-placa-prev');
+  if(tipoTransferencia==='endoso'&&fotoPlacaEl&&fotoPlacaEl.style.display!=='none'&&fotoPlacaEl.src){
+    DB.ventas[i].fotoPlacaExhibicion=fotoPlacaEl.src;
+  }
+  // Vehículo recibido como parte de pago: solo actualiza los datos guardados en la venta —
+  // NO vuelve a crear un vehículo nuevo en Inventario (eso solo pasa una vez, al confirmar la venta original)
+  const tieneRecibidoEdit=document.getElementById('ev-tiene-recibido')?.checked;
+  if(tieneRecibidoEdit){
+    const matEl=document.getElementById('ev-rec-mat-prev');
+    DB.ventas[i].vehiculoRecibido={
+      vehiculo:document.getElementById('ev-rec-vehiculo')?.value||'',
+      vin:document.getElementById('ev-rec-vin')?.value||'',
+      placa:document.getElementById('ev-rec-placa')?.value||'',
+      matricula:(matEl&&matEl.style.display!=='none'&&matEl.src)?matEl.src:(DB.ventas[i].vehiculoRecibido?.matricula||'')
+    };
+  } else {
+    DB.ventas[i].vehiculoRecibido=null;
+  }
   DB.ventas[i].comentario=document.getElementById('ev-motivo').value;
   DB.ventas[i].motivoTransito=document.getElementById('ev-motivo').value;
   // Actualizar CXC
