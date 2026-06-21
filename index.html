@@ -3278,7 +3278,7 @@ function actualizarTasaCaja(){
 function renderCaja(){
   const mes=document.getElementById('caja-mes')?.value||today().slice(0,7);
   const tab=document.getElementById('caja-tab')?.value||'TODO';
-  const vista=document.getElementById('caja-vista')?.value||'MES';
+  const vista=document.getElementById('caja-vista')?.value||'ACUMULADO';
   const tasa=parseFloat(DB.config.tasaCambio||60);
   const fmtUSD=n=>'USD '+parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -3443,8 +3443,8 @@ function renderCaja(){
         <div style="font-size:14px;font-weight:700">🏦 Saldo por Cuentas Bancarias</div>
         <div style="display:flex;gap:8px;align-items:center">
           <select id="caja-vista" onchange="renderCaja()" style="padding:6px 12px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
-            <option value="MES" ${vista==='MES'?'selected':''}>Movimientos del mes</option>
             <option value="ACUMULADO" ${vista==='ACUMULADO'?'selected':''}>Saldo acumulado total</option>
+            <option value="MES" ${vista==='MES'?'selected':''}>Movimientos del mes</option>
           </select>
         </div>
       </div>
@@ -3457,6 +3457,17 @@ function renderCaja(){
 
     <!-- Tarjetas por banco/cuenta -->
     ${Object.keys(bancoGroups).length>0?bancoCards:'<div class="card" style="text-align:center;padding:24px;color:var(--gray)">Sin movimientos registrados en este período</div>'}
+    ${(()=>{
+      // Verificación: la suma de las cuentas (en esta vista) debe cuadrar con el Saldo Acumulado de arriba cuando vista=ACUMULADO
+      if(vista!=='ACUMULADO'||Object.keys(bancoGroups).length===0)return '';
+      const sumaRD=Object.values(cuentasAcum).filter(c=>c.moneda==='RD$').reduce((a,c)=>a+(c.entradas-c.salidas),0);
+      const sumaUSD=Object.values(cuentasAcum).filter(c=>c.moneda==='USD').reduce((a,c)=>a+(c.entradas-c.salidas),0);
+      const cuadra=Math.abs(sumaRD-totalAcumRD)<0.01&&Math.abs(sumaUSD-totalAcumUSD)<0.01;
+      return `<div style="text-align:center;padding:10px;font-size:12px;color:${cuadra?'var(--green)':'var(--red)'};font-weight:700">
+        ${cuadra?'✅ Cuadra exacto con el "Saldo Acumulado — Todas las Cuentas" de arriba':'⚠️ No cuadra con el total de arriba — revisar'}
+        <div style="font-size:11px;color:var(--gray);font-weight:400;margin-top:2px">Suma de cuentas: ${fmt(sumaRD)} RD$ ${sumaUSD?'+ '+fmtUSD(sumaUSD):''}</div>
+      </div>`;
+    })()}
     `:''}<!-- fin verSaldoCaja -->
     ${(currentUser?.role==='admin'||(currentUser?.modulos||[]).includes('verSaldoCaja'))?`
     <div class="card" style="background:var(--navy);margin-bottom:16px">
@@ -8150,9 +8161,10 @@ function toggleVehRecibido(){
   if(fields)fields.style.display=cb?.checked?'block':'none';
 }
 
-function actualizarCuentasVenta(){
-  const bancoEl=document.getElementById('sv-banco');
-  const cuentaEl=document.getElementById('sv-cuenta');
+function actualizarCuentasVenta(prefijo){
+  prefijo=prefijo||'sv';
+  const bancoEl=document.getElementById(prefijo+'-banco');
+  const cuentaEl=document.getElementById(prefijo+'-cuenta');
   if(!bancoEl||!cuentaEl)return;
   const bcs=DB.config.bancoCuentas||[];
   const b=bcs.find(x=>x.banco===bancoEl.value);
@@ -8529,13 +8541,50 @@ function confirmarAbVenta(vid){
 function editarVenta(vid){
   if(currentUser?.role!=='admin'&&!canDo('editar')){toast('No tienes permiso para editar','error');return;}
   const v=DB.ventas.find(x=>x.id===vid);if(!v)return;
-  const cuentas=DB.config.cuentas&&DB.config.cuentas.length?DB.config.cuentas:['Caja General'];
   const bancoCuentas=DB.config.bancoCuentas||[];
   openModal('✏️ Editar Venta — '+escHtml(v.factura),`
-    <div style="background:var(--blue3);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px">
-      <span>🚗 <strong>${escHtml(v.vehiculo||v.codigo||'')}</strong></span>
-      <span>👤 <strong>${escHtml(v.cliente||'')}</strong></span>
-      <span>📋 Factura: <strong>${escHtml(v.factura||'')}</strong></span>
+    <div style="background:var(--navy);color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;font-weight:700">N° FACTURA</span>
+      <span style="font-family:monospace;font-size:16px;font-weight:800;color:#60a5fa">${escHtml(v.factura||'')}</span>
+    </div>
+    <div class="form-row c2">
+      <div class="form-field"><label>Vehículo</label>
+        <div style="padding:9px 12px;background:var(--gray2);border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--navy)">🚗 ${escHtml(v.vehiculo||v.codigo||'—')}</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:3px">El vehículo de esta venta no se puede cambiar aquí.</div>
+      </div>
+      <div class="form-field"><label>Cliente</label>
+        <div style="padding:9px 12px;background:var(--gray2);border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:var(--navy)">👤 ${escHtml(v.cliente||'—')}</div>
+      </div>
+    </div>
+    <div class="form-row c3">
+      <div class="form-field"><label>Fecha de Venta</label><input type="date" id="ev-fecha" value="${v.fecha||''}"></div>
+      <div class="form-field"><label>Método de Pago</label>
+        <select id="ev-pago">${['Contado','Financiamiento','Transferencia','Cheque','Mixto'].map(p=>`<option ${p===v.metodoPago?'selected':''}>${p}</option>`).join('')}</select>
+      </div>
+      <div class="form-field"><label>Banco</label>
+        <select id="ev-banco" onchange="actualizarCuentasVenta('ev')">
+          ${bancoCuentas.length?bancoCuentas.map(b=>`<option value="${escHtml(b.banco)}" ${(v.banco||'')===b.banco?'selected':''}>${escHtml(b.banco)}</option>`).join(''):'<option value="Caja General">Caja General</option>'}
+        </select>
+      </div>
+    </div>
+    <div class="form-row c3">
+      <div class="form-field"><label class="required">Cuenta de Cobro</label>
+        <select id="ev-cuenta">
+          ${(()=>{
+            const bSel=bancoCuentas.find(b=>b.banco===(v.banco||''))||bancoCuentas[0];
+            return bSel?(bSel.cuentas||[]).map(c=>{const val=c.tipo+' — '+c.numero;return `<option value="${escHtml(val)}" ${(v.cuenta||'')===val?'selected':''}>${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`;}).join(''):'<option value="Caja General">Caja General</option>';
+          })()}
+        </select>
+      </div>
+      <div class="form-field"><label>Moneda de Venta</label>
+        <select id="ev-moneda">
+          <option value="RD$" ${(v.moneda||'RD$')==='RD$'?'selected':''}>RD$ — Pesos</option>
+          <option value="USD" ${v.moneda==='USD'?'selected':''}>USD — Dólares</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Fecha de Entrega</label>
+        <input type="date" id="ev-fecha-entrega" value="${v.fechaEntrega||''}">
+      </div>
     </div>
     <div class="form-row c3">
       <div class="form-field"><label class="required">Precio de Venta</label>
@@ -8550,48 +8599,28 @@ function editarVenta(vid){
         <input type="text" id="ev-pendiente" value="${fmtMoneyDisplay(v.pendiente||0)}" readonly style="background:#f8fafc;color:var(--red);font-weight:700">
       </div>
     </div>
-    <div class="form-row c3">
-      <div class="form-field"><label>Método de Pago</label>
-        <select id="ev-pago">${['Contado','Financiamiento','Transferencia','Cheque','Mixto'].map(p=>`<option ${p===v.metodoPago?'selected':''}>${p}</option>`).join('')}</select>
-      </div>
-      <div class="form-field"><label>Moneda</label>
-        <select id="ev-moneda">
-          <option value="RD$" ${(v.moneda||'RD$')==='RD$'?'selected':''}>🇩🇴 RD$</option>
-          <option value="USD" ${v.moneda==='USD'?'selected':''}>🇺🇸 USD</option>
-        </select>
-      </div>
-      <div class="form-field"><label>Banco / Cuenta</label>
-        <select id="ev-banco">
-          ${bancoCuentas.length?bancoCuentas.flatMap(b=>b.cuentas&&b.cuentas.length?b.cuentas.map(ct=>`<option value="${escHtml(b.banco+' — '+ct.numero)}" ${(v.banco||v.cuenta||'')===(b.banco+' — '+ct.numero)?'selected':''}>${escHtml(b.banco+' — '+ct.numero)}</option>`):[`<option value="${escHtml(b.banco)}" ${(v.banco||'')=== b.banco?'selected':''}>${escHtml(b.banco)}</option>`]).join(''):cuentas.map(c=>`<option ${c===(v.cuenta||'')?'selected':''}>${escHtml(c)}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="form-row c3">
-      <div class="form-field"><label>Fecha de Venta</label>
-        <input type="date" id="ev-fecha" value="${v.fecha||''}">
-      </div>
-      <div class="form-field"><label>Fecha de Entrega</label>
-        <input type="date" id="ev-fecha-entrega" value="${v.fechaEntrega||''}">
-      </div>
-      <div class="form-field"><label>Estado</label>
-        <select id="ev-estado">
-          <option value="TRÁNSITO" ${v.estadoVenta==='TRÁNSITO'?'selected':''}>🔄 Tránsito</option>
-          <option value="VENDIDO" ${(v.estadoVenta||'VENDIDO')==='VENDIDO'?'selected':''}>✅ Vendido</option>
-          <option value="ACTIVO">🚫 Cancelar Venta (vehículo vuelve a Activo)</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row c2">
-      <div class="form-field"><label>Tipo Transferencia</label>
-        <select id="ev-tipo-transf">
-          <option value="" ${!v.tipoTransferencia?'selected':''}>Sin transferencia</option>
-          <option value="traspaso" ${v.tipoTransferencia==='traspaso'?'selected':''}>Traspaso</option>
-          <option value="endoso" ${v.tipoTransferencia==='endoso'?'selected':''}>Endoso</option>
-          <option value="placa_exhibicion" ${v.tipoTransferencia==='placa_exhibicion'?'selected':''}>Placa Exhibición</option>
-        </select>
-      </div>
-      <div class="form-field"><label>Gestor de Transferencia</label>
-        <input type="text" id="ev-gestor" value="${escHtml(v.gestorTransf||'')}" placeholder="Nombre del gestor">
+    <!-- Campos propios de edición: progreso de la venta y titulación. NO incluye estados de inventario (Activo/Aduana/EEUU) -->
+    <div style="background:var(--blue3);border-radius:8px;padding:12px;margin-top:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">📋 Estado de la Venta y Titulación</div>
+      <div class="form-row c3" style="margin-bottom:0">
+        <div class="form-field" style="margin:0"><label>Estado</label>
+          <select id="ev-estado">
+            <option value="TRÁNSITO" ${v.estadoVenta==='TRÁNSITO'?'selected':''}>🔄 Tránsito</option>
+            <option value="VENDIDO" ${(v.estadoVenta||'VENDIDO')==='VENDIDO'?'selected':''}>✅ Vendido</option>
+            <option value="ACTIVO">🚫 Cancelar Venta (vehículo vuelve a Activo)</option>
+          </select>
+        </div>
+        <div class="form-field" style="margin:0"><label>Tipo Transferencia</label>
+          <select id="ev-tipo-transf">
+            <option value="" ${!v.tipoTransferencia?'selected':''}>Sin transferencia</option>
+            <option value="traspaso" ${v.tipoTransferencia==='traspaso'?'selected':''}>Traspaso</option>
+            <option value="endoso" ${v.tipoTransferencia==='endoso'?'selected':''}>Endoso</option>
+            <option value="placa_exhibicion" ${v.tipoTransferencia==='placa_exhibicion'?'selected':''}>Placa Exhibición</option>
+          </select>
+        </div>
+        <div class="form-field" style="margin:0"><label>Gestor de Transferencia</label>
+          <input type="text" id="ev-gestor" value="${escHtml(v.gestorTransf||'')}" placeholder="Nombre del gestor">
+        </div>
       </div>
     </div>
     <div class="form-field"><label>Comentario / Notas</label>
@@ -8625,6 +8654,7 @@ function guardarEditarVenta(vid){
   DB.ventas[i].metodoPago=document.getElementById('ev-pago').value;
   DB.ventas[i].moneda=document.getElementById('ev-moneda')?.value||DB.ventas[i].moneda||'RD$';
   DB.ventas[i].banco=document.getElementById('ev-banco')?.value||DB.ventas[i].banco||'';
+  DB.ventas[i].cuenta=document.getElementById('ev-cuenta')?.value||DB.ventas[i].cuenta||'';
   DB.ventas[i].fecha=document.getElementById('ev-fecha').value;
   DB.ventas[i].fechaEntrega=fechaEntrega;
   DB.ventas[i].tipoTransferencia=document.getElementById('ev-tipo-transf')?.value||'';
