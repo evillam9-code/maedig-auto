@@ -655,6 +655,7 @@ function doLogin(){
     // Avisos emergentes automáticos desactivados a pedido del usuario (mensajes de alertas al iniciar sesión)
     _iniciarPresenciaGlobal();
     setTimeout(_verificarBackupAdmin,2500);
+    setTimeout(asegurarCuentaEfectivo,3000);
   };
   // Mostrar bienvenida con datos del localStorage primero
   _actualizarWelcome();
@@ -2722,16 +2723,18 @@ function renderInventario(){
   sincronizarStatusVehiculos();
   const filtroEstado=document.getElementById('inv-estado-filter')?.value||'ALL';
   const filtroTipo=document.getElementById('inv-tipo-filter')?.value||'ALL';
+  const norm=s=>(s||'').toString().trim().toUpperCase();
   let veh=DB.vehiculos;
   // Por defecto se ocultan VENDIDO y TRÁNSITO (ya tienen venta activa)
-  if(filtroEstado==='ALL')veh=veh.filter(v=>v.status!=='VENDIDO'&&v.status!=='TRÁNSITO');
-  else veh=veh.filter(v=>v.status===filtroEstado);
-  if(filtroTipo!=='ALL')veh=veh.filter(v=>v.tipoCompra===filtroTipo);
+  if(filtroEstado==='ALL')veh=veh.filter(v=>norm(v.status)!=='VENDIDO'&&norm(v.status)!=='TRÁNSITO');
+  else veh=veh.filter(v=>norm(v.status)===norm(filtroEstado));
+  if(filtroTipo!=='ALL')veh=veh.filter(v=>norm(v.tipoCompra)===norm(filtroTipo));
   veh=[...veh].sort((a,b)=>{const na=parseInt((a.codigo||'').replace(/\D/g,''))||0;const nb=parseInt((b.codigo||'').replace(/\D/g,''))||0;return nb-na;});
   const btnDis='background:#e2e8f0;color:#adb5bd;cursor:not-allowed;border:1px solid #dee2e6';
+  const hayFiltroActivo=filtroEstado!=='ALL'||filtroTipo!=='ALL';
   pg.innerHTML=`
     <div class="page-header">
-      <div><h1>🚗 Registro de Vehículo</h1><p>${DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&v.status!=='TRÁNSITO').length} en inventario — ${DB.vehiculos.filter(v=>v.status==='ACTIVO').length} activos · <span style="color:var(--gray);font-size:11px">Los VENDIDOS y en TRÁNSITO están en Ventas</span></p></div>
+      <div><h1>🚗 Registro de Vehículo</h1><p>${hayFiltroActivo?`<strong style="color:var(--blue)">${veh.length} resultado(s) con este filtro</strong> — `:''}${DB.vehiculos.filter(v=>v.status!=='VENDIDO'&&v.status!=='TRÁNSITO').length} en inventario — ${DB.vehiculos.filter(v=>v.status==='ACTIVO').length} activos · <span style="color:var(--gray);font-size:11px">Los VENDIDOS y en TRÁNSITO están en Ventas</span></p></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <select id="inv-estado-filter" onchange="renderInventario()" style="width:150px;padding:7px 10px;border:1.5px solid var(--gray3);border-radius:var(--radius-sm);font-size:13px">
           <option value="ALL">Todos los estados</option>
@@ -3021,42 +3024,6 @@ function eliminarVehiculo(id){
 }
 
 // ══ GASTOS DEL VEHÍCULO ══
-function exportarInventarioPDF(){
-  sincronizarStatusVehiculos();
-  const filtroEstado=document.getElementById('inv-estado-filter')?.value||'ALL';
-  const filtroTipo=document.getElementById('inv-tipo-filter')?.value||'ALL';
-  let veh=DB.vehiculos;
-  if(filtroEstado==='ALL')veh=veh.filter(v=>v.status!=='VENDIDO'&&v.status!=='TRÁNSITO');
-  else veh=veh.filter(v=>v.status===filtroEstado);
-  if(filtroTipo!=='ALL')veh=veh.filter(v=>v.tipoCompra===filtroTipo);
-  veh=[...veh].sort((a,b)=>{const na=parseInt((a.codigo||'').replace(/\D/g,''))||0;const nb=parseInt((b.codigo||'').replace(/\D/g,''))||0;return nb-na;});
-  const empresa=DB.config.empresa||'DealerSystem';
-  const logo=DB.config.logoData||'';
-  const _blobHtml=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventario</title>
-  <style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}h2{font-size:16px;margin:0}
-  table{width:100%;border-collapse:collapse;margin-top:12px}
-  th{background:#0f172a;color:#fff;padding:6px 8px;text-align:left;font-size:10px}
-  td{padding:5px 8px;border-bottom:1px solid #e2e8f0;font-size:11px}tr:nth-child(even){background:#f8fafc}
-  @page{size:letter landscape;margin:8mm}@media print{button{display:none}}</style></head><body>
-  <h2>Registro de Vehiculos — ${escHtml(empresa)}</h2>
-  <p style="color:#64748b;font-size:11px">${veh.length} vehiculo(s) — Generado: ${fmtDate(today())}</p>
-  <table><thead><tr>
-    <th>Codigo</th><th>Vehiculo (Anio Color)</th><th>Chasis VIN</th><th>Propietario</th><th>Tipo Compra</th><th>Estado</th><th>Fecha</th>
-  </tr></thead><tbody>
-  ${veh.map(v=>{
-    const prop=v.propietario||'—';
-    return '<tr><td>'+escHtml(v.codigo||'—')+'</td><td>'+escHtml(v.marca||'')+' '+escHtml(v.modelo||'')+' '+escHtml(String(v.anio||''))+' '+escHtml(v.color||'')+'</td><td>'+escHtml(v.vin||'—')+'</td><td>'+escHtml(prop)+'</td><td>'+({'IMPORTACION':'Importacion','LOCAL':'Compra Local','RECIBIDO':'Recibido'}[v.tipoCompra]||v.tipoCompra||'—')+'</td><td>'+(v.status||'—')+'</td><td>'+fmtDate(v.fecha||'')+'</td></tr>';
-  }).join('')}
-  </tbody></table>
-  <br><button onclick="window.print()" style="padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700">Imprimir</button>
-  </body></html>`;
-  const _blobObj=new Blob([_blobHtml],{type:'text/html;charset=utf-8'});
-  const _blobUrl=URL.createObjectURL(_blobObj);
-  const win=window.open(_blobUrl,'_blank');
-  if(!win){const _a=document.createElement('a');_a.href=_blobUrl;_a.target='_blank';_a.click();}
-  setTimeout(()=>URL.revokeObjectURL(_blobUrl),60000);
-  win.onafterprint=()=>{try{win.close();}catch(e){}};
-}
 
 function gastosVehiculo(vid){
   const v=DB.vehiculos.find(x=>x.id===vid);if(!v)return;
@@ -3161,6 +3128,41 @@ function imprimirGastosVehiculo(vid){
 
 
 // ══ CAJA ══
+let _reasignarCajaPendiente=null;
+function abrirReasignarBancoCaja(cuenta,moneda){
+  _reasignarCajaPendiente={cuenta,moneda};
+  const bcs=DB.config.bancoCuentas||[];
+  const n=DB.caja.filter(c=>!c.banco&&(c.cuenta||'Sin cuenta')===cuenta&&(c.moneda||'RD$')===moneda).length;
+  openModal('🔧 Asignar Banco',`
+    <div style="background:var(--amber2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e">
+      ⚠️ ${n} movimiento(s) de la cuenta <strong>${escHtml(cuenta)}</strong> (${moneda}) no tienen banco asignado. Selecciona a cuál banco pertenecen — se actualizarán todos juntos.
+    </div>
+    <div class="form-field">
+      <label class="required">Banco</label>
+      <select id="rb-banco">
+        <option value="">-- Seleccionar banco --</option>
+        ${bcs.map(b=>`<option value="${escHtml(b.banco)}">${escHtml(b.banco)}</option>`).join('')}
+      </select>
+      ${bcs.length===0?'<div style="font-size:11px;color:var(--red);margin-top:4px">No tienes bancos configurados todavía. Ve a Cuentas → Agregar Banco primero.</div>':''}
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="confirmarReasignarBancoCaja()">💾 Asignar</button>`);
+}
+function confirmarReasignarBancoCaja(){
+  if(!_reasignarCajaPendiente)return;
+  const banco=document.getElementById('rb-banco')?.value;
+  if(!banco){toast('Selecciona un banco','error');return;}
+  const {cuenta,moneda}=_reasignarCajaPendiente;
+  let n=0;
+  DB.caja.forEach(c=>{
+    if(!c.banco&&(c.cuenta||'Sin cuenta')===cuenta&&(c.moneda||'RD$')===moneda){c.banco=banco;n++;}
+  });
+  sDB('caja');
+  _reasignarCajaPendiente=null;
+  closeModal();
+  toast(n+' movimiento(s) asignados a '+banco+' ✓','success');
+  renderCaja();
+}
 function actualizarTasaCaja(){
   const val=parseFloat(document.getElementById('caja-tasa-input')?.value||0);
   if(val>0){DB.config.tasaCambio=val;sDB('config');renderCaja();toast('Tasa actualizada ✓','success');}
@@ -3223,6 +3225,7 @@ function renderCaja(){
   let filtrados=tab==='ENTRADAS'?cajaFilt.filter(c=>c.tipo==='ENTRADA'):tab==='SALIDAS'?cajaFilt.filter(c=>c.tipo==='SALIDA'):cajaFilt;
 
   const bancoCards=Object.entries(bancoGroups).map(([banco,cuentas])=>{
+    const esSinBanco=banco==='Sin banco';
     const cuentasHTML=cuentas.map(c=>{
       const saldo=c.entradas-c.salidas;
       const isUSD=c.moneda==='USD';
@@ -3231,6 +3234,7 @@ function renderCaja(){
           <div style="font-size:13px;font-weight:700;color:var(--navy)">${escHtml(c.cuenta)}</div>
           <div style="font-size:11px;color:var(--gray);margin-top:2px">${isUSD?'🇺🇸 Dólares':'🇩🇴 Pesos'} · Ent: ${isUSD?fmtUSD(c.entradas):fmt(c.entradas)} · Sal: ${isUSD?fmtUSD(c.salidas):fmt(c.salidas)}</div>
           ${isUSD?`<div style="font-size:11px;color:var(--gray);margin-top:1px">≈ ${fmt(saldo*tasa)} al cambio</div>`:''}
+          ${esSinBanco?`<button class="btn btn-secondary btn-sm" style="margin-top:6px;font-size:11px;padding:3px 10px" data-cuenta="${escHtml(c.cuenta)}" data-moneda="${escHtml(c.moneda||'RD$')}" onclick="abrirReasignarBancoCaja(this.dataset.cuenta,this.dataset.moneda)">🔧 Asignar a un banco</button>`:''}
         </div>
         <div style="text-align:right">
           <div style="font-size:18px;font-weight:900;color:${saldo>=0?'var(--green)':'var(--red)'}">${isUSD?fmtUSD(saldo):fmt(saldo)}</div>
@@ -3240,9 +3244,9 @@ function renderCaja(){
     }).join('');
     const totRD=cuentas.filter(c=>c.moneda==='RD$').reduce((a,c)=>a+(c.entradas-c.salidas),0);
     const totUSD=cuentas.filter(c=>c.moneda==='USD').reduce((a,c)=>a+(c.entradas-c.salidas),0);
-    return `<div class="card" style="border-top:3px solid var(--blue);margin-bottom:14px">
+    return `<div class="card" style="border-top:3px solid ${esSinBanco?'var(--amber)':'var(--blue)'};margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div class="card-title" style="margin:0;padding:0;border:none">🏦 ${escHtml(banco)}</div>
+        <div class="card-title" style="margin:0;padding:0;border:none">${esSinBanco?'⚠️':'🏦'} ${escHtml(banco)}</div>
         <div style="text-align:right;font-size:12px">
           ${totRD!==0?`<span style="font-weight:700;color:${totRD>=0?'var(--green)':'var(--red)'}">${fmt(totRD)}</span>`:''}
           ${totUSD!==0?`<span style="font-weight:700;color:${totUSD>=0?'var(--blue)':'var(--red)'};margin-left:8px">${fmtUSD(totUSD)}</span>`:''}
@@ -5096,10 +5100,30 @@ function agregarFilaCuentaNuevoBanco(){
         <option value="Corriente USD">Corriente USD</option>
         <option value="Ahorro RD$">Ahorro RD$</option>
         <option value="Ahorro USD">Ahorro USD</option>
+        <option value="Efectivo RD$">Efectivo RD$</option>
+        <option value="Efectivo USD">Efectivo USD</option>
       </select>
     </div>
     <button class="btn btn-red btn-sm" onclick="this.parentElement.remove()">✕</button>`;
   list.appendChild(div);
+}
+function asegurarCuentaEfectivo(){
+  if(currentUser?.role!=='admin')return;
+  if(!DB.config)return;
+  const bcs=DB.config.bancoCuentas||[];
+  const yaExiste=bcs.some(b=>(b.banco||'').trim().toLowerCase()==='efectivo');
+  if(yaExiste)return;
+  const nuevoBanco={
+    banco:'Efectivo',
+    cuentas:[
+      {numero:'Caja Chica',tipo:'Efectivo RD$',banco:'Efectivo'},
+      {numero:'Caja Chica',tipo:'Efectivo USD',banco:'Efectivo'}
+    ]
+  };
+  DB.config.bancoCuentas=[...bcs,nuevoBanco];
+  DB.config.bancos=DB.config.bancoCuentas.map(b=>b.banco);
+  sDB('config');
+  toast('💵 Cuenta "Efectivo" (RD$ y USD) creada automáticamente en Cuentas','success');
 }
 function guardarNuevoBancoCuenta(){
   const nombre=document.getElementById('nb-nombre')?.value.trim();
@@ -5131,6 +5155,8 @@ function agregarCuentaABanco(bi){
           <option value="Corriente USD">Corriente USD</option>
           <option value="Ahorro RD$">Ahorro RD$</option>
           <option value="Ahorro USD">Ahorro USD</option>
+          <option value="Efectivo RD$">Efectivo RD$</option>
+          <option value="Efectivo USD">Efectivo USD</option>
         </select>
       </div>
     </div>`,
@@ -5776,6 +5802,8 @@ function agregarCuentaBanco(bi){
       <option value="Corriente USD">Corriente USD</option>
       <option value="Ahorro RD$">Ahorro RD$</option>
       <option value="Ahorro USD">Ahorro USD</option>
+      <option value="Efectivo RD$">Efectivo RD$</option>
+      <option value="Efectivo USD">Efectivo USD</option>
     </select>
     <button class="btn btn-red btn-sm" onclick="this.closest('.bc-cuenta-row').remove()">✕</button>`;
   cont.appendChild(div);
@@ -6319,9 +6347,18 @@ function agregarSeguroConfig(){
 // ══ EXPORTAR INVENTARIO PDF ══
 function exportarInventarioPDF(){
   sincronizarStatusVehiculos();
-  const veh=DB.vehiculos;
-  const win=openPopup('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventario</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:12px}h2{font-size:18px;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#0f172a;color:#fff;padding:8px;text-align:left;font-size:11px}td{padding:8px;border-bottom:1px solid #e2e8f0}tr:nth-child(even){background:#f8fafc}.bg{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700}.green{background:#dcfce7;color:#16a34a}.blue{background:#dbeafe;color:#2563eb}.amber{background:#fef3c7;color:#d97706}.purple{background:#ede9fe;color:#7c3aed}.gray{background:#f1f5f9;color:#6b7280}@media print{.noprint{display:none}}</style></head><body>'+
-  '<div style="display:flex;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px"><div><h2>'+escHtml(DB.config.empresa||'DealerSystem')+'</h2><div style="color:#6b7280">LISTADO DE INVENTARIO — '+fmtDate(today())+'</div></div><div style="text-align:right;font-size:11px;color:#6b7280">Total: '+veh.length+' vehículos</div></div>'+
+  const filtroEstado=document.getElementById('inv-estado-filter')?.value||'ALL';
+  const filtroTipo=document.getElementById('inv-tipo-filter')?.value||'ALL';
+  const norm=s=>(s||'').toString().trim().toUpperCase();
+  let veh=DB.vehiculos;
+  if(filtroEstado==='ALL')veh=veh.filter(v=>norm(v.status)!=='VENDIDO'&&norm(v.status)!=='TRÁNSITO');
+  else veh=veh.filter(v=>norm(v.status)===norm(filtroEstado));
+  if(filtroTipo!=='ALL')veh=veh.filter(v=>norm(v.tipoCompra)===norm(filtroTipo));
+  veh=[...veh].sort((a,b)=>{const na=parseInt((a.codigo||'').replace(/\D/g,''))||0;const nb=parseInt((b.codigo||'').replace(/\D/g,''))||0;return nb-na;});
+  const tipoLbl={IMPORTACION:'Importación',LOCAL:'Compra Local',RECIBIDO:'Recibido'}[filtroTipo]||'Todos los tipos';
+  const filtroLabel='Estado: '+(filtroEstado==='ALL'?'Todos (activo)':filtroEstado)+' | Tipo: '+tipoLbl;
+  const win=openPopup('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventario</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:12px}h2{font-size:18px;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#0f172a;color:#fff;padding:8px;text-align:left;font-size:11px}td{padding:8px;border-bottom:1px solid #e2e8f0}tr:nth-child(even){background:#f8fafc}.bg{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700}.green{background:#dcfce7;color:#16a34a}.blue{background:#dbeafe;color:#2563eb}.amber{background:#fef3c7;color:#d97706}.purple{background:#ede9fe;color:#7c3aed}.gray{background:#f1f5f9;color:#6b7280}@media print{.noprint{display:none}@page{size:letter landscape;margin:8mm}}</style></head><body>'+
+  '<div style="display:flex;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:12px;margin-bottom:16px"><div><h2>'+escHtml(DB.config.empresa||'DealerSystem')+'</h2><div style="color:#6b7280">LISTADO DE INVENTARIO — '+fmtDate(today())+'</div><div style="color:#6b7280;font-size:11px;margin-top:2px">Filtro: '+escHtml(filtroLabel)+'</div></div><div style="text-align:right;font-size:11px;color:#6b7280">Total: '+veh.length+' vehículos</div></div>'+
   '<table><thead><tr><th>Código</th><th>Vehículo</th><th>Año</th><th>Color</th><th>VIN/Chasis</th><th>Propietario</th><th>Tipo Compra</th><th>Estado</th></tr></thead><tbody>'+
   veh.map(v=>{const sc={ACTIVO:'green',VENDIDO:'blue',ADUANA:'amber','TRÁNSITO':'purple'};return'<tr><td style="font-family:monospace">'+escHtml(v.codigo||'—')+'</td><td>'+escHtml(v.marca)+' '+escHtml(v.modelo)+'</td><td>'+(v.anio||'—')+'</td><td>'+escHtml(v.color||'—')+'</td><td style="font-size:10px">'+escHtml(v.vin||'—')+'</td><td>'+escHtml(v.propietario||'—')+'</td><td>'+(v.tipoCompra==='IMPORTACION'?'Importación':v.tipoCompra==='LOCAL'?'Compra Local':'Recibido')+'</td><td><span class="bg '+(sc[v.status]||'gray')+'">'+(v.status||'—')+'</span></td></tr>';}).join('')+
   '</tbody></table><div class="noprint" style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir / PDF</button></div></body></html>');
