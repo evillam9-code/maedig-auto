@@ -3166,6 +3166,45 @@ function confirmarReasignarBancoCaja(){
   toast(n+' movimiento(s) asignados a '+banco+' ✓','success');
   renderCaja();
 }
+let _reasignarCuentaPendiente=null;
+function abrirReasignarCuentaCaja(banco,moneda){
+  _reasignarCuentaPendiente={banco,moneda};
+  const bcs=DB.config.bancoCuentas||[];
+  const b=bcs.find(x=>x.banco===banco);
+  const cuentaOpts=(b&&b.cuentas&&b.cuentas.length)
+    ?b.cuentas.map(c=>`<option value="${escHtml(c.tipo+' — '+c.numero)}">${escHtml(c.tipo)} — ${escHtml(c.numero)}</option>`).join('')
+    :'';
+  const n=DB.caja.filter(c=>(c.banco||'')===banco&&!c.cuenta&&(c.moneda||'RD$')===moneda).length;
+  openModal('🔧 Asignar Cuenta',`
+    <div style="background:var(--amber2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e">
+      ⚠️ ${n} movimiento(s) en <strong>${escHtml(banco)}</strong> (${moneda}) tienen el banco correcto pero les falta la cuenta específica. Selecciona cuál cuenta de ${escHtml(banco)} les corresponde.
+    </div>
+    <div class="form-field">
+      <label class="required">Cuenta</label>
+      <select id="rc-cuenta">
+        <option value="">-- Seleccionar cuenta --</option>
+        ${cuentaOpts}
+      </select>
+      ${!cuentaOpts?`<div style="font-size:11px;color:var(--red);margin-top:4px">${escHtml(banco)} no tiene cuentas registradas todavía. Ve a Cuentas → ${escHtml(banco)} → Agregar Cuenta primero.</div>`:''}
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+     <button class="btn btn-primary" onclick="confirmarReasignarCuentaCaja()">💾 Asignar</button>`);
+}
+function confirmarReasignarCuentaCaja(){
+  if(!_reasignarCuentaPendiente)return;
+  const cuenta=document.getElementById('rc-cuenta')?.value;
+  if(!cuenta){toast('Selecciona una cuenta','error');return;}
+  const {banco,moneda}=_reasignarCuentaPendiente;
+  let n=0;
+  DB.caja.forEach(c=>{
+    if((c.banco||'')===banco&&!c.cuenta&&(c.moneda||'RD$')===moneda){c.cuenta=cuenta;n++;}
+  });
+  sDB('caja');
+  _reasignarCuentaPendiente=null;
+  closeModal();
+  toast(n+' movimiento(s) asignados a '+cuenta+' ✓','success');
+  renderCaja();
+}
 function abrirReasignarTodoSinBanco(){
   // Lista única de combinaciones cuenta+moneda que están sin banco
   const grupos={};
@@ -3285,12 +3324,14 @@ function renderCaja(){
     const cuentasHTML=cuentas.map(c=>{
       const saldo=c.entradas-c.salidas;
       const isUSD=c.moneda==='USD';
+      const esSinCuenta=!esSinBanco&&c.cuenta==='Sin cuenta';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--gray3);margin-bottom:6px">
         <div>
           <div style="font-size:13px;font-weight:700;color:var(--navy)">${escHtml(c.cuenta)}</div>
           <div style="font-size:11px;color:var(--gray);margin-top:2px">${isUSD?'🇺🇸 Dólares':'🇩🇴 Pesos'} · Ent: ${isUSD?fmtUSD(c.entradas):fmt(c.entradas)} · Sal: ${isUSD?fmtUSD(c.salidas):fmt(c.salidas)}</div>
           ${isUSD?`<div style="font-size:11px;color:var(--gray);margin-top:1px">≈ ${fmt(saldo*tasa)} al cambio</div>`:''}
           ${esSinBanco?`<button class="btn btn-secondary btn-sm" style="margin-top:6px;font-size:11px;padding:3px 10px" data-cuenta="${escHtml(c.cuenta)}" data-moneda="${escHtml(c.moneda||'RD$')}" onclick="abrirReasignarBancoCaja(this.dataset.cuenta,this.dataset.moneda)">🔧 Asignar a un banco</button>`:''}
+          ${esSinCuenta?`<button class="btn btn-secondary btn-sm" style="margin-top:6px;font-size:11px;padding:3px 10px" data-banco="${escHtml(banco)}" data-moneda="${escHtml(c.moneda||'RD$')}" onclick="abrirReasignarCuentaCaja(this.dataset.banco,this.dataset.moneda)">🔧 Asignar a una cuenta</button>`:''}
         </div>
         <div style="text-align:right">
           <div style="font-size:18px;font-weight:900;color:${saldo>=0?'var(--green)':'var(--red)'}">${isUSD?fmtUSD(saldo):fmt(saldo)}</div>
@@ -4901,10 +4942,38 @@ function renderBackup(){
     {label:'Seguros',val:(DB.seguros||[]).length,ico:'🛡️'},
   ];
 
+  // Diagnóstico de rendimiento: tamaño real de los datos cargados en memoria
+  const totalRegistros=resumen.reduce((a,r)=>a+r.val,0);
+  let pesoKB=0;
+  try{ pesoKB=Math.round(new Blob([JSON.stringify(DB)]).size/1024); }catch(e){ try{ pesoKB=Math.round(JSON.stringify(DB).length/1024); }catch(e2){ pesoKB=0; } }
+  let nivel,colorNivel,mensajeNivel;
+  if(pesoKB<500){nivel='🟢 Ligero';colorNivel='var(--green)';mensajeNivel='Tu volumen de datos es bajo. El sistema debería sentirse ágil.';}
+  else if(pesoKB<2000){nivel='🟡 Moderado';colorNivel='var(--amber)';mensajeNivel='Volumen normal para un negocio en crecimiento. Si notas lentitud, probablemente sea más por conexión a internet que por esto.';}
+  else if(pesoKB<5000){nivel='🟠 Considerable';colorNivel='#ea580c';mensajeNivel='Ya hay bastante información acumulada. Es un buen momento para considerar archivar datos muy viejos (ventas/gastos de hace más de 2-3 años).';}
+  else{nivel='🔴 Pesado';colorNivel='var(--red)';mensajeNivel='Volumen alto. Es probable que esto SÍ esté contribuyendo a que el sistema se sienta lento o se "congele" en equipos menos potentes. Recomendado: archivar datos históricos.';}
+
   document.getElementById('page-backup').innerHTML=`
     <div class="page-header">
       <div><h1>💾 Backup del Sistema</h1><p>Respaldo de todos los datos del sistema</p></div>
     </div>
+
+    <!-- Diagnóstico de rendimiento -->
+    ${currentUser?.role==='admin'?`
+    <div class="card" style="border-top:4px solid ${colorNivel}">
+      <div class="card-title">⚡ Diagnóstico de Rendimiento</div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div style="text-align:center;min-width:120px">
+          <div style="font-size:13px;font-weight:800;color:${colorNivel}">${nivel}</div>
+          <div style="font-size:24px;font-weight:900;color:var(--navy);margin-top:4px">${pesoKB.toLocaleString('es-DO')} KB</div>
+          <div style="font-size:10px;color:var(--gray);text-transform:uppercase">datos cargados en memoria</div>
+        </div>
+        <div style="text-align:center;min-width:120px">
+          <div style="font-size:24px;font-weight:900;color:var(--navy)">${totalRegistros.toLocaleString('es-DO')}</div>
+          <div style="font-size:10px;color:var(--gray);text-transform:uppercase">registros totales</div>
+        </div>
+        <div style="flex:1;min-width:220px;font-size:12px;color:var(--navy)">${mensajeNivel}</div>
+      </div>
+    </div>`:''}
 
     <!-- Estado del backup -->
     <div class="card" style="border-top:4px solid ${statusColor}">
@@ -10120,7 +10189,7 @@ function confirmarPagoCXPManual(i){
   DB.cxp[i].statusGasto=DB.cxp[i].montoPendiente<=0?'PAGADO':'ABONADO';
   DB.caja.push({id:uid(),fecha,tipo:'SALIDA',categoria:'CXP Manual',
     descripcion:'Pago CXP: '+g.descripcion+(g.suplidor?' \u2014 '+g.suplidor:''),
-    monto,referencia:cuenta,banco,responsable:currentUser?.nombre||''});
+    monto,banco,cuenta,referencia:cuenta,responsable:currentUser?.nombre||''});
   sDB('cxp');sDB('caja');
   closeModal();toast('Pago registrado \u2713','success');renderCXP();
 }
