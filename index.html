@@ -9175,16 +9175,16 @@ function guardarCotizacion(idx){
   if(!doc){toast('El documento es requerido','error');return;}
   if(!banco){toast('Selecciona la entidad bancaria','error');return;}
   if(!precio){toast('El monto es requerido','error');return;}
-  const vidSel=document.getElementById('cot-veh').value;
+  const vidSel=document.getElementById('cot-veh')?.value||'';
   const vObj=vidSel?DB.vehiculos.find(v=>v.id===vidSel):null;
   const cot={id:idx!==undefined?DB.cotizaciones[idx].id:uid(),
     fecha:document.getElementById('cot-fecha').value,
     cliente:cli,tipoDoc:document.getElementById('cot-tipodoc').value,
     documento:doc,cedula:doc,telefono:document.getElementById('cot-tel').value,
-    banco,vehiculoId:vidSel,
-    vehiculo:vObj?`${vObj.codigo} ${vObj.marca} ${vObj.modelo} ${vObj.anio}`:'',
-    vin:vObj?.vin||'',color:vObj?.color||'',placa:vObj?.placa||'EN TRÁMITE',
-    anio:vObj?.anio||'',marca:vObj?.marca||'',modelo:vObj?.modelo||'',
+    banco,vehiculoId:vidSel||(idx!==undefined?DB.cotizaciones[idx].vehiculoId:''),
+    vehiculo:vObj?`${vObj.codigo} ${vObj.marca} ${vObj.modelo} ${vObj.anio}`:(idx!==undefined?DB.cotizaciones[idx].vehiculo||'':''),
+    vin:vObj?.vin||(idx!==undefined?DB.cotizaciones[idx].vin:'')||'',color:vObj?.color||(idx!==undefined?DB.cotizaciones[idx].color:'')||'',placa:vObj?.placa||(idx!==undefined?DB.cotizaciones[idx].placa:'')||'EN TRÁMITE',
+    anio:vObj?.anio||(idx!==undefined?DB.cotizaciones[idx].anio:'')||'',marca:vObj?.marca||(idx!==undefined?DB.cotizaciones[idx].marca:'')||'',modelo:vObj?.modelo||(idx!==undefined?DB.cotizaciones[idx].modelo:'')||'',
     precio,moneda:document.getElementById('cot-moneda').value,
     fechaVence:document.getElementById('cot-vence2')?.value||'',
     notas:document.getElementById('cot-notas').value,status:'PENDIENTE'};
@@ -9205,7 +9205,7 @@ function editarCotizacion(i){
     </div>
     <div class="form-row c3">
       <div class="form-field"><label>Teléfono</label><input type="text" id="cot-tel" value="${escHtml(c.telefono||'')}" maxlength="12" oninput="fmtTelInput(this)"></div>
-      <div class="form-field"><label>Banco</label><select id="cot-banco">${bancos.map(b=>`<option ${b===c.banco?'selected':''}>${escHtml(b)}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Banco</label><div style="display:flex;gap:6px;align-items:center"><select id="cot-banco" style="flex:1">${bancos.map(b=>`<option ${b===c.banco?'selected':''}>${escHtml(b)}</option>`).join('')}</select><button type="button" title="Agregar banco" onclick="agregarBancoModal()" style="padding:6px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;font-weight:700;flex-shrink:0">+</button></div></div>
       <div class="form-field"><label>Fecha</label><input type="date" id="cot-fecha" value="${c.fecha||today()}"></div>
     </div>
     <div class="form-row c3">
@@ -9216,6 +9216,17 @@ function editarCotizacion(i){
     <div class="form-field"><label>Notas</label><textarea id="cot-notas" rows="2">${escHtml(c.notas||'')}</textarea></div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
      <button class="btn btn-primary" onclick="guardarCotizacion(${i})">💾 Actualizar</button>`);
+}
+function agregarBancoModal(){
+  const nombre=prompt('Nombre del banco a agregar:');
+  if(!nombre||!nombre.trim())return;
+  const b=nombre.trim();
+  if(!DB.config.bancos)DB.config.bancos=['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro'];
+  if(!DB.config.bancos.includes(b))DB.config.bancos.push(b);
+  sDB('config');
+  const sel=document.getElementById('cot-banco');
+  if(sel){const opt=document.createElement('option');opt.value=b;opt.textContent=b;opt.selected=true;sel.appendChild(opt);}
+  toast('Banco agregado: '+b,'success');
 }
 function imprimirCotizacion(i){
   const c=DB.cotizaciones[i];if(!c)return;
