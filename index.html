@@ -1512,6 +1512,7 @@ function feriaCargarVehiculo(vid){
     +'<div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:14px">'+escHtml(v.marca+' '+v.modelo+' '+v.anio)+'</div>'
     +priceBox
     +techGrid
+    +(v.carfax?'<button class="btn btn-secondary" style="width:100%;margin-bottom:12px" onclick="abrirArchivoVehiculo(\''+vid+'\',\'carfax\')">📄 Ver Carfax</button>':'')
     +(ex.carfax?'<div onclick="feriaToggleAcc(\'carfax\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:14px;font-weight:700;cursor:pointer;border-top:1px solid var(--gray3)">🛡️ Historial Carfax Completo <span id="ico-carfax">▼</span></div>'
       +'<div id="feria-carfax" style="display:none;padding-bottom:12px;font-size:13px;color:var(--gray);line-height:1.6">'+escHtml(ex.carfax)+'</div>':'')
     +(ex.ventajas?'<div onclick="feriaToggleAcc(\'ventajas\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:14px;font-weight:700;cursor:pointer;border-top:1px solid var(--gray3)">💎 Ventajas Comerciales <span id="ico-ventajas">▼</span></div>'
@@ -2377,6 +2378,82 @@ function previewFoto(inputId,prevId){
   reader.readAsDataURL(file);
 }
 
+function archivoVehHtml(url){
+  if(!url)return '';
+  if(url.indexOf('data:application/pdf')===0)return '<div style="display:flex;align-items:center;gap:6px;background:#f1f5f9;border-radius:6px;padding:8px;font-size:12px;font-weight:600;color:#475569;margin-top:6px">📄 Documento PDF cargado</div>';
+  return '<img src="'+url+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px">';
+}
+function cargarArchivoVeh(inputId,prevId,actionsId){
+  const inputEl=document.getElementById(inputId);
+  const file=inputEl?.files[0];
+  const prev=document.getElementById(prevId);
+  const actions=document.getElementById(actionsId);
+  if(!file)return;
+  const allowed=['image/jpeg','image/jpg','image/png','application/pdf'];
+  if(!allowed.includes(file.type)){toast('Solo se permiten archivos JPG, PNG o PDF','error');inputEl.value='';return;}
+  if(file.size>5*1024*1024){toast('El archivo es muy grande (máx. 5MB)','error');inputEl.value='';return;}
+  if(file.type==='application/pdf'){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      inputEl.dataset.current=e.target.result;
+      if(prev)prev.innerHTML=archivoVehHtml(inputEl.dataset.current);
+      if(actions)actions.style.display='flex';
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      const MAX=1200;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const compressed=canvas.toDataURL('image/jpeg',0.75);
+      inputEl.dataset.current=compressed;
+      if(prev)prev.innerHTML=archivoVehHtml(compressed);
+      if(actions)actions.style.display='flex';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function abrirDataUrl(url){
+  if(!url)return;
+  if(url.indexOf('data:')!==0){window.open(url,'_blank');return;}
+  try{
+    const partes=url.split(',');
+    const mimeMatch=partes[0].match(/:(.*?);/);
+    const mime=mimeMatch?mimeMatch[1]:'application/octet-stream';
+    const bstr=atob(partes[1]);
+    let n=bstr.length;
+    const u8arr=new Uint8Array(n);
+    while(n--){u8arr[n]=bstr.charCodeAt(n);}
+    const blobUrl=URL.createObjectURL(new Blob([u8arr],{type:mime}));
+    window.open(blobUrl,'_blank');
+  }catch(e){
+    window.open(url,'_blank');
+  }
+}
+function abrirArchivoVehiculo(vehId,campo){
+  const v=DB.vehiculos.find(x=>x.id===vehId);
+  if(v&&v[campo])abrirDataUrl(v[campo]);
+}
+function verArchivoVeh(inputId){
+  abrirDataUrl(document.getElementById(inputId)?.dataset.current);
+}
+function limpiarArchivoVeh(inputId,prevId,actionsId){
+  const input=document.getElementById(inputId);
+  const prev=document.getElementById(prevId);
+  const actions=document.getElementById(actionsId);
+  if(input){input.value='';input.dataset.current='';}
+  if(prev)prev.innerHTML='';
+  if(actions)actions.style.display='none';
+}
+
 let invSelectedId=null;
 function seleccionarVehiculo(id,tr){
   invSelectedId=id;
@@ -2902,14 +2979,30 @@ function formVehiculo(v){
       <div class="form-field"><label class="required">Chasis / VIN</label><input type="text" id="v-vin" value="${escHtml(v?.vin||'')}" placeholder="Número de chasis o VIN" maxlength="17" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
       <div class="form-field"><label>Placa</label><input type="text" id="v-placa" value="${escHtml(v?.placa||'')}" placeholder="A000000" maxlength="7" style="text-transform:uppercase" oninput="fmtPlaca(this)"></div>
     </div>
-    <div class="form-row c2">
+    <div class="form-row c3">
       <div class="form-field"><label>📋 BL (Bill of Lading)</label>
-        <input type="file" id="v-foto" accept=".jpg,.jpeg,.png,.pdf" onchange="previewFoto('v-foto','v-foto-prev')">
-        <img id="v-foto-prev" src="${v?.foto||''}" style="display:${v?.foto?'block':'none'};width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px">
+        <input type="file" id="v-foto" accept=".jpg,.jpeg,.png,.pdf" data-current="${v?.foto||''}" onchange="cargarArchivoVeh('v-foto','v-foto-prev','v-foto-actions')">
+        <div id="v-foto-prev">${archivoVehHtml(v?.foto)}</div>
+        <div id="v-foto-actions" style="display:${v?.foto?'flex':'none'};gap:6px;margin-top:6px">
+          <button type="button" onclick="verArchivoVeh('v-foto')" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid var(--gray3);border-radius:6px;background:#fff;color:var(--blue);cursor:pointer;font-weight:600">👁️ Ver</button>
+          <button type="button" onclick="limpiarArchivoVeh('v-foto','v-foto-prev','v-foto-actions')" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid #fca5a5;border-radius:6px;background:#fff;color:#dc2626;cursor:pointer;font-weight:600">✕ Quitar</button>
+        </div>
       </div>
       <div class="form-field"><label>📄 Carfax</label>
-        <input type="file" id="v-carfax" accept=".jpg,.jpeg,.png,.pdf" onchange="previewFoto('v-carfax','v-carfax-prev')">
-        <img id="v-carfax-prev" src="${v?.carfax||''}" style="display:${v?.carfax?'block':'none'};width:100%;max-height:120px;object-fit:cover;border-radius:6px;margin-top:6px">
+        <input type="file" id="v-carfax" accept=".jpg,.jpeg,.png,.pdf" data-current="${v?.carfax||''}" onchange="cargarArchivoVeh('v-carfax','v-carfax-prev','v-carfax-actions')">
+        <div id="v-carfax-prev">${archivoVehHtml(v?.carfax)}</div>
+        <div id="v-carfax-actions" style="display:${v?.carfax?'flex':'none'};gap:6px;margin-top:6px">
+          <button type="button" onclick="verArchivoVeh('v-carfax')" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid var(--gray3);border-radius:6px;background:#fff;color:var(--blue);cursor:pointer;font-weight:600">👁️ Ver</button>
+          <button type="button" onclick="limpiarArchivoVeh('v-carfax','v-carfax-prev','v-carfax-actions')" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid #fca5a5;border-radius:6px;background:#fff;color:#dc2626;cursor:pointer;font-weight:600">✕ Quitar</button>
+        </div>
+      </div>
+      <div class="form-field"><label>🖨️ Printer</label>
+        <input type="file" id="v-printer" accept=".jpg,.jpeg,.png,.pdf" data-current="${v?.printer||''}" onchange="cargarArchivoVeh('v-printer','v-printer-prev','v-printer-actions')">
+        <div id="v-printer-prev">${archivoVehHtml(v?.printer)}</div>
+        <div id="v-printer-actions" style="display:${v?.printer?'flex':'none'};gap:6px;margin-top:6px">
+          <button type="button" onclick="verArchivoVeh('v-printer')" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid var(--gray3);border-radius:6px;background:#fff;color:var(--blue);cursor:pointer;font-weight:600">👁️ Ver</button>
+          <button type="button" onclick="limpiarArchivoVeh('v-printer','v-printer-prev','v-printer-actions')" style="flex:1;font-size:11px;padding:5px 8px;border:1px solid #fca5a5;border-radius:6px;background:#fff;color:#dc2626;cursor:pointer;font-weight:600">✕ Quitar</button>
+        </div>
       </div>
     </div>
     <div class="form-row c2">
@@ -2946,8 +3039,6 @@ function guardarVehiculo(id){
   // Validar duplicado por chasis/VIN únicamente
   const vinDup=DB.vehiculos.find(v=>v.vin&&v.vin.toUpperCase()===vin.toUpperCase()&&v.id!==id);
   if(vinDup){toast('Ya existe un vehículo con ese chasis/VIN: '+vinDup.codigo+' — '+vinDup.marca+' '+vinDup.modelo+' '+vinDup.anio,'error');return;}
-  const fotoEl=document.getElementById('v-foto-prev');
-  const carfaxEl=document.getElementById('v-carfax-prev');
   const obj={
     id:id||uid(),codigo:cod,propietario:prop,marca,modelo,
     tipo:document.getElementById('v-tipo').value,
@@ -2959,8 +3050,9 @@ function guardarVehiculo(id){
     tipoCompra:document.getElementById('v-tipo-compra').value,
     fecha:document.getElementById('v-fecha').value,
     vin,placa:document.getElementById('v-placa').value,
-    foto:fotoEl?.style.display!=='none'&&fotoEl?.src?fotoEl.src:(id?DB.vehiculos.find(x=>x.id===id)?.foto||'':''),
-    carfax:carfaxEl?.style.display!=='none'&&carfaxEl?.src?carfaxEl.src:(id?DB.vehiculos.find(x=>x.id===id)?.carfax||'':''),
+    foto:document.getElementById('v-foto')?.dataset.current||'',
+    carfax:document.getElementById('v-carfax')?.dataset.current||'',
+    printer:document.getElementById('v-printer')?.dataset.current||'',
     notas:document.getElementById('v-notas').value
   };
   if(id){
@@ -3042,7 +3134,7 @@ function verVehiculo(id){
   const i=DB.vehiculos.findIndex(x=>x.id===id);
   const totalGastos=(DB.gastosVehiculos||[]).filter(g=>g.vehiculoId===id).reduce((a,g)=>a+parseFloat(g.monto||0),0);
   openModal(`${v.marca} ${v.modelo} ${v.anio}`,`
-    ${v.foto?`<img src="${v.foto}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-bottom:14px">`:''}
+    ${v.foto&&v.foto.indexOf('data:application/pdf')!==0?`<img src="${v.foto}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-bottom:14px">`:''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Código</div><div style="font-family:monospace;font-weight:700">${escHtml(v.codigo||'—')}</div></div>
       <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Propietario</div><div style="font-weight:600">${escHtml(v.propietario||'—')}</div></div>
@@ -3056,8 +3148,9 @@ function verVehiculo(id){
       <div><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase">Estado</div><div><span class="badge ${v.status==='ACTIVO'?'badge-green':v.status==='VENDIDO'?'badge-blue':v.status==='TRÁNSITO'?'badge-purple':'badge-amber'}">${v.status}</span></div></div>
     </div>`,
     `<button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
-     ${v.foto?`<button class="btn btn-secondary" onclick="window.open('${v.foto}','_blank')">📋 BL</button>`:''}
-     ${v.carfax?`<button class="btn btn-secondary" onclick="window.open('${v.carfax}','_blank')">📄 Carfax</button>`:''}
+     ${v.foto?`<button class="btn btn-secondary" onclick="abrirArchivoVehiculo('${id}','foto')">📋 BL</button>`:''}
+     ${v.carfax?`<button class="btn btn-secondary" onclick="abrirArchivoVehiculo('${id}','carfax')">📄 Carfax</button>`:''}
+     ${v.printer?`<button class="btn btn-secondary" onclick="abrirArchivoVehiculo('${id}','printer')">🖨️ Printer</button>`:''}
      <button class="btn btn-amber" onclick="closeModal();gastosVehiculo('${id}')">💸 Gastos de Vehículo</button>
      <button class="btn btn-green btn-sm" onclick="closeModal();imprimirHojaSalida('${id}')">📋 Hoja Salida</button>
      <button class="btn btn-secondary btn-sm" onclick="closeModal();imprimirLavadoActivos('${id}')">🔍 Lavado Activos</button>
