@@ -2391,7 +2391,12 @@ function cargarArchivoVeh(inputId,prevId,actionsId){
   if(!file)return;
   const allowed=['image/jpeg','image/jpg','image/png','application/pdf'];
   if(!allowed.includes(file.type)){toast('Solo se permiten archivos JPG, PNG o PDF','error');inputEl.value='';return;}
-  if(file.size>5*1024*1024){toast('El archivo es muy grande (máx. 5MB)','error');inputEl.value='';return;}
+  const maxSize=file.type==='application/pdf'?350*1024:3*1024*1024;
+  if(file.size>maxSize){
+    toast(file.type==='application/pdf'?'⚠️ El PDF es muy grande (máx. 350 KB). Comprímelo o sube una foto en su lugar.':'El archivo es muy grande (máx. 3MB)','error');
+    inputEl.value='';
+    return;
+  }
   if(file.type==='application/pdf'){
     const reader=new FileReader();
     reader.onload=e=>{
@@ -13468,15 +13473,25 @@ const _fbCol = 'maedig';
 
 async function fbGuardar(key){
   try {
-    let val=DB[key]!==undefined?DB[key]:(key==='config'?{}:key==='feria'?{extras:{},ventas:[]}:[]);
-    // Para config: guardar logoData separado para evitar límite de tamaño
-    if(key==='config'&&typeof val==='object'&&val!==null){
-      const logo=val.logoData||'';
-      const sinLogo=Object.assign({},val,{logoData:''});
-      await _fbDB.collection(_fbCol).doc(key).set({valor:JSON.stringify(sinLogo)});
-      if(logo) await _fbDB.collection(_fbCol).doc('config_logo').set({valor:JSON.stringify(logo)});
+    if(key==='vehiculos'){
+      // Un documento por vehículo: evita el límite de 1MB compartido entre toda la flota
+      const arr=DB.vehiculos||[];
+      const col=_fbDB.collection(_fbCol+'_vehiculos');
+      await Promise.all(arr.map(v=>col.doc(v.id).set({valor:JSON.stringify(v)})));
+      const snap=await col.get();
+      const idsActuales=new Set(arr.map(v=>v.id));
+      await Promise.all(snap.docs.filter(d=>!idsActuales.has(d.id)).map(d=>d.ref.delete()));
     } else {
-      await _fbDB.collection(_fbCol).doc(key).set({valor:JSON.stringify(val)});
+      let val=DB[key]!==undefined?DB[key]:(key==='config'?{}:key==='feria'?{extras:{},ventas:[]}:[]);
+      // Para config: guardar logoData separado para evitar límite de tamaño
+      if(key==='config'&&typeof val==='object'&&val!==null){
+        const logo=val.logoData||'';
+        const sinLogo=Object.assign({},val,{logoData:''});
+        await _fbDB.collection(_fbCol).doc(key).set({valor:JSON.stringify(sinLogo)});
+        if(logo) await _fbDB.collection(_fbCol).doc('config_logo').set({valor:JSON.stringify(logo)});
+      } else {
+        await _fbDB.collection(_fbCol).doc(key).set({valor:JSON.stringify(val)});
+      }
     }
     // Indicador visual guardado OK
     const dot=document.getElementById('fb-dot');const txt=document.getElementById('fb-text');
@@ -13507,6 +13522,26 @@ async function fbCargar(){
   let loaded=false;
   for(const key of keys){
     try {
+      if(key==='vehiculos'){
+        const col=_fbDB.collection(_fbCol+'_vehiculos');
+        let qs=await col.get();
+        if(qs.empty){
+          // Migración única: si aún no existe la colección nueva, copiar desde el documento antiguo
+          const oldSnap=await _fbDB.collection(_fbCol).doc('vehiculos').get();
+          if(oldSnap.exists){
+            const oldVal=JSON.parse(oldSnap.data().valor);
+            if(Array.isArray(oldVal)&&oldVal.length){
+              await Promise.all(oldVal.map(v=>col.doc(v.id).set({valor:JSON.stringify(v)})));
+              qs=await col.get();
+            }
+          }
+        }
+        if(!qs.empty){
+          DB.vehiculos=qs.docs.map(d=>JSON.parse(d.data().valor));
+          loaded=true;
+        }
+        continue;
+      }
       const snap = await _fbDB.collection(_fbCol).doc(key).get();
       if(snap.exists){
         const val = JSON.parse(snap.data().valor);
@@ -13769,11 +13804,55 @@ function _ejecutarBackupAuto(){
 }
 
 // ══ FIREBASE LISTENERS TIEMPO REAL ══
+function _fbRenderTrasSync(key){
+  const activePage=document.querySelector('.page.active');
+  if(!activePage)return;
+  const pid=activePage.id.replace('page-','');
+  const renderMap={
+    dashboard:()=>typeof renderDashboard==='function'&&renderDashboard(),
+    inventario:()=>typeof renderInventario==='function'&&renderInventario(),
+    ventas:()=>typeof renderVentas==='function'&&renderVentas(),
+    clientes:()=>typeof renderClientes==='function'&&renderClientes(),
+    suplidores:()=>typeof renderSuplidores==='function'&&renderSuplidores(),
+    gastos:()=>typeof renderGastos==='function'&&renderGastos(),
+    nomina:()=>typeof renderNomina==='function'&&renderNomina(),
+    cxc:()=>typeof renderCXC==='function'&&renderCXC(),
+    cxp:()=>typeof renderCXP==='function'&&renderCXP(),
+    caja:()=>typeof renderCaja==='function'&&renderCaja(),
+    gastosVeh:()=>typeof renderGastosVeh==='function'&&renderGastosVeh(),
+    cotizaciones:()=>typeof renderCotizaciones==='function'&&renderCotizaciones(),
+    autorizaciones:()=>typeof renderAutorizaciones==='function'&&renderAutorizaciones(),
+    usuarios:()=>typeof renderUsuarios==='function'&&renderUsuarios(),
+    informes:()=>typeof renderInformes==='function'&&renderInformes(),
+    cumpleanos:()=>typeof renderCumpleanos==='function'&&renderCumpleanos(),
+    // Feria: refresh inteligente - actualiza datos sin resetear el vendedor
+    feria:()=>typeof feriaRefreshSilente==='function'&&feriaRefreshSilente(),
+  };
+  // Chat: actualizar badge siempre (aunque no esté en esa pantalla) y refrescar mensajes sin perder lo que se está escribiendo
+  if(key==='chat'){
+    if(typeof _chatActualizarBadge==='function')_chatActualizarBadge();
+    if(pid==='chat'&&typeof renderChat==='function'){
+      clearTimeout(window._chatRenderTimeout);
+      window._chatRenderTimeout=setTimeout(()=>{
+        const inpPrev=document.getElementById('chat-input');
+        const textoPrev=inpPrev?inpPrev.value:'';
+        renderChat();
+        const inpNuevo=document.getElementById('chat-input');
+        if(inpNuevo&&textoPrev)inpNuevo.value=textoPrev;
+      },300);
+    }
+    return;
+  }
+  if(renderMap[pid]){
+    clearTimeout(window._renderTimeout);
+    window._renderTimeout=setTimeout(renderMap[pid],300);
+  }
+}
 function fbActivarListeners(){
-  const keys=['config','config_logo','users','vehiculos','clientes','suplidores',
+  const keys=['config','config_logo','users','clientes','suplidores',
     'ventas','cotizaciones','caja','gastos','nomina','nominaPagos',
     'gastosVehiculos','cxp','cxc','autorizaciones','cumpleanosMensajes','feria','chat'];
-  
+
   keys.forEach(key=>{
     _fbDB.collection(_fbCol).doc(key).onSnapshot(snap=>{
       if(!snap.exists||!window._fbActivo)return;
@@ -13804,51 +13883,20 @@ function fbActivarListeners(){
             DB[key]=val;
           }
         }
-        const activePage=document.querySelector('.page.active');
-        if(!activePage)return;
-        const pid=activePage.id.replace('page-','');
-        const renderMap={
-          dashboard:()=>typeof renderDashboard==='function'&&renderDashboard(),
-          inventario:()=>typeof renderInventario==='function'&&renderInventario(),
-          ventas:()=>typeof renderVentas==='function'&&renderVentas(),
-          clientes:()=>typeof renderClientes==='function'&&renderClientes(),
-          suplidores:()=>typeof renderSuplidores==='function'&&renderSuplidores(),
-          gastos:()=>typeof renderGastos==='function'&&renderGastos(),
-          nomina:()=>typeof renderNomina==='function'&&renderNomina(),
-          cxc:()=>typeof renderCXC==='function'&&renderCXC(),
-          cxp:()=>typeof renderCXP==='function'&&renderCXP(),
-          caja:()=>typeof renderCaja==='function'&&renderCaja(),
-          gastosVeh:()=>typeof renderGastosVeh==='function'&&renderGastosVeh(),
-          cotizaciones:()=>typeof renderCotizaciones==='function'&&renderCotizaciones(),
-          autorizaciones:()=>typeof renderAutorizaciones==='function'&&renderAutorizaciones(),
-          usuarios:()=>typeof renderUsuarios==='function'&&renderUsuarios(),
-          informes:()=>typeof renderInformes==='function'&&renderInformes(),
-          cumpleanos:()=>typeof renderCumpleanos==='function'&&renderCumpleanos(),
-          // Feria: refresh inteligente - actualiza datos sin resetear el vendedor
-          feria:()=>typeof feriaRefreshSilente==='function'&&feriaRefreshSilente(),
-        };
-        // Chat: actualizar badge siempre (aunque no esté en esa pantalla) y refrescar mensajes sin perder lo que se está escribiendo
-        if(key==='chat'){
-          if(typeof _chatActualizarBadge==='function')_chatActualizarBadge();
-          if(pid==='chat'&&typeof renderChat==='function'){
-            clearTimeout(window._chatRenderTimeout);
-            window._chatRenderTimeout=setTimeout(()=>{
-              const inpPrev=document.getElementById('chat-input');
-              const textoPrev=inpPrev?inpPrev.value:'';
-              renderChat();
-              const inpNuevo=document.getElementById('chat-input');
-              if(inpNuevo&&textoPrev)inpNuevo.value=textoPrev;
-            },300);
-          }
-          return;
-        }
-        if(renderMap[pid]){
-          clearTimeout(window._renderTimeout);
-          window._renderTimeout=setTimeout(renderMap[pid],300);
-        }
+        _fbRenderTrasSync(key);
       }catch(e){console.warn('FB listener error:',key,e.message);}
     });
   });
+
+  // Vehículos: colección con un documento por vehículo (evita el límite de 1MB compartido)
+  _fbDB.collection(_fbCol+'_vehiculos').onSnapshot(snap=>{
+    if(!window._fbActivo)return;
+    try{
+      DB.vehiculos=snap.docs.map(d=>JSON.parse(d.data().valor));
+      _fbRenderTrasSync('vehiculos');
+    }catch(e){console.warn('FB listener error: vehiculos',e.message);}
+  });
+
   console.log('✅ Firebase listeners activos — tiempo real habilitado');
 }
 
