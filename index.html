@@ -1176,6 +1176,7 @@ function renderFeria(){
               <input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">
             </div>
           </div>
+          <button class="btn btn-secondary" style="width:100%;padding:10px;font-size:13px;margin-top:4px" onclick="feriaLimpiarCampos()">🧹 Limpiar</button>
           <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:4px" onclick="feriaGenerarCotizacion()">📄 Generar cotización</button>
         </div>
       </div>
@@ -1521,6 +1522,7 @@ function feriaCargarVehiculo(vid){
     +'<div style="font-size:13px;font-weight:600;color:#475569" id="feria-foto-txt">📋 Capturar Cédula del Cliente (Frente)</div>'
     +'<input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">'
     +'</div></div>'
+    +'<button class="btn btn-secondary" style="width:100%;padding:12px;font-size:14px;margin-top:8px;border-radius:10px" onclick="feriaLimpiarCampos()">🧹 Limpiar</button>'
     +'<button class="btn btn-primary" style="width:100%;padding:16px;font-size:16px;margin-top:8px;border-radius:10px" onclick="feriaGenerarCotizacion()">📄 Generar e Imprimir Cotización</button>'
     +'</div>';
 
@@ -1567,6 +1569,16 @@ function feriaFotoSubida(){
   if(txt)txt.textContent='✓ Documento adjuntado';
 }
 
+function feriaLimpiarCampos(){
+  ['feria-cli-nombre','feria-cli-tel','feria-cli-doc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const banco=document.getElementById('feria-banco-sel');if(banco)banco.value='';
+  const tipoDoc=document.getElementById('feria-cli-tipodoc');if(tipoDoc)tipoDoc.value='Cédula';
+  const box=document.getElementById('feria-doc-box');
+  if(box)box.style.cssText='border:2px dashed #94a3b8;background:#f8fafc;padding:16px;text-align:center;border-radius:8px;cursor:pointer';
+  const txt=document.getElementById('feria-foto-txt');if(txt)txt.textContent='📋 Capturar Cédula del Cliente (Frente)';
+  const inp=document.getElementById('feria-foto-inp');if(inp)inp.value='';
+  toast('Campos limpiados','success');
+}
 function feriaGenerarCotizacion(){
   const v=window._feriaVehActivo;
   const nombre=document.getElementById('feria-cli-nombre')?.value.trim();
