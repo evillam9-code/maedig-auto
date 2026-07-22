@@ -538,22 +538,7 @@ function preguntarCerrar(onSiCode){
     `<button class="btn btn-secondary" onclick="closeModal()">No, continuar</button>
      <button class="btn btn-primary" onclick="${onSiCode||'closeModal()'}">Sí, cerrar</button>`);
 }
-let _inactTimer=null;
-function resetInactTimer(){
-  clearTimeout(_inactTimer);
-  _inactTimer=setTimeout(()=>{
-    if(currentUser){
-      currentUser=null;
-      closeModal();
-      document.getElementById('app').style.display='none';
-      document.getElementById('login-screen').style.display='flex';
-      document.getElementById('li-user').value='';
-      document.getElementById('li-pass').value='';
-      alert('Sesión cerrada por inactividad (30 min). Inicie sesión nuevamente.');
-    }
-  },1800000);
-}
-['click','keydown','mousemove','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,resetInactTimer,{passive:true}));
+function resetInactTimer(){}
 
 let currentUser=null;
 
