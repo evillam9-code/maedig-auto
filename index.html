@@ -1570,13 +1570,9 @@ function feriaFotoSubida(){
 }
 
 function feriaLimpiarCampos(){
-  ['feria-cli-nombre','feria-cli-tel','feria-cli-doc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const banco=document.getElementById('feria-banco-sel');if(banco)banco.value='';
-  const tipoDoc=document.getElementById('feria-cli-tipodoc');if(tipoDoc)tipoDoc.value='Cédula';
-  const box=document.getElementById('feria-doc-box');
-  if(box)box.style.cssText='border:2px dashed #94a3b8;background:#f8fafc;padding:16px;text-align:center;border-radius:8px;cursor:pointer';
-  const txt=document.getElementById('feria-foto-txt');if(txt)txt.textContent='📋 Capturar Cédula del Cliente (Frente)';
-  const inp=document.getElementById('feria-foto-inp');if(inp)inp.value='';
+  const buscar=document.getElementById('feria-veh-buscar');if(buscar)buscar.value='';
+  const sel=document.getElementById('feria-veh-sel');if(sel)sel.value='';
+  feriaCargarVehiculo('');
   toast('Campos limpiados','success');
 }
 function feriaGenerarCotizacion(){
