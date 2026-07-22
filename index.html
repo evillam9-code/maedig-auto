@@ -1092,6 +1092,7 @@ function renderFeria(){
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="exportarFeriaPDF()">📄 Exportar PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportarPreciosFeria()">💲 Exportar Precios</button>
       </div>
     </div>
 
@@ -1115,6 +1116,7 @@ function renderFeria(){
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;color:#166534;text-align:center;margin-top:8px">
             📢 Tasa oficial: RD$ ${parseFloat(DB.config.tasaCambio||60).toFixed(2)}
           </div>
+          <button class="btn btn-secondary" style="width:100%;padding:10px;font-size:13px;margin-top:8px" onclick="feriaLimpiarCampos()">🧹 Limpiar</button>
         </div>
       </div>
 
@@ -1176,7 +1178,6 @@ function renderFeria(){
               <input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">
             </div>
           </div>
-          <button class="btn btn-secondary" style="width:100%;padding:10px;font-size:13px;margin-top:4px" onclick="feriaLimpiarCampos()">🧹 Limpiar</button>
           <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:4px" onclick="feriaGenerarCotizacion()">📄 Generar cotización</button>
         </div>
       </div>
@@ -1522,7 +1523,6 @@ function feriaCargarVehiculo(vid){
     +'<div style="font-size:13px;font-weight:600;color:#475569" id="feria-foto-txt">📋 Capturar Cédula del Cliente (Frente)</div>'
     +'<input type="file" id="feria-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="feriaFotoSubida()">'
     +'</div></div>'
-    +'<button class="btn btn-secondary" style="width:100%;padding:12px;font-size:14px;margin-top:8px;border-radius:10px" onclick="feriaLimpiarCampos()">🧹 Limpiar</button>'
     +'<button class="btn btn-primary" style="width:100%;padding:16px;font-size:16px;margin-top:8px;border-radius:10px" onclick="feriaGenerarCotizacion()">📄 Generar e Imprimir Cotización</button>'
     +'</div>';
 
@@ -1785,6 +1785,29 @@ function crearCotizacionDesdeFeria(vid){
 function imprimirCotizacionFeria(cotId){
   const i=DB.cotizaciones.findIndex(c=>c.id===cotId);
   if(i>=0)imprimirCotizacion(i);else toast('Cotización no encontrada','error');
+}
+
+function exportarPreciosFeria(){
+  const veh=DB.vehiculos.filter(v=>v.status==='ACTIVO'||v.status==='ADUANA')
+    .sort((a,b)=>{const na=parseInt((a.codigo||'').replace(/\D/g,''))||0;const nb=parseInt((b.codigo||'').replace(/\D/g,''))||0;return na-nb;});
+  const empresa=DB.config.empresa||'DealerSystem';
+  const filas=veh.map(v=>{
+    const ex=(DB.feria?.extras||{})[v.id]||{};
+    return '<tr><td style="font-family:monospace">'+escHtml(v.codigo||'—')+'</td>'
+      +'<td>'+escHtml((v.marca||'')+' '+(v.modelo||'')+' '+(v.anio||''))+'</td>'
+      +'<td style="font-size:10px">'+escHtml(v.vin||'—')+'</td>'
+      +'<td style="font-weight:700">'+(ex.precioFeria?'$'+parseFloat(ex.precioFeria).toLocaleString('en-US',{minimumFractionDigits:2}):'—')+'</td>'
+      +'<td>'+(ex.min?'$'+parseFloat(ex.min).toLocaleString('en-US',{minimumFractionDigits:2}):'—')+'</td></tr>';
+  }).join('');
+  const pdfHtml='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lista de Precios</title>'
+    +'<style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px}table{width:100%;border-collapse:collapse;margin-top:12px}th{background:#0f172a;color:#fff;padding:6px 8px;text-align:left;font-size:10px}td{padding:5px 8px;border-bottom:1px solid #e2e8f0}@media print{button{display:none}}</style>'
+    +'</head><body><h2>💲 Lista de Precios — '+escHtml(empresa)+'</h2>'
+    +'<p style="color:#64748b;margin-bottom:12px">'+veh.length+' vehículo(s) — Generado: '+fmtDate(today())+'</p>'
+    +'<table><thead><tr><th>Código</th><th>Vehículo</th><th>Chasis</th><th>Precio Venta (USD)</th><th>Mínimo (USD)</th></tr></thead>'
+    +'<tbody>'+filas+'</tbody></table>'
+    +'<br><button onclick="window.print()" style="padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700">Imprimir</button>'
+    +'</body></html>';
+  openPopup(pdfHtml);
 }
 
 function eliminarVentaFeria(id){
