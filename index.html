@@ -543,6 +543,36 @@ function resetInactTimer(){}
 let currentUser=null;
 
 let _loginIntentos=0,_loginBloqueado=false,_loginTimer=null;
+function _guardarSesionLocal(user){
+  try{sessionStorage.setItem('maedig_session',JSON.stringify({uid:user.id}));}catch{}
+}
+function _borrarSesionLocal(){
+  try{sessionStorage.removeItem('maedig_session');}catch{}
+}
+function _restaurarSesionSiExiste(){
+  let s;
+  try{s=JSON.parse(sessionStorage.getItem('maedig_session')||'null');}catch{s=null;}
+  if(!s||!s.uid)return false;
+  const user=(DB.users||[]).find(x=>x.id===s.uid&&x.activo);
+  if(!user)return false;
+  currentUser=user;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('welcome-screen').classList.remove('show');
+  document.getElementById('app').style.display='flex';
+  document.getElementById('top-username').textContent=user.nombre;
+  document.getElementById('topbar-nombre').textContent=user.nombre;
+  document.getElementById('top-role').textContent=_getRolLabel(user.role);
+  document.getElementById('user-initials').textContent=user.nombre.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const emp=document.getElementById('topbar-empresa');
+  if(emp&&DB.config.empresa)emp.textContent=DB.config.empresa;
+  aplicarPermisosNav();
+  if(DB.config?.colores)aplicarColoresSistema();
+  actualizarLogoSidebar();
+  showPage(paginaInicialPara(currentUser));
+  _iniciarPresenciaGlobal();
+  setTimeout(asegurarCuentaEfectivo,3000);
+  return true;
+}
 function doLogin(){
   if(_loginBloqueado){document.getElementById('login-blocked').style.display='block';return;}
   const u=document.getElementById('li-user').value.trim();
@@ -585,6 +615,7 @@ function doLogin(){
   _loginIntentos=0;_loginBloqueado=false;if(_loginTimer)clearInterval(_loginTimer);
   err.style.display='none';blk.style.display='none';
   currentUser=user;
+  _guardarSesionLocal(user);
   // Mostrar pantalla de bienvenida
   const ws=document.getElementById('welcome-screen');
   document.getElementById('login-screen').style.display='none';
@@ -1953,6 +1984,7 @@ function doLogout(){
     if(window._presenciaGlobalInterval)clearInterval(window._presenciaGlobalInterval);
   }
   currentUser=null;
+  _borrarSesionLocal();
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('li-user').value='';
@@ -9544,7 +9576,12 @@ function nuevaCotizacion(){
     <div class="form-row c3">
       <div class="form-field"><label>Teléfono</label><input type="text" id="cot-tel" maxlength="12" placeholder="000-000-0000" oninput="fmtTelInput(this)"></div>
       <div class="form-field"><label class="required">Entidad Bancaria</label>
-        <select id="cot-banco"><option value="">Seleccionar...</option>${bancos.map(b=>`<option>${escHtml(b)}</option>`).join('')}</select>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="cot-banco" style="flex:1"><option value="">Seleccionar...</option>${bancos.map(b=>`<option>${escHtml(b)}</option>`).join('')}</select>
+          <button type="button" title="Agregar banco" onclick="agregarBancoModal()" style="padding:6px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;font-weight:700;flex-shrink:0">+</button>
+          <button type="button" title="Editar banco seleccionado" onclick="editarBancoSeleccionado()" style="padding:6px 10px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700;flex-shrink:0">✎</button>
+          <button type="button" title="Eliminar banco seleccionado" onclick="eliminarBancoSeleccionado()" style="padding:6px 10px;background:var(--red,#d33);color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700;flex-shrink:0">🗑</button>
+        </div>
       </div>
       <div class="form-field"><label>Fecha</label><input type="date" id="cot-fecha" value="${today()}"></div>
     </div>
@@ -9621,7 +9658,7 @@ function editarCotizacion(i){
     </div>
     <div class="form-row c3">
       <div class="form-field"><label>Teléfono</label><input type="text" id="cot-tel" value="${escHtml(c.telefono||'')}" maxlength="12" oninput="fmtTelInput(this)"></div>
-      <div class="form-field"><label>Banco</label><div style="display:flex;gap:6px;align-items:center"><select id="cot-banco" style="flex:1">${bancos.map(b=>`<option ${b===c.banco?'selected':''}>${escHtml(b)}</option>`).join('')}</select><button type="button" title="Agregar banco" onclick="agregarBancoModal()" style="padding:6px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;font-weight:700;flex-shrink:0">+</button></div></div>
+      <div class="form-field"><label>Banco</label><div style="display:flex;gap:6px;align-items:center"><select id="cot-banco" style="flex:1">${bancos.map(b=>`<option ${b===c.banco?'selected':''}>${escHtml(b)}</option>`).join('')}</select><button type="button" title="Agregar banco" onclick="agregarBancoModal()" style="padding:6px 10px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;font-weight:700;flex-shrink:0">+</button><button type="button" title="Editar banco seleccionado" onclick="editarBancoSeleccionado()" style="padding:6px 10px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700;flex-shrink:0">✎</button><button type="button" title="Eliminar banco seleccionado" onclick="eliminarBancoSeleccionado()" style="padding:6px 10px;background:var(--red,#d33);color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:700;flex-shrink:0">🗑</button></div></div>
       <div class="form-field"><label>Fecha</label><input type="date" id="cot-fecha" value="${c.fecha||today()}"></div>
     </div>
     <div class="form-row c3">
@@ -9643,6 +9680,33 @@ function agregarBancoModal(){
   const sel=document.getElementById('cot-banco');
   if(sel){const opt=document.createElement('option');opt.value=b;opt.textContent=b;opt.selected=true;sel.appendChild(opt);}
   toast('Banco agregado: '+b,'success');
+}
+function editarBancoSeleccionado(){
+  const sel=document.getElementById('cot-banco');
+  const actual=sel?.value;
+  if(!actual){toast('Selecciona un banco primero','error');return;}
+  const nuevo=prompt('Editar nombre del banco:',actual);
+  if(!nuevo||!nuevo.trim()||nuevo.trim()===actual)return;
+  const b=nuevo.trim();
+  if(!DB.config.bancos)DB.config.bancos=['Banco Popular','BHD León','Banreservas','Scotiabank','Banco Santa Cruz','Otro'];
+  const i=DB.config.bancos.indexOf(actual);
+  if(i>=0)DB.config.bancos[i]=b;else DB.config.bancos.push(b);
+  sDB('config');
+  const opt=Array.from(sel.options).find(o=>o.value===actual);
+  if(opt){opt.value=b;opt.textContent=b;}
+  toast('Banco actualizado: '+b,'success');
+}
+function eliminarBancoSeleccionado(){
+  const sel=document.getElementById('cot-banco');
+  const actual=sel?.value;
+  if(!actual){toast('Selecciona un banco primero','error');return;}
+  if(!confirm('¿Eliminar el banco "'+actual+'" de la lista?'))return;
+  if(DB.config.bancos)DB.config.bancos=DB.config.bancos.filter(x=>x!==actual);
+  sDB('config');
+  const opt=Array.from(sel.options).find(o=>o.value===actual);
+  if(opt)opt.remove();
+  sel.value='';
+  toast('Banco eliminado','success');
 }
 function imprimirCotizacion(i){
   const c=DB.cotizaciones[i];if(!c)return;
@@ -13480,6 +13544,11 @@ document.getElementById('li-pass').addEventListener('keydown',e=>{if(e.key==='En
 document.getElementById('li-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-pass').focus();});
 // Precargar Firebase al arrancar para que los usuarios estén disponibles antes del login
 window.addEventListener('load', ()=>{
+  // Si había una sesión activa (el móvil recargó la pestaña en segundo plano), restaurarla directo
+  if(_restaurarSesionSiExiste()){
+    if(typeof fbIniciar==='function')fbIniciar().catch(()=>{});
+    return;
+  }
   if(typeof fbCargar==='function'){
     // Mostrar indicador de carga en el login
     const btn=document.querySelector('.btn-login');
